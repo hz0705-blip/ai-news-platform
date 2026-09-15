@@ -1,15 +1,15 @@
-# Project
+# 프로젝트
 
-ai-news-platform. Shared facts for both agents. Fill in as the codebase forms; keep it short.
+ai-news-platform. 두 에이전트가 공유하는 사실. 코드베이스가 형성되는 대로 채우되 짧게 유지한다.
 
-## Stack
+## 스택
 
-_TBD_
+_미정_
 
-## Commands
+## 명령어
 
-_TBD_ (install / dev / test / lint)
+_미정_ (설치 / 개발 서버 / 테스트 / 린트)
 
-## Conventions
+## 컨벤션
 
-_TBD_
+_미정_
