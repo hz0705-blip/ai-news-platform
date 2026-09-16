@@ -14,7 +14,7 @@
 
 ## Project context (decided 2026-09-16, supersedes the context in briefs 01–05)
 
-**ai-news-platform** — a product-grade portfolio web app for **Korean readers** that clusters **English-language international news** into *Stories*, writes a **Korean summary as a list of Claims**, links every Claim to **English Evidence spans** in the original articles, and tracks **what changed since the reader last saw the Story**. Solo developer; Codex implements, Claude plans/reviews. Hiring targets: full-stack + applied-AI roles, Korea first with an English README as a secondary path.
+**ai-news-platform** — a product-grade portfolio web app for **Korean readers** that clusters **English-language international news** into *Stories*, writes a **Korean summary as a list of Claims**, links every Claim to **English Evidence spans** in the original articles, and tracks **what changed since the reader last saw the Story**. Solo developer; Claude implements via the superpowers cycle, Codex does research. Hiring targets: full-stack + applied-AI roles, Korea first with an English README as a secondary path.
 
 Fixed decisions you must not re-open (glossary in `CONTEXT.md`):
 
