@@ -6,5 +6,8 @@
       "Skill(superpowers:writing-skills)",
       "Skill(superpowers:writing-skills *)"
     ]
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true
   }
 }
