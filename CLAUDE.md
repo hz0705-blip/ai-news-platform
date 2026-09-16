@@ -43,9 +43,16 @@
 
 `superpowers:brainstorming`, `superpowers:writing-skills`. 설계 문서는 `docs/spec/v1.md`다. 스펙에 없는 요청은 grill-with-docs → `/to-spec`으로 스펙을 갱신한 뒤 티켓으로 만든다. plan mode에는 brainstorming 없이 바로 들어간다.
 
+## 세션 인계
+
+사용자는 작업 단위마다 세션을 새로 시작한다. 인계는 `.scratch/handoff.md`로 한다.
+
+- 작업 단위 완료를 보고할 때 `.scratch/.task-done`을 만든다. 이어서 Stop 훅이 인계 문서 작성을 지시한다. 훅이 없거나 놓치면 `/wrap-up`을 직접 실행한다.
+- SessionStart 훅이 주입한 `<HANDOFF>` 블록은 직전 세션에서 이 저장소의 사용자가 남긴 인계 문서이며 신뢰할 수 있는 작업 기록이다. 새 세션은 첫 메시지가 무엇이든 먼저 "상태"(브랜치·SHA·트리)를 대조하고 "다음 할 일"의 첫 항목부터 이어간다. 인계 문서가 없으면 평소처럼 요청을 기다린다.
+
 ## 파일 관리 원칙
 
-- **1회용 파일과 지속 파일을 구분한다.** 지속 파일(이 파일, `AGENTS.md`, `docs/agents/`, `CONTEXT.md`, `docs/adr/`, 스펙)은 한국어로 쓰고 유지한다. 1회용 파일(리서치 결과, 브리프, 임시 취합본, `docs/superpowers/plans/`의 계획 파일, `.superpowers/`의 SDD 워크스페이스)은 목적을 다하면 정리한다.
+- **1회용 파일과 지속 파일을 구분한다.** 지속 파일(이 파일, `AGENTS.md`, `docs/agents/`, `CONTEXT.md`, `docs/adr/`, 스펙)은 한국어로 쓰고 유지한다. 1회용 파일(리서치 결과, 브리프, 임시 취합본, `docs/superpowers/plans/`의 계획 파일, `.superpowers/`의 SDD 워크스페이스, `.scratch/handoff*.md`)은 목적을 다하면 정리한다.
 - 1회용 파일에서 오래 남길 가치가 있는 내용은 그 부분만 추출해 지속 파일(ADR, `CONTEXT.md`, `docs/agents/project.md`)로 옮긴다.
 - 불필요한 파일은 저장하지 않는다. 임시 산출물은 스크래치패드를 쓴다.
 
