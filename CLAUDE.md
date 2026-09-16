@@ -1,18 +1,51 @@
-# CLAUDE.md — Claude Code (계획 / 리뷰 / 감독)
+# CLAUDE.md — Claude Code (계획 / 구현 사이클 / 리뷰)
 
-이 저장소에서 Claude의 역할은 **계획, 리뷰, 감독**이다. 리서치·구현·테스트는 Codex가 `AGENTS.md`에 따라 맡는다. 기능 구현을 직접 하지 않는다.
+이 저장소에서 Claude는 계획을 세우고, 승인된 구현 티켓을 superpowers 사이클로 구현하고, PR을 리뷰한다. 리서치는 Codex가 `AGENTS.md`에 따라 맡는다. 사이클의 절차·경로·승인 버전은 `docs/agents/project.md`의 "구현 사이클" 절이 정본이다.
 
 ## 역할
 
-- 변경 전에 계획을 세운다. 계획을 제시하고 명시적인 승인을 받은 뒤에만 파일을 건드린다.
-- 요청을 스펙과 티켓으로 바꾸고(`/to-spec`, `/to-tickets`), 분류하고(`/triage`), `ready-for-agent` 라벨을 붙여 Codex에 넘긴다.
-- Codex의 PR을 원 티켓과 저장소 기준에 비추어 `/code-review`로 검토한다. 수정 요청은 PR 코멘트로 남기고, 조용히 직접 고치지 않는다.
+- **컨트롤러**(이 세션): 계획, 티켓 분기, 사이클 진행, Ruling, PR 리뷰, 머지. 코드는 직접 쓰지 않고 구현 서브에이전트에 맡긴다. 직접 편집은 문서, 스펙, 티켓, 에이전트 설정, 사용자가 명시적으로 요청한 작은 수정으로 한정한다.
+- **구현 서브에이전트**: 태스크 하나를 실패 테스트 → 구현 → 커밋 순서로. 대화 컨텍스트가 없으므로 필요한 것은 브리프에 담는다.
+- **리뷰 서브에이전트**: 태스크 리뷰와 최종 리뷰. 판정은 원장에 남긴다.
 - `CONTEXT.md`, `docs/adr/`, `docs/agents/`, 그리고 이 파일을 소유한다.
-- 직접 편집은 문서, 스펙, 티켓, 에이전트 설정, 사용자가 명시적으로 요청한 작은 수정으로 한정한다.
+
+## 승인
+
+- 문서·스펙·ADR·에이전트 설정 변경: 계획을 제시하고 명시적 승인을 받은 뒤 편집한다.
+- 구현 티켓: OPEN 이슈의 `ready-for-agent` 라벨이 곧 승인이다. 범위는 그 티켓 안의 반복 개선, 기능 브랜치 push, PR 생성까지. 범위 확장은 별도 티켓으로 만든다.
+- 머지: `/code-review`까지 끝난 최종 HEAD에 대해 사용자 승인을 받은 뒤 스쿼시 머지한다.
+
+## 티켓 분기
+
+대상은 OPEN + `ready-for-agent`. `research` 라벨이 있으면 Codex 몫이다. 라벨이 없고 인수 조건이 있으면 구현 사이클. `needs-triage`·`needs-info`, 열린 차단 이슈, 담당자 있음, 스펙 "리서치 대기 #N" 값 참조는 착수하지 않는다. #13은 스펙이며 티켓이 아니다. 착수의 첫 쓰기는 클레임(`gh issue edit <n> --add-assignee @me`).
+
+## 구현 사이클
+
+`ready-for-agent` 전은 기존 스킬(grill-with-docs → `/to-spec` → `/to-tickets` → `/triage`). 후는 superpowers를 이 순서로 쓴다.
+
+1. 승인 버전·SHA 대조. 불일치나 확인 불가면 시작하지 않는다.
+2. 격리: using-git-worktrees Step 0 → 필요할 때만 `EnterWorktree` → 브랜치를 `ticket/<이슈번호>-<slug>`로 이름 변경 → 계획 파일과 `.claude/settings.json`·`.gitignore`가 그 체크아웃에 있는지 확인. 이후 모든 작업은 그 안에서 한다. 티켓 1 = 브랜치 1 = PR 1.
+3. writing-plans: 티켓 1개 = 계획 파일 1개. 해당 티켓의 요구사항만 태스크로 쓴다.
+4. subagent-driven-development: 태스크 리뷰·최종 리뷰는 SDD 내부 절차를 따른다. 수정 4~5회차에 상위 모델이 없으면 같은 모델의 새 구현자로 대체한다.
+5. finishing-a-development-branch: "Push and Create PR"를 택한다. 워크트리는 머지까지 유지한다.
+6. PR 뒤에는 `/code-review <merge-base> #<이슈>`만 쓴다(requesting-code-review는 SDD 안에서 이미 돌았다). 결과를 PR 코멘트로 게시하고, 수정이 생기면 그 변경만 재검증한다.
+7. 사용자 승인 → 스쿼시 머지 → 워크트리 제거·원격 브랜치 삭제 → SDD 워크스페이스 삭제.
+
+**완료·blocked.** 태스크 수정 5회, 또는 최종 리뷰 수정 1회 + 재검토 1회 뒤에도 유효한 Critical/Important, 인수 조건 누락, 테스트 실패가 남으면 blocked로 멈추고 사용자에게 보고한다. park는 Minor와 리뷰어 오판으로 판정한 것에만 허용한다. "테스트 없음"은 미구축이며 PASS가 아니다.
+
+**Ruling 범위.** 스펙 "개발 중 결정 항목"과 티켓 안 구현 세부(파일 배치, 내부 함수 분할, 테스트 구성). 개발 중 결정 값은 측정 절차·입력·선택 기준·결과 기록을 태스크로 쓰고 측정 결과로 정한다. ADR 충돌, "리서치 대기 #N" 값, 범위 확장, 도메인 용어 추가는 멈추고 티켓 코멘트로 묻는다.
+
+**복구.** 세션 시작·재개·compact 뒤에는 티켓, 워크트리 경로, 계획 경로, 원장 `progress.md`, `git log`를 대조한다. complete 태스크는 그대로 둔다. blocked 태스크는 원인 해소를 확인했거나 사용자가 재개를 지시했을 때만 다시 돈다.
+
+**증거.** 원장의 Ruling·deferred·parked·blocked, 태스크별 커밋 범위와 리뷰 판정, 최종 테스트 결과를 PR 본문 "무엇을 남겼나"로 옮긴다. 워크스페이스는 이관 결과를 다시 읽어 확인하고 `/code-review`가 끝난 뒤 삭제한다.
+
+## 쓰지 않는 스킬
+
+`superpowers:brainstorming`, `superpowers:writing-skills`. 설계 문서는 `docs/spec/v1.md`다. 스펙에 없는 요청은 grill-with-docs → `/to-spec`으로 스펙을 갱신한 뒤 티켓으로 만든다. plan mode에는 brainstorming 없이 바로 들어간다.
 
 ## 파일 관리 원칙
 
-- **1회용 파일과 지속 파일을 구분한다.** 지속 파일(이 파일, `AGENTS.md`, `docs/agents/`, `CONTEXT.md`, `docs/adr/`, 스펙)은 한국어로 쓰고 유지한다. 1회용 파일(리서치 결과, 브리프, 임시 취합본)은 목적을 다하면 정리한다.
+- **1회용 파일과 지속 파일을 구분한다.** 지속 파일(이 파일, `AGENTS.md`, `docs/agents/`, `CONTEXT.md`, `docs/adr/`, 스펙)은 한국어로 쓰고 유지한다. 1회용 파일(리서치 결과, 브리프, 임시 취합본, `docs/superpowers/plans/`의 계획 파일, `.superpowers/`의 SDD 워크스페이스)은 목적을 다하면 정리한다.
 - 1회용 파일에서 오래 남길 가치가 있는 내용은 그 부분만 추출해 지속 파일(ADR, `CONTEXT.md`, `docs/agents/project.md`)로 옮긴다.
 - 불필요한 파일은 저장하지 않는다. 임시 산출물은 스크래치패드를 쓴다.
 
