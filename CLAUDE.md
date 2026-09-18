@@ -14,6 +14,7 @@
 - 문서·스펙·ADR·에이전트 설정 변경: 계획을 제시하고 명시적 승인을 받은 뒤 편집한다.
 - 구현 티켓: OPEN 이슈의 `ready-for-agent` 라벨이 곧 승인이다. 범위는 그 티켓 안의 반복 개선, 기능 브랜치 push, PR 생성까지. 범위 확장은 별도 티켓으로 만든다.
 - 머지: `/code-review`까지 끝난 최종 HEAD에 대해 사용자 승인을 받은 뒤 스쿼시 머지한다.
+- 할 수 없는 단계: 절차의 한 단계를 Claude가 수행할 수 없으면(사용자 전용 스킬, 외부 계정, 권한 없는 도구) 그 자리에서 멈춘다. 무엇을 할 수 없는지와 대안(사용자가 직접 호출, 다른 경로, 스킬 본문을 읽어 수동 수행, 생략)을 먼저 제시하고, 사용자가 고른 것으로만 진행한다. 우회는 승인받은 대안일 때만 허용된다.
 
 ## 티켓 분기
 
@@ -21,7 +22,7 @@
 
 ## 구현 사이클
 
-`ready-for-agent` 전은 기존 스킬(grill-with-docs → `/to-spec` → `/to-tickets` → `/triage`). 후는 superpowers를 이 순서로 쓴다.
+`ready-for-agent` 전은 기존 스킬(grill-with-docs → `/to-spec` → `/to-tickets` → `/triage`. 넷 모두 `disable-model-invocation`이라 사용자가 직접 입력해야 로드된다). 후는 superpowers를 이 순서로 쓴다.
 
 1. 승인 버전·SHA 대조. 불일치나 확인 불가면 시작하지 않는다.
 2. 격리: using-git-worktrees Step 0 → 필요할 때만 `EnterWorktree` → 브랜치를 `ticket/<이슈번호>-<slug>`로 이름 변경 → 계획 파일과 `.claude/settings.json`·`.gitignore`가 그 체크아웃에 있는지 확인. 이후 모든 작업은 그 안에서 한다. 티켓 1 = 브랜치 1 = PR 1.
