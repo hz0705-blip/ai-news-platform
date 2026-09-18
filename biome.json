@@ -44,9 +44,7 @@
                 "paths": {
                   "@newsplatform/worker": "웹은 워커를 import하지 않는다 (docs/spec/v1.md 시스템 구조)"
                 },
-                "patterns": [
-                  { "group": ["@newsplatform/worker/*", "**/apps/worker/**", "../worker/**"] }
-                ]
+                "patterns": [{ "group": ["@newsplatform/worker/*"] }]
               }
             }
           }
@@ -64,7 +62,7 @@
                 "paths": {
                   "@newsplatform/web": "워커는 웹을 import하지 않는다 (docs/spec/v1.md 시스템 구조)"
                 },
-                "patterns": [{ "group": ["@newsplatform/web/*", "**/apps/web/**", "../web/**"] }]
+                "patterns": [{ "group": ["@newsplatform/web/*"] }]
               }
             }
           }
