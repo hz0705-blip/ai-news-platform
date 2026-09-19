@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "migration:generate": "drizzle-kit generate",
     "migrate": "node --env-file-if-exists=../../.env scripts/migrate.ts",
-    "gate:pgvector": "node --env-file-if-exists=../../.env scripts/pgvector-gate.ts"
+    "gate:pgvector": "node --env-file-if-exists=../../.env scripts/pgvector-gate.ts",
+    "backup:encrypt": "node --env-file-if-exists=../../.env scripts/backup-encrypt.ts",
+    "backup:decrypt": "node --env-file-if-exists=../../.env scripts/backup-decrypt.ts"
   },
   "dependencies": {
     "@newsplatform/domain": "workspace:*",
