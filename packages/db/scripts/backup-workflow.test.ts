@@ -151,3 +151,40 @@ describe("backup.yml 시크릿·로그 위생", () => {
     expect(runs).toContain("-lt 1");
   });
 });
+
+describe("PostgreSQL 17 클라이언트 경로", () => {
+  it("dump·verify 두 설치 스텝 모두 PGDG 17 bin을 GITHUB_PATH에 추가한다", () => {
+    const installSteps = [...steps("dump"), ...steps("verify")].filter(
+      (s) => typeof s.name === "string" && s.name.includes("PostgreSQL 17 클라이언트 설치"),
+    );
+    expect(installSteps.length).toBe(2);
+    for (const step of installSteps) {
+      expect(step.run).toContain('>> "$GITHUB_PATH"');
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: 셸 변수 ${PG_MAJOR}를 문자 그대로 검사한다
+      expect(step.run).toContain("/usr/lib/postgresql/${PG_MAJOR}/bin");
+    }
+  });
+
+  it("pg_dump 스텝은 실행 전 메이저 버전을 확인한다", () => {
+    const dumpStep = steps("dump").find(
+      (s) => typeof s.run === "string" && s.run.includes("pg_dump --dbname"),
+    );
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: 셸 변수 ${PG_MAJOR}를 문자 그대로 검사한다
+    expect(dumpStep.run).toContain('grep -q "(PostgreSQL) ${PG_MAJOR}\\.');
+  });
+
+  it("verify 잡은 pg_restore --version도 실행한다", () => {
+    const runs = steps("verify")
+      .map((s) => String(s.run ?? ""))
+      .join("\n");
+    expect(runs).toContain("pg_restore --version");
+  });
+
+  it("pg_dump 실패 시 마스킹된 stderr를 출력하고 원본은 여전히 cat하지 않는다", () => {
+    const dumpStep = steps("dump").find(
+      (s) => typeof s.run === "string" && s.run.includes("pg_dump --dbname"),
+    );
+    expect(dumpStep.run).toContain("sed -E");
+    expect(dumpStep.run).not.toContain("cat work/pg_dump.err");
+  });
+});
