@@ -1,0 +1,15 @@
+{
+  "name": "@newsplatform/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "echo \"@newsplatform/worker dev는 #17에서 정의한다\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@newsplatform/db": "workspace:*",
+    "@newsplatform/domain": "workspace:*",
+    "@newsplatform/pipeline": "workspace:*"
+  }
+}

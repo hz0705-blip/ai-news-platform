@@ -4,3 +4,13 @@
 .claude/worktrees/
 .superpowers/
 .claude/settings.local.json
+
+# 의존성·빌드 산출물
+node_modules/
+*.tsbuildinfo
+coverage/
+
+# 로컬 환경 파일
+.env
+.env.*
+!.env.example
