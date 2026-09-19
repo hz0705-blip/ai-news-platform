@@ -1,7 +1,13 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { parseArgs } from "node:util";
-import { encryptBackup, parseBackupKey, SHA256_LINE, sha256Hex } from "./backup-crypto.ts";
+import {
+  assertPlainSize,
+  encryptBackup,
+  parseBackupKey,
+  SHA256_LINE,
+  sha256Hex,
+} from "./backup-crypto.ts";
 
 /**
  * 평문 덤프를 NPBK1로 암호화한다(이슈 #18). 실행: pnpm --filter @newsplatform/db backup:encrypt -- --in <file> --out-dir <dir>
@@ -29,6 +35,8 @@ try {
     throw new Error(USAGE);
   }
   const key = parseBackupKey(process.env);
+  const { size } = statSync(input);
+  assertPlainSize(size);
   const plain = readFileSync(input);
   const sealed = encryptBackup(plain, key);
   const encryptedFile = `${basename(input)}.enc`;

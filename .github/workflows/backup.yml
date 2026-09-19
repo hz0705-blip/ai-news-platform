@@ -53,10 +53,17 @@ jobs:
           DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
         run: |
           mkdir -p work
+          set +e
           pg_dump --dbname "$DATABASE_MIGRATION_URL" \
             --format=custom --no-owner --no-privileges \
             --schema=public --schema=drizzle \
-            --file work/newsplatform.dump
+            --file work/newsplatform.dump 2>work/pg_dump.err
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo "pg_dump 실패(종료 코드 ${status}). 연결 정보 노출을 막기 위해 원본 stderr는 출력하지 않는다. stderr 줄 수: $(wc -l <work/pg_dump.err)" >&2
+            exit "$status"
+          fi
           echo "dump_bytes=$(stat -c %s work/newsplatform.dump)" >> "$GITHUB_ENV"
       - name: 암호화·체크섬
         env:
@@ -64,6 +71,13 @@ jobs:
         run: |
           node packages/db/scripts/backup-encrypt.ts --in work/newsplatform.dump --out-dir artifact | tee work/encrypt.json
           rm -f work/newsplatform.dump
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: db-backup-${{ steps.stamp.outputs.stamp }}-${{ github.run_id }}
+          path: artifact/
+          retention-days: 90
+          compression-level: 0
+          if-no-files-found: error
       - name: 요약
         run: |
           {
@@ -73,13 +87,6 @@ jobs:
             echo "- 암호문 바이트: $(jq -r .encryptedBytes work/encrypt.json)"
             echo "- SHA-256: $(cut -d' ' -f1 artifact/newsplatform.dump.enc.sha256)"
           } >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: db-backup-${{ steps.stamp.outputs.stamp }}-${{ github.run_id }}
-          path: artifact/
-          retention-days: 90
-          compression-level: 0
-          if-no-files-found: error
 
   verify:
     needs: dump
@@ -115,8 +122,16 @@ jobs:
         run: |
           pg_restore --list newsplatform.dump > toc.txt
           entries=$(grep -c '^[0-9]' toc.txt || true)
+          if [ "${entries}" -lt 1 ]; then
+            echo "TOC가 비어 있다: 백업에 객체가 없다" >&2
+            exit 1
+          fi
+          if ! grep -q '__drizzle_migrations' toc.txt; then
+            echo "TOC에 drizzle.__drizzle_migrations가 없다: 마이그레이션 저널이 백업되지 않았다" >&2
+            exit 1
+          fi
           echo "toc_entries=${entries}" >> "$GITHUB_ENV"
-          echo "TOC 항목 ${entries}개"
+          echo "TOC 항목 ${entries}개, 마이그레이션 저널 포함"
           rm -f newsplatform.dump
       - name: 요약
         run: |

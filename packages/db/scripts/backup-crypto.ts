@@ -84,3 +84,24 @@ export function sha256Hex(data: Buffer): string {
 
 /** `sha256sum -c` 호환 한 줄: hex, 공백 둘, 파일명, 개행. */
 export const SHA256_LINE = (hex: string, fileName: string): string => `${hex}  ${fileName}\n`;
+
+/** 한 번에 메모리로 읽어 암호화하는 상한. 초과하면 스트리밍 구현(후속 티켓)이 필요하다. */
+export const MAX_PLAIN_BYTES = 1024 * 1024 * 1024; // 1 GiB
+
+export class BackupSizeError extends Error {
+  constructor(bytes: number) {
+    super(
+      `백업 원문이 ${bytes}바이트로 상한 ${MAX_PLAIN_BYTES}바이트를 넘는다. 스트리밍 암호화 도입 전까지는 처리하지 않는다.`,
+    );
+    this.name = "BackupSizeError";
+  }
+}
+
+export function assertPlainSize(bytes: number): void {
+  if (!Number.isSafeInteger(bytes) || bytes < 0) {
+    throw new BackupSizeError(bytes);
+  }
+  if (bytes > MAX_PLAIN_BYTES) {
+    throw new BackupSizeError(bytes);
+  }
+}

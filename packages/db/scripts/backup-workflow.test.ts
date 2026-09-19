@@ -134,4 +134,20 @@ describe("backup.yml 시크릿·로그 위생", () => {
     expect(runs).toContain("packages/db/scripts/backup-decrypt.ts");
     expect(runs).toContain("pg_restore --list");
   });
+
+  it("pg_dump 실패 시 stderr를 파일로만 받고 원본을 로그에 cat하지 않는다", () => {
+    const dumpStep = steps("dump").find(
+      (s) => typeof s.run === "string" && s.run.includes("pg_dump --dbname"),
+    );
+    expect(dumpStep.run).toContain("2>work/pg_dump.err");
+    expect(dumpStep.run).not.toContain("cat work/pg_dump.err");
+  });
+
+  it("verify는 TOC가 비었거나 마이그레이션 저널이 없으면 실패한다", () => {
+    const runs = steps("verify")
+      .map((s) => String(s.run ?? ""))
+      .join("\n");
+    expect(runs).toContain("__drizzle_migrations");
+    expect(runs).toContain("-lt 1");
+  });
 });

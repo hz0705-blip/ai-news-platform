@@ -1,12 +1,15 @@
 import { randomBytes } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
+  assertPlainSize,
   BACKUP_FORMAT_MAGIC,
   BACKUP_KEY_VARIABLE,
   BackupFormatError,
   BackupKeyError,
+  BackupSizeError,
   decryptBackup,
   encryptBackup,
+  MAX_PLAIN_BYTES,
   parseBackupKey,
   SHA256_LINE,
   sha256Hex,
@@ -103,5 +106,29 @@ describe("sha256Hex / SHA256_LINE", () => {
 
   it("sha256sum -c 형식(hex, 공백 둘, 파일명, 개행)을 만든다", () => {
     expect(SHA256_LINE("ab".repeat(32), "a.enc")).toBe(`${"ab".repeat(32)}  a.enc\n`);
+  });
+});
+
+describe("assertPlainSize", () => {
+  it("0과 MAX_PLAIN_BYTES는 통과한다", () => {
+    expect(() => assertPlainSize(0)).not.toThrow();
+    expect(() => assertPlainSize(MAX_PLAIN_BYTES)).not.toThrow();
+  });
+
+  it("MAX_PLAIN_BYTES + 1은 BackupSizeError를 던진다", () => {
+    expect(() => assertPlainSize(MAX_PLAIN_BYTES + 1)).toThrow(BackupSizeError);
+  });
+
+  it("음수는 BackupSizeError를 던진다", () => {
+    expect(() => assertPlainSize(-1)).toThrow(BackupSizeError);
+  });
+
+  it("오류 메시지에 바이트 수를 담는다", () => {
+    try {
+      assertPlainSize(MAX_PLAIN_BYTES + 1);
+      throw new Error("던져야 한다");
+    } catch (error) {
+      expect((error as Error).message).toContain(String(MAX_PLAIN_BYTES + 1));
+    }
   });
 });
