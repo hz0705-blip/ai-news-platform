@@ -14,3 +14,6 @@ coverage/
 .env
 .env.*
 !.env.example
+
+# SDD 계획 파일은 워크트리 안에서만 산다
+docs/superpowers/plans/
