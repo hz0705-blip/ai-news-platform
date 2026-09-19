@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# 스쿼시 머지 뒤 정리: 워크트리 제거, 로컬·원격 ticket 브랜치 삭제, SDD 워크스페이스 삭제.
+# 사용: scripts/cycle-finish <이슈번호> [--yes]
+# --yes 없으면 삭제 대상만 출력하고 멈춘다(종료 코드 3). 이슈가 CLOSED가 아니면 실패(1).
+set -euo pipefail
+
+issue=""; yes=0
+for a in "$@"; do
+  case "$a" in --yes) yes=1 ;; *) issue="$a" ;; esac
+done
+[[ "$issue" =~ ^[0-9]+$ ]] || { echo "사용: scripts/cycle-finish <이슈번호> [--yes]" >&2; exit 2; }
+
+main_root="$(git worktree list --porcelain | awk 'NR==1 && /^worktree /{sub(/^worktree /,""); print}')"
+cd "$main_root"
+state="$(gh issue view "$issue" --json state --jq .state)"
+[ "$state" = "CLOSED" ] || { echo "FAIL: #$issue 상태 $state — 머지·닫힘 뒤에 실행한다." >&2; exit 1; }
+
+pattern="ticket/$issue-"
+mapfile -t worktrees < <(git worktree list --porcelain | awk -v p="refs/heads/$pattern" '
+  /^worktree /{wt=substr($0,10)} /^branch /{if (index($0,p)==8) print wt}')
+mapfile -t local_branches < <(git for-each-ref --format='%(refname:short)' "refs/heads/$pattern*")
+git fetch --prune origin >/dev/null 2>&1 || true
+mapfile -t remote_branches < <(git ls-remote --heads origin "$pattern*" | awk '{sub("refs/heads/","",$2); print $2}')
+mapfile -t workspaces < <(for wt in "${worktrees[@]}" "$main_root"; do
+  [ -d "$wt/.superpowers/sdd" ] && find "$wt/.superpowers/sdd" -mindepth 1 -maxdepth 1 -type d -name "*-$issue-*"; done 2>/dev/null | sort -u)
+
+echo "#$issue CLOSED. 삭제 대상:"
+printf '  worktree: %s\n' "${worktrees[@]:-(없음)}"
+printf '  local branch: %s\n' "${local_branches[@]:-(없음)}"
+printf '  remote branch: origin/%s\n' "${remote_branches[@]:-(없음)}"
+printf '  sdd workspace: %s\n' "${workspaces[@]:-(없음)}"
+
+if [ "$yes" -ne 1 ]; then
+  echo "멈춤: 사용자 확인 뒤 --yes로 다시 실행한다."; exit 3
+fi
+
+for wt in "${worktrees[@]}"; do git worktree remove "$wt" && echo "removed worktree $wt"; done
+for b in "${local_branches[@]}"; do git branch -D "$b" >/dev/null && echo "deleted branch $b"; done
+for b in "${remote_branches[@]}"; do git push origin --delete "$b" >/dev/null 2>&1 && echo "deleted origin/$b"; done
+for w in "${workspaces[@]}"; do rm -rf "$w" && echo "deleted $w"; done
+git worktree prune
+
+echo "--- 남은 것"
+git worktree list
+gh pr list --state open --json number,title --jq 'if length==0 then "open PR: 없음" else .[] | "open PR #\(.number) \(.title)" end'

@@ -6,7 +6,7 @@ ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 
 
 - 결정과 범위, 마일스톤: `docs/spec/v1.md`. 여기에 없는 것은 구현하지 않고 티켓 코멘트로 묻는다.
 - 용어: `CONTEXT.md`. 산출물(이슈·PR·테스트 이름)에서 피하라고 한 동의어를 쓰지 않는다.
-- 되돌리기 어려운 결정: `docs/adr/0001~0010`. 구현 방식(superpowers 사이클, 역할 분담)은 0007, 호스팅·복구는 0008, UI 티켓의 Codex 계획·구현은 0010.
+- 되돌리기 어려운 결정: `docs/adr/0001~0011`. 구현 방식(superpowers 사이클, 역할 분담)은 0007, 호스팅·복구는 0008, UI 티켓의 Codex 계획·구현은 0010, 서브에이전트 모델 티어는 0011.
 - 개발 중 알게 된 사실과 결정은 반드시 기록한다. 단, 새 파일 대신 기존 파일에 넣는다: 환경·계정·명령 같은 사실은 이 파일, 결정과 측정값은 스펙·ADR, 용어는 `CONTEXT.md`, 작업 증거는 PR 본문·이슈 코멘트.
 
 ## 이슈·라벨
@@ -80,14 +80,53 @@ ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 
 
 ## 구현 사이클
 
-`ready-for-agent`가 붙은 구현 티켓을 Claude가 superpowers로 돈다. 규칙은 `CLAUDE.md`, 여기는 절차와 값.
+`ready-for-agent`가 붙은 구현 티켓을 Claude가 superpowers로 돈다. 규칙은 `CLAUDE.md`, 여기는 절차와 값. 절차 명령은 저장소 `scripts/`에 있고 각 스크립트 머리말이 사용법이다.
 
 - **승인 버전**: superpowers 6.3.0, 소스 SHA `b36e0829c6d0140e93cfef2ca599b1b07d4a7797`. 프로젝트 스코프 플러그인(`.claude/settings.json`의 `enabledPlugins`), `claude-plugins-official` 마켓플레이스 자동 갱신 끔.
-- **대조 절차**(사이클 시작마다): `claude plugin list`에서 superpowers 버전 = 6.3.0, `~/.claude/plugins/marketplaces/claude-plugins-official/.claude-plugin/marketplace.json`의 superpowers `source.sha` = 위 SHA. 갱신은 수동으로 하고 스킬 원문을 다시 검토한 뒤 이 값을 고친다.
-- **단계**: 버전 대조 → 격리(Step 0 → `EnterWorktree` → 브랜치 이름 변경 → 설정 존재 확인) → writing-plans → subagent-driven-development(`scripts/sdd-workspace`, `scripts/task-brief`는 워크트리 안에서) → finishing-a-development-branch "Push and Create PR" → `/code-review <merge-base> #<이슈>` → 코멘트 게시 → 사용자 승인 → 스쿼시 머지 → `git worktree remove` + 원격 브랜치 삭제 → 워크스페이스 삭제.
-- **격리**: `EnterWorktree`는 `.claude/worktrees/<name>/`에 `worktree-<name>` 브랜치를 저장소 기본 브랜치에서 만든다. `.claude/settings.json`·`.gitignore`가 main에 있어야 워크트리에 들어온다. 같은 워크트리에 구현자 동시 실행 없음.
+- **대조 절차**(사이클 시작마다): `scripts/cycle-start`가 `claude plugin list`의 superpowers 버전과 `~/.claude/plugins/marketplaces/claude-plugins-official/.claude-plugin/marketplace.json`의 `source.sha`를 위 줄과 대조한다(스크립트가 위 '승인 버전' 줄을 파싱하므로 줄 형식을 바꾸지 않는다). 갱신은 수동으로 하고 스킬 원문을 다시 검토한 뒤 이 값을 고친다.
+- **단계**:
+  1. `scripts/cycle-start <이슈>` — 버전 대조 + 티켓 게이트(OPEN, `ready-for-agent`, `research`·`ui`·`needs-triage`·`needs-info` 없음, 담당자 없음, 열린 차단 이슈·"리서치 대기 #N" 없음) + 클레임 + 브랜치명 제안. FAIL이면 시작하지 않는다. `--check-only`는 클레임 없이 확인만.
+  2. using-git-worktrees Step 0 → `EnterWorktree` → 워크트리 안에서 `scripts/cycle-worktree <이슈> <slug>`(브랜치 이름 변경, `.claude/settings.json`·`.gitignore` 확인, 메인 체크아웃 `.env` 복사).
+  3. writing-plans. 태스크마다 `**모델:**` 태그(아래 "서브에이전트 모델").
+  4. subagent-driven-development(`scripts/sdd-workspace`, `scripts/task-brief`는 superpowers 것, 워크트리 안에서). 브리프 첫 블록은 아래 "브리프 표준 문구".
+  5. finishing-a-development-branch "Push and Create PR".
+  6. `/code-review <merge-base> #<이슈>` → 결과를 PR 코멘트로 게시.
+  7. 사용자 승인 → 스쿼시 머지 → `scripts/cycle-finish <이슈>`(삭제 대상 출력) → 사용자 확인 → `--yes`(워크트리·로컬·원격 브랜치·SDD 워크스페이스 삭제).
+- **격리**: `EnterWorktree`는 `.claude/worktrees/<name>/`에 `worktree-<name>` 브랜치를 저장소 기본 브랜치에서 만든다. `.claude/settings.json`·`.gitignore`가 main에 있어야 워크트리에 들어온다. `.env`는 미추적이라 워크트리에 없으므로 `cycle-worktree`가 메인 체크아웃에서 복사한다(`db:migrate`·`db:gate`에 필요). 같은 워크트리에 구현자 동시 실행 없음.
 - **계획 파일**: `docs/superpowers/plans/YYYY-MM-DD-<이슈번호>-<slug>.md`. `**Spec:**`에 `docs/spec/v1.md` 해당 절 + 이슈 번호. 설명은 한국어, 코드는 TypeScript. 구조 표식은 영문 유지: `## Global Constraints`, `### Task N:`, `**Files:**`, `**Interfaces:**`(task-brief가 `Task N` 헤딩으로 추출). 미추적(`.gitignore`)이며 워크트리 안에서 쓰고 워크트리와 함께 사라진다. 남길 내용은 PR 본문에 둔다.
-- **원장**: `.superpowers/sdd/<계획 파일명>/progress.md`. 첫 줄이 계획 파일 경로. `Task N: complete`는 완료, 마지막 줄이 fix round면 그 다음 회차부터 재개. PR 이관 확인과 `/code-review` 종료 뒤 삭제.
+- **원장**: `.superpowers/sdd/<계획 파일명>/progress.md`. 첫 줄이 계획 파일 경로. `Task N: complete`는 완료, 마지막 줄이 fix round면 그 다음 회차부터 재개. PR 이관 확인과 `/code-review` 종료 뒤 삭제(`cycle-finish`가 지운다).
 - **기준 커밋**: `/code-review`에 넘기는 기준은 `git merge-base origin/main HEAD`.
 - **첫 사이클(M0)**: Task 1은 manifest·pnpm 워크스페이스·Vitest 실행 기반 구축. 이후 태스크부터 실패 테스트 → 구현.
 
+## 서브에이전트 모델 (ADR-0011)
+
+superpowers SDD는 티어를 fast/standard/most-capable로만 말하고 브리프마다 모델을 명시하라고 한다. 이 프로젝트의 매핑(Agent 도구 `model` 값 `haiku`·`sonnet`·`opus`·`fable`):
+
+| 역할 | light | standard | heavy |
+|---|---|---|---|
+| 구현자 | haiku | sonnet | opus |
+| 태스크 리뷰어 | sonnet | sonnet | opus |
+| 최종 리뷰(브랜치 전체) | opus | opus | opus, 민감 티켓은 fable |
+| 수정 4~5회차 | 한 티어 위(haiku → sonnet → opus → fable) | | |
+| Explore·조사 보조 | haiku | | |
+
+- 등급은 writing-plans 단계에서 계획 파일 `### Task N:` 아래 첫 줄에 `**모델:** light|standard|heavy`로 적는다. SDD는 이 값을 읽고 바꾸지 않는다. 바꾸면 원장에 Ruling으로 남긴다.
+- light: 문서·YAML·설정·단순 테스트, 예상 변경 50줄 이하, 브리프에 정답이 다 있음. standard: 기능 + 테스트, 모듈 1~2개, 스펙 해석 여지 작음. heavy: 스키마·마이그레이션, 암호화·인증, 동시성, 3개 이상 모듈 교차, Ruling이 필요한 태스크.
+- 민감 티켓: 라벨·본문에 비밀·인증·백업·복구·마이그레이션이 있으면 최종 리뷰를 fable로.
+- 컨트롤러 세션: 구현 사이클은 Fable 5.1. `/code-review`+머지만 하는 UI 티켓 세션과 `/triage`·문서 세션은 Opus 5로 시작해도 된다.
+
+## 브리프 표준 문구
+
+구현자·리뷰어 브리프의 첫 블록에 그대로 넣는다.
+
+- 커밋 트레일러는 서브에이전트 모델과 무관하게 이 줄 하나: `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
+- 테스트 명령은 워크트리 루트에서 `pnpm test`, `pnpm lint`, `pnpm typecheck`. DB가 필요한 검사는 `.env`의 `DATABASE_MIGRATION_URL`.
+- 보고 형식: 판정 한 줄, 근거 항목마다 1~2줄과 `파일:행`. diff·로그 원문은 붙이지 않는다. 컨트롤러는 판정만 읽는다.
+- 용어는 `CONTEXT.md`, 산출물 규칙은 이 파일 "도메인 규칙".
+
+## 컨트롤러 운영
+
+- 확인 명령은 스크립트 하나로: 시작 `scripts/cycle-start`, 상태 `scripts/handoff-state`, 정리 `scripts/cycle-finish`.
+- diff·리뷰·로그는 서브에이전트가 읽고 컨트롤러는 판정만 받는다. PR 본문·코멘트 초안은 스크래치패드 파일로 만들어 `--body-file`로 넘긴다.
+- 세션당 작업 단위 하나. 예산 30%를 넘길 것 같으면 다음 경계(태스크 완료·PR 생성·머지)에서 `.scratch/.task-done`을 만들고 인계한다.
+- Herdr 안에서는 SessionStart 훅 `.claude/hooks/agent-monitor-start.sh`가 오른쪽 pane(id는 `.scratch/.agent-monitor-pane`)에 `scripts/agent-monitor <스크래치패드>/tasks`를 띄워 서브에이전트·백그라운드 작업(프롬프트 첫 줄, 마지막 도구 호출, 마지막 응답, done 여부)을 실시간으로 보인다. Herdr 밖이나 서브에이전트 세션에서는 아무것도 하지 않는다.

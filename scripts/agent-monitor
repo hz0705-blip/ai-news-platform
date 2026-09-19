@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# 이 세션의 서브에이전트·백그라운드 작업 트랜스크립트(<scratchpad>/tasks/*.output)를 한 화면에 실시간으로 보여준다.
+# 사용: scripts/agent-monitor <tasks-dir> [--interval 초]
+# Herdr 옆 pane에서 돌리는 용도. Ctrl+C로 종료.
+set -euo pipefail
+dir="${1:-}"; interval="${3:-1}"
+[ -n "$dir" ] || { echo "사용: scripts/agent-monitor <tasks-dir> [--interval 초]" >&2; exit 2; }
+exec python3 - "$dir" "$interval" <<'PY'
+import glob, json, os, sys, time, shutil
+d, interval = sys.argv[1], float(sys.argv[2])
+DIM, BOLD, GREEN, YELLOW, CYAN, RESET = "\033[2m", "\033[1m", "\033[32m", "\033[33m", "\033[36m", "\033[0m"
+
+def short(s, n):
+    s = " ".join(str(s).split())
+    return s if len(s) <= n else s[: n - 1] + "…"
+
+def tool_arg(inp):
+    for k in ("description", "command", "file_path", "pattern", "query", "prompt", "skill", "url"):
+        if k in inp:
+            return short(inp[k], 70)
+    return short(json.dumps(inp, ensure_ascii=False), 70)
+
+def parse(path):
+    st = {"id": os.path.basename(path).split(".")[0], "prompt": "", "tools": 0, "last_tool": "", "last_text": "",
+          "done": False, "start": None, "last": None, "raw": None}
+    try:
+        lines = open(path, encoding="utf-8", errors="replace").read().splitlines()
+    except OSError:
+        return None
+    if not lines:
+        return st
+    if not lines[0].startswith("{"):
+        st["raw"] = [short(l, 90) for l in lines[-3:]]
+        return st
+    for l in lines:
+        try:
+            r = json.loads(l)
+        except ValueError:
+            continue
+        ts = r.get("timestamp")
+        if ts:
+            st["start"] = st["start"] or ts
+            st["last"] = ts
+        m = r.get("message") or {}
+        c = m.get("content")
+        if r.get("type") == "user" and not st["prompt"]:
+            if isinstance(c, str):
+                st["prompt"] = short(c.splitlines()[0] if c else "", 80)
+            elif isinstance(c, list):
+                t = next((b.get("text") for b in c if b.get("type") == "text"), "")
+                st["prompt"] = short(t.splitlines()[0] if t else "", 80)
+        if r.get("type") == "assistant" and isinstance(c, list):
+            for b in c:
+                if b.get("type") == "tool_use":
+                    st["tools"] += 1
+                    st["last_tool"] = f"{b.get('name')}  {tool_arg(b.get('input') or {})}"
+                    st["done"] = False
+                elif b.get("type") == "text" and b.get("text", "").strip():
+                    st["last_text"] = short(b["text"], 160)
+            if m.get("stop_reason") == "end_turn":
+                st["done"] = True
+    return st
+
+def fmt_age(path):
+    return int(time.time() - os.path.getmtime(path))
+
+while True:
+    files = sorted(glob.glob(os.path.join(d, "*.output")), key=os.path.getmtime, reverse=True)
+    cols = shutil.get_terminal_size((100, 40)).columns
+    out = [f"{BOLD}agents{RESET} {DIM}{d}{RESET}", f"{DIM}{time.strftime('%H:%M:%S')} · {len(files)} task(s) · 갱신 {interval:g}s{RESET}", "─" * min(cols, 120)]
+    for p in files[:12]:
+        st = parse(p)
+        if st is None:
+            continue
+        age = fmt_age(p)
+        if st["raw"] is not None:
+            mark = f"{CYAN}▸{RESET}"
+            out.append(f"{mark} {BOLD}{st['id']}{RESET} {DIM}bash · {age}s 전 갱신{RESET}")
+            out += [f"    {DIM}{l}{RESET}" for l in st["raw"]]
+        else:
+            if st["done"]:
+                mark, label = f"{GREEN}✓{RESET}", "done"
+            elif age > 120:
+                mark, label = f"{YELLOW}⏸{RESET}", f"quiet {age}s"
+            else:
+                mark, label = f"{GREEN}●{RESET}", "working"
+            out.append(f"{mark} {BOLD}{st['id']}{RESET} {DIM}{label} · tools {st['tools']} · {age}s 전 갱신{RESET}")
+            if st["prompt"]:
+                out.append(f"    {st['prompt']}")
+            if st["last_tool"] and not st["done"]:
+                out.append(f"    {CYAN}⚙{RESET} {short(st['last_tool'], cols - 8)}")
+            if st["last_text"]:
+                out.append(f"    {DIM}{short(st['last_text'], cols - 8)}{RESET}")
+        out.append("")
+    if not files:
+        out.append(f"{DIM}아직 서브에이전트·백그라운드 작업 없음{RESET}")
+    sys.stdout.write("\033[H\033[2J" + "\n".join(out) + "\n")
+    sys.stdout.flush()
+    time.sleep(interval)
+PY
