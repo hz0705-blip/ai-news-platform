@@ -1,11 +1,12 @@
 import type { ReactElement } from "react";
+import { SCREEN_TITLE, TEMPORARY_NOTICE } from "./copy.ts";
 
-// #17 빈 화면. 데이터·DB 호출 없음. 문구는 Ruling(PR 본문 "무엇을 남겼나")이며 서비스 이름 확정(M4 전) 시 바꾼다.
+// #17 빈 화면. 데이터·DB 호출 없음. 문구는 ./copy.ts에 있다.
 export default function Page(): ReactElement {
   return (
     <main>
-      <h1>사건으로 읽는 해외 보도</h1>
-      <p>임시 화면입니다. 서비스 이름과 내용은 준비 중입니다.</p>
+      <h1>{SCREEN_TITLE}</h1>
+      <p>{TEMPORARY_NOTICE}</p>
     </main>
   );
 }

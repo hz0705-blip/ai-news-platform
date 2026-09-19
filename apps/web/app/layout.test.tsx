@@ -4,6 +4,7 @@ import RootLayout, { metadata } from "./layout.tsx";
 
 describe("루트 레이아웃", () => {
   it("html 요소의 lang이 ko다", () => {
+    // <html>을 반환하는 컴포넌트는 Testing Library render(문서에 mount)로 검증하기 어려워 정적 마크업 문자열로 확인한다.
     const html = renderToStaticMarkup(
       <RootLayout>
         <p>내용</p>

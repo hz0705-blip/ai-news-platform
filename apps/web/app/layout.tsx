@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactElement, ReactNode } from "react";
+import { SCREEN_TITLE } from "./copy.ts";
 
 export const metadata: Metadata = {
-  title: "사건으로 읽는 해외 보도",
+  title: SCREEN_TITLE,
   description: "임시 화면",
 };
 
