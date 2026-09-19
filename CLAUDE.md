@@ -1,6 +1,6 @@
 # CLAUDE.md — Claude Code (계획 / 구현 사이클 / 리뷰)
 
-이 저장소에서 Claude는 계획을 세우고, 승인된 구현 티켓을 superpowers 사이클로 구현하고, PR을 리뷰한다. 리서치는 Codex가 `AGENTS.md`에 따라 맡는다. 사이클의 절차·경로·승인 버전은 `docs/agents/project.md`의 "구현 사이클" 절이 정본이다.
+이 저장소에서 Claude는 계획을 세우고, 승인된 구현 티켓을 superpowers 사이클로 구현하고, PR을 리뷰한다. 리서치와 `ui` 라벨 티켓의 계획·구현은 Codex가 `AGENTS.md`에 따라 맡는다(ADR-0010). 사이클의 절차·경로·승인 버전은 `docs/agents/project.md`의 "구현 사이클" 절이 정본이다.
 
 ## 역할
 
@@ -18,7 +18,7 @@
 
 ## 티켓 분기
 
-대상은 OPEN + `ready-for-agent`. `research` 라벨이 있으면 Codex 몫이다. 라벨이 없고 인수 조건이 있으면 구현 사이클. `needs-triage`·`needs-info`, 열린 차단 이슈, 담당자 있음, 스펙 "리서치 대기 #N" 값 참조는 착수하지 않는다. #13은 스펙이며 티켓이 아니다. 착수의 첫 쓰기는 클레임(`gh issue edit <n> --add-assignee @me`).
+대상은 OPEN + `ready-for-agent`. `research` 또는 `ui` 라벨이 있으면 Codex 몫이다(UI 티켓은 Claude가 `/code-review`·머지만 한다). 라벨이 없고 인수 조건이 있으면 구현 사이클. `needs-triage`·`needs-info`, 열린 차단 이슈, 담당자 있음, 스펙 "리서치 대기 #N" 값 참조는 착수하지 않는다. #13은 스펙이며 티켓이 아니다. 착수의 첫 쓰기는 클레임(`gh issue edit <n> --add-assignee @me`).
 
 ## 구현 사이클
 
