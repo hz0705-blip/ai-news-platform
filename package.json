@@ -18,7 +18,9 @@
     "test": "vitest run",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "typecheck": "pnpm -r run typecheck"
+    "typecheck": "pnpm -r run typecheck",
+    "db:migrate": "pnpm --filter @newsplatform/db migrate",
+    "db:gate": "pnpm --filter @newsplatform/db gate:pgvector"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
