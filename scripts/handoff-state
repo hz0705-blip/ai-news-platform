@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# 인계 문서 "상태" 절 재료를 한 번에 출력한다(마크다운). 어느 체크아웃에서 실행해도 된다.
+set -euo pipefail
+
+main_root="$(git worktree list --porcelain | awk 'NR==1 && /^worktree /{sub(/^worktree /,""); print}')"
+cd "$main_root"
+git fetch --quiet origin 2>/dev/null || true
+
+branch="$(git rev-parse --abbrev-ref HEAD)"
+sha="$(git rev-parse --short HEAD)"
+upstream="$(git rev-parse --abbrev-ref '@{upstream}' 2>/dev/null || echo '(없음)')"
+ahead_behind="$(git rev-list --left-right --count HEAD...@{upstream} 2>/dev/null | awk '{printf "ahead %s / behind %s", $1, $2}' || echo '-')"
+dirty="$(git status --porcelain | wc -l | tr -d ' ')"
+
+echo "- 메인 체크아웃 \`$branch\` = \`$sha\` ($upstream, $ahead_behind). 작업 트리: $([ "$dirty" = 0 ] && echo 깨끗 || echo "변경 ${dirty}개")."
+echo "- 워크트리:"
+git worktree list --porcelain | awk '/^worktree /{wt=substr($0,10)} /^branch /{print "  - " wt " (" substr($0,19) ")"}' | tail -n +2 | { grep . || echo "  - 없음"; }
+echo "- 열린 PR:"
+gh pr list --state open --json number,title,headRefName --jq '.[] | "  - #\(.number) \(.title) [\(.headRefName)]"' | { grep . || echo "  - 없음"; }
+echo "- OPEN 이슈(라벨 · 담당자):"
+gh issue list --state open --limit 60 --json number,title,labels,assignees \
+  --jq 'sort_by(.number) | .[] | select((.labels|map(.name)|index("ready-for-agent")) or (.labels|map(.name)|index("needs-triage")) or (.labels|map(.name)|index("needs-info")) or (.assignees|length>0))
+        | "  - #\(.number) \(.title) — \(.labels|map(.name)|join(","))\(if (.assignees|length)>0 then " · @" + (.assignees|map(.login)|join(",@")) else "" end)"' \
+  | { grep . || echo "  - 없음"; }

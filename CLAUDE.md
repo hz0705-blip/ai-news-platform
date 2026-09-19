@@ -22,15 +22,7 @@
 
 ## 구현 사이클
 
-`ready-for-agent` 전은 기존 스킬(grill-with-docs → `/to-spec` → `/to-tickets` → `/triage`. 넷 모두 `disable-model-invocation`이라 사용자가 직접 입력해야 로드된다). 후는 superpowers를 이 순서로 쓴다.
-
-1. 승인 버전·SHA 대조. 불일치나 확인 불가면 시작하지 않는다.
-2. 격리: using-git-worktrees Step 0 → 필요할 때만 `EnterWorktree` → 브랜치를 `ticket/<이슈번호>-<slug>`로 이름 변경 → `.claude/settings.json`·`.gitignore`가 그 체크아웃에 있는지 확인. 이후 모든 작업은 그 안에서 한다. 티켓 1 = 브랜치 1 = PR 1.
-3. writing-plans: 티켓 1개 = 계획 파일 1개. 해당 티켓의 요구사항만 태스크로 쓴다. 계획 파일은 워크트리 안 `docs/superpowers/plans/`에 쓰며 미추적이다.
-4. subagent-driven-development: 태스크 리뷰·최종 리뷰는 SDD 내부 절차를 따른다. 수정 4~5회차에 상위 모델이 없으면 같은 모델의 새 구현자로 대체한다.
-5. finishing-a-development-branch: "Push and Create PR"를 택한다. 워크트리는 머지까지 유지한다.
-6. PR 뒤에는 `/code-review <merge-base> #<이슈>`만 쓴다(requesting-code-review는 SDD 안에서 이미 돌았다). 결과를 PR 코멘트로 게시하고, 수정이 생기면 그 변경만 재검증한다.
-7. 사용자 승인 → 스쿼시 머지 → 워크트리 제거·원격 브랜치 삭제 → SDD 워크스페이스 삭제.
+`ready-for-agent` 전은 기존 스킬(grill-with-docs → `/to-spec` → `/to-tickets` → `/triage`. 넷 모두 `disable-model-invocation`이라 사용자가 직접 입력해야 로드된다). 후는 superpowers를 `docs/agents/project.md` "구현 사이클"의 단계 1~7대로 돈다(`scripts/cycle-start` → `EnterWorktree`+`scripts/cycle-worktree` → writing-plans → subagent-driven-development → finishing-a-development-branch "Push and Create PR" → `/code-review <merge-base> #<이슈>` → 승인·스쿼시 머지 → `scripts/cycle-finish`). 스크립트가 FAIL이면 시작하지 않는다. 티켓 1 = 브랜치 1 = PR 1, 워크트리는 머지까지 유지. 서브에이전트 모델은 같은 파일 "서브에이전트 모델"(ADR-0011)의 표를 계획 파일 태스크 태그로 고정하고, 브리프 첫 블록은 "브리프 표준 문구"를 쓴다.
 
 **완료·blocked.** 태스크 수정 5회, 또는 최종 리뷰 수정 1회 + 재검토 1회 뒤에도 유효한 Critical/Important, 인수 조건 누락, 테스트 실패가 남으면 blocked로 멈추고 사용자에게 보고한다. park는 Minor와 리뷰어 오판으로 판정한 것에만 허용한다. "테스트 없음"은 미구축이며 PASS가 아니다.
 
