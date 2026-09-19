@@ -4,7 +4,11 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     projects: [
-      { test: { name: "web", root: "./apps/web", environment: "jsdom" } },
+      {
+        test: { name: "web", root: "./apps/web", environment: "jsdom" },
+        // Next.js tsconfig는 jsx: preserve라 Vitest(oxc)가 JSX를 변환하도록 여기서 지정한다.
+        oxc: { jsx: { runtime: "automatic" } },
+      },
       { test: { name: "worker", root: "./apps/worker", environment: "node" } },
       { test: { name: "domain", root: "./packages/domain", environment: "node" } },
       { test: { name: "db", root: "./packages/db", environment: "node" } },
