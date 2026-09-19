@@ -6,7 +6,7 @@ ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 
 
 - 결정과 범위, 마일스톤: `docs/spec/v1.md`. 여기에 없는 것은 구현하지 않고 티켓 코멘트로 묻는다.
 - 용어: `CONTEXT.md`. 산출물(이슈·PR·테스트 이름)에서 피하라고 한 동의어를 쓰지 않는다.
-- 되돌리기 어려운 결정: `docs/adr/0001~0007`. 구현 방식(superpowers 사이클, 역할 분담)은 0007.
+- 되돌리기 어려운 결정: `docs/adr/0001~0009`. 구현 방식(superpowers 사이클, 역할 분담)은 0007, 호스팅·복구는 0008.
 
 ## 스택
 
@@ -19,7 +19,18 @@ ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 
 - 의존 방향: 웹과 워커는 도메인·DB·파이프라인을 import한다. 웹 ↔ 워커는 서로 import하지 않는다.
 - 패키지 스코프는 임시로 `@newsplatform/*`. 서비스 이름 확정(M4 전) 시 일괄 변경.
 - 경계마다 zod 스키마를 두고, 도메인 타입과 같은 모양이어야 하는 곳은 `z.ZodType<도메인타입>`으로 주석한다.
-- 배포 대상·스케줄러·관측은 리서치 #6 결과 뒤 확정.
+- 배포 대상·스케줄러·관측: 스펙 "배포와 운영"과 ADR-0008. 실제 계정 사실은 아래 "운영 환경".
+
+## 운영 환경
+
+계정·자격은 사용자가 만들고 Claude가 확인해 적는다(2026-09-19, #15). 값은 적지 않는다.
+
+- **Supabase**: 조직 Pro, 프로젝트 `ai-news-platform`(ref `dhmwspzugsxrahzkggxx`), 서울 `ap-northeast-2`, PostgreSQL 17.6, Micro. 일일 백업 7일. pgvector 0.8.2는 확장 목록에만 있고 미활성(활성화·HNSW 게이트는 #16). 직접 연결 5432, 트랜잭션 풀러 6543.
+- **GitHub Actions**: 환경 이름 `Production`(대문자 P, 보호 규칙 없음). 환경 시크릿 `DATABASE_MIGRATION_URL`(직접 연결). 워크플로는 `environment: Production`을 선언해야 읽는다. `BACKUP_ENCRYPTION_KEY`는 #18이 형식을 정한 뒤 같은 환경에 등록. 저장소 시크릿은 쓰지 않는다.
+- **Vercel**: 팀 `hz`(슬러그 `hz23`) Hobby, 프로젝트 `ai-news-platform`, Git `hz0705-blip/ai-news-platform` `main`, Root Directory `apps/web`, Next.js, Node 24, 함수 리전 `icn1`. 환경변수 `DATABASE_URL`(Production만, Sensitive). 자동 도메인 `ai-news-platform-six.vercel.app`. 첫 배포는 `next` 미설치로 실패 상태(#17이 해결).
+- **프리뷰 자격 없음**: 프리뷰는 프로덕션 DB 자격을 쓰지 않는다. 필요해지면 별도 결정.
+- **로컬**: `.gitignore`가 `.env*`를 무시하고 `.env.example`만 허용. 로컬 파일은 #16에서 만든다.
+- DB 비밀번호는 비밀번호 관리자에 없다. 재설정하면 위 두 시크릿을 함께 갱신한다.
 
 ## 명령어
 
