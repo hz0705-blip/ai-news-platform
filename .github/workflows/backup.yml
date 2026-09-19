@@ -44,7 +44,8 @@ jobs:
           sudo apt-get install -y postgresql-common
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           sudo apt-get install -y "postgresql-client-${PG_MAJOR}"
-          pg_dump --version
+          echo "/usr/lib/postgresql/${PG_MAJOR}/bin" >> "$GITHUB_PATH"
+          "/usr/lib/postgresql/${PG_MAJOR}/bin/pg_dump" --version
       - name: 타임스탬프
         id: stamp
         run: echo "stamp=$(date -u +%Y%m%dT%H%M%SZ)" >> "$GITHUB_OUTPUT"
@@ -52,6 +53,10 @@ jobs:
         env:
           DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
         run: |
+          pg_dump --version | grep -q "(PostgreSQL) ${PG_MAJOR}\." || {
+            echo "pg_dump 메이저가 ${PG_MAJOR}이 아니다: $(pg_dump --version)" >&2
+            exit 1
+          }
           mkdir -p work
           set +e
           pg_dump --dbname "$DATABASE_MIGRATION_URL" \
@@ -62,6 +67,7 @@ jobs:
           set -e
           if [ "$status" -ne 0 ]; then
             echo "pg_dump 실패(종료 코드 ${status}). 연결 정보 노출을 막기 위해 원본 stderr는 출력하지 않는다. stderr 줄 수: $(wc -l <work/pg_dump.err)" >&2
+            sed -E 's/"[^"]*"/"<masked>"/g; s/[0-9]{1,3}(\.[0-9]{1,3}){3}/<ip>/g; s/postgres\.[a-z0-9]+/postgres.<ref>/g; s/[a-z0-9.-]+\.pooler\.supabase\.com/<pooler>/g' work/pg_dump.err >&2
             exit "$status"
           fi
           echo "dump_bytes=$(stat -c %s work/newsplatform.dump)" >> "$GITHUB_ENV"
@@ -106,7 +112,8 @@ jobs:
           sudo apt-get install -y postgresql-common
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           sudo apt-get install -y "postgresql-client-${PG_MAJOR}"
-          pg_restore --version
+          echo "/usr/lib/postgresql/${PG_MAJOR}/bin" >> "$GITHUB_PATH"
+          "/usr/lib/postgresql/${PG_MAJOR}/bin/pg_restore" --version
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: db-backup-${{ needs.dump.outputs.stamp }}-${{ github.run_id }}
@@ -120,6 +127,10 @@ jobs:
         run: node packages/db/scripts/backup-decrypt.ts --in artifact/newsplatform.dump.enc --out newsplatform.dump | tee decrypt.json
       - name: pg_restore --list
         run: |
+          pg_restore --version | grep -q "(PostgreSQL) ${PG_MAJOR}\." || {
+            echo "pg_restore 메이저가 ${PG_MAJOR}이 아니다: $(pg_restore --version)" >&2
+            exit 1
+          }
           pg_restore --list newsplatform.dump > toc.txt
           entries=$(grep -c '^[0-9]' toc.txt || true)
           if [ "${entries}" -lt 1 ]; then
