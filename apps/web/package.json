@@ -4,12 +4,23 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "echo \"@newsplatform/web dev는 #16에서 정의한다\"",
-    "typecheck": "tsc --noEmit"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@newsplatform/db": "workspace:*",
     "@newsplatform/domain": "workspace:*",
-    "@newsplatform/pipeline": "workspace:*"
+    "@newsplatform/pipeline": "workspace:*",
+    "next": "16.3.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
   }
 }
