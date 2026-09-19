@@ -6,13 +6,13 @@ ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 
 
 - 결정과 범위, 마일스톤: `docs/spec/v1.md`. 여기에 없는 것은 구현하지 않고 티켓 코멘트로 묻는다.
 - 용어: `CONTEXT.md`. 산출물(이슈·PR·테스트 이름)에서 피하라고 한 동의어를 쓰지 않는다.
-- 되돌리기 어려운 결정: `docs/adr/0001~0009`. 구현 방식(superpowers 사이클, 역할 분담)은 0007, 호스팅·복구는 0008.
+- 되돌리기 어려운 결정: `docs/adr/0001~0010`. 구현 방식(superpowers 사이클, 역할 분담)은 0007, 호스팅·복구는 0008, UI 티켓의 Codex 계획·구현은 0010.
 - 개발 중 알게 된 사실과 결정은 반드시 기록한다. 단, 새 파일 대신 기존 파일에 넣는다: 환경·계정·명령 같은 사실은 이 파일, 결정과 측정값은 스펙·ADR, 용어는 `CONTEXT.md`, 작업 증거는 PR 본문·이슈 코멘트.
 
 ## 이슈·라벨
 
 - GitHub Issues를 `gh`로 쓴다: `gh issue create/view --comments/list --label/comment/edit --add-label --add-assignee/close --comment`. 이슈 본문이 곧 브리프다.
-- 라벨 다섯: `needs-triage`(평가 필요), `needs-info`(보고자 정보 대기), `ready-for-agent`(명세 완료, 에이전트 착수 가능), `ready-for-human`(사람이 함), `wontfix`. 스킬이 말하는 역할 이름과 라벨 문자열이 같다. `research`는 Codex 몫 표시.
+- 라벨 다섯: `needs-triage`(평가 필요), `needs-info`(보고자 정보 대기), `ready-for-agent`(명세 완료, 에이전트 착수 가능), `ready-for-human`(사람이 함), `wontfix`. 스킬이 말하는 역할 이름과 라벨 문자열이 같다. `research`는 Codex 리서치, `ui`는 Codex UI 계획·구현 표시(ADR-0010).
 - 차단은 GitHub 네이티브 이슈 의존성이 정본: `gh api --method POST repos/<owner>/<repo>/issues/<child>/dependencies/blocked_by -F issue_id=<차단 이슈의 데이터베이스 id>`(id는 `gh api repos/<owner>/<repo>/issues/<n> --jq .id`). 열린 차단자가 있거나 담당자가 있는 이슈는 착수하지 않는다.
 - 외부 PR은 분류 대상이 아니다.
 
@@ -70,6 +70,13 @@ ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 
 - 보조: 도메인 규칙은 순수 함수라 픽스처만으로 단위 테스트. 경계 매퍼 단위 테스트. 수집 어댑터는 기록된 API 응답으로.
 - 외부에서 관찰되는 행동만 검증한다. 내부 호출 순서나 DB 행 구조를 단언하지 않는다. 모델 호출은 실제 네트워크를 타지 않되 기록은 실제 응답에서 만든다.
 - 테스트는 각 패키지에 병치. E2E는 웹 앱 아래. 구현 서브에이전트는 테스트를 먼저 쓴다.
+
+## UI 스킬 (ui-skills.com)
+
+- `ui` 라벨 티켓의 계획·구현은 Codex(GPT-6 Astra)가 ui-skills.com 레지스트리 스킬로 한다. 절차는 `AGENTS.md` "역할 — UI 구현", 결정은 ADR-0010.
+- CLI: `npx ui-skills start`(라우팅 스킬), `npx ui-skills categories`, `npx ui-skills list [--category <name>]`, `npx ui-skills get <slug>`(스킬 마크다운). MCP: `https://www.ui-skills.com/mcp`(`list_skills`·`get_skill`). 기본 설치 경로는 Codex `.codex/skills`, Claude Code `.claude/skills`.
+- 고른 스킬 원문은 `.codex/skills/<slug>/SKILL.md`로 저장소에 커밋한다(레지스트리에 버전 고정이 없음). 갱신은 티켓 안에서만.
+- 2026-09-19 기준 스택과 맞는 후보: 구현 `shadcn`, `ui-styling`(shadcn+Tailwind), `frontend-design`(Anthropic), `better-colors`(Tailwind v4·다크 모드), `better-accessibility`, `migrate-radix-to-base`(Base UI), `next-cache-components`, `animate`. 읽기 전용 리뷰 `design-review`, `improve-ui`, `interface-review`, `wcag-audit-patterns`. 한국어 타이포 전용 스킬은 없어 스펙 타이포 항목이 정본.
 
 ## 구현 사이클
 
