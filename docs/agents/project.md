@@ -34,7 +34,7 @@ ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 
 ## 컨벤션
 
 - Biome으로 린트와 포맷. `any` 금지. TypeScript strict 전부.
-- 커밋: Conventional Commits. 타입은 영어, 제목은 한국어, 스코프는 패키지명. 예: `feat(domain): 상충 상태 전이 규칙`.
+- 커밋: Conventional Commits. 타입은 영어, 제목은 한국어, 스코프는 패키지명. 패키지에 속하지 않는 저장소 전역 변경의 스코프는 `repo`. 예: `feat(domain): 상충 상태 전이 규칙`, `chore(repo): 루트 Biome 설정`.
 - 브랜치 `ticket/<이슈번호>-<slug>`. 티켓당 PR 하나, 스쿼시 머지.
 - PR 본문: `Closes #N` + 무엇을 했나 / 어떻게 테스트했나 / 무엇을 남겼나. 400줄 이내, 하루 안에 리뷰 가능한 크기.
 - "무엇을 남겼나"에 원장에서 옮기는 것: Ruling 전체(무엇을·왜·틀리면 비용), deferred Minor, parked, blocked, 태스크별 커밋 범위와 리뷰 판정·수정/재검토 결과, 최종 테스트 명령과 출력 요약.
