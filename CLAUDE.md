@@ -25,8 +25,8 @@
 `ready-for-agent` 전은 기존 스킬(grill-with-docs → `/to-spec` → `/to-tickets` → `/triage`. 넷 모두 `disable-model-invocation`이라 사용자가 직접 입력해야 로드된다). 후는 superpowers를 이 순서로 쓴다.
 
 1. 승인 버전·SHA 대조. 불일치나 확인 불가면 시작하지 않는다.
-2. 격리: using-git-worktrees Step 0 → 필요할 때만 `EnterWorktree` → 브랜치를 `ticket/<이슈번호>-<slug>`로 이름 변경 → 계획 파일과 `.claude/settings.json`·`.gitignore`가 그 체크아웃에 있는지 확인. 이후 모든 작업은 그 안에서 한다. 티켓 1 = 브랜치 1 = PR 1.
-3. writing-plans: 티켓 1개 = 계획 파일 1개. 해당 티켓의 요구사항만 태스크로 쓴다.
+2. 격리: using-git-worktrees Step 0 → 필요할 때만 `EnterWorktree` → 브랜치를 `ticket/<이슈번호>-<slug>`로 이름 변경 → `.claude/settings.json`·`.gitignore`가 그 체크아웃에 있는지 확인. 이후 모든 작업은 그 안에서 한다. 티켓 1 = 브랜치 1 = PR 1.
+3. writing-plans: 티켓 1개 = 계획 파일 1개. 해당 티켓의 요구사항만 태스크로 쓴다. 계획 파일은 워크트리 안 `docs/superpowers/plans/`에 쓰며 미추적이다.
 4. subagent-driven-development: 태스크 리뷰·최종 리뷰는 SDD 내부 절차를 따른다. 수정 4~5회차에 상위 모델이 없으면 같은 모델의 새 구현자로 대체한다.
 5. finishing-a-development-branch: "Push and Create PR"를 택한다. 워크트리는 머지까지 유지한다.
 6. PR 뒤에는 `/code-review <merge-base> #<이슈>`만 쓴다(requesting-code-review는 SDD 안에서 이미 돌았다). 결과를 PR 코멘트로 게시하고, 수정이 생기면 그 변경만 재검증한다.
@@ -38,7 +38,7 @@
 
 **복구.** 세션 시작·재개·compact 뒤에는 티켓, 워크트리 경로, 계획 경로, 원장 `progress.md`, `git log`를 대조한다. complete 태스크는 그대로 둔다. blocked 태스크는 원인 해소를 확인했거나 사용자가 재개를 지시했을 때만 다시 돈다.
 
-**증거.** 원장의 Ruling·deferred·parked·blocked, 태스크별 커밋 범위와 리뷰 판정, 최종 테스트 결과를 PR 본문 "무엇을 남겼나"로 옮긴다. 워크스페이스는 이관 결과를 다시 읽어 확인하고 `/code-review`가 끝난 뒤 삭제한다.
+**증거.** 원장의 Ruling(무엇을·왜)·deferred·parked·blocked와 실측으로 정한 값만 PR 본문 "무엇을 남겼나"로 옮긴다. 커밋 범위·리뷰 판정·테스트 출력은 옮기지 않는다. 워크스페이스는 이관 결과를 다시 읽어 확인하고 `/code-review`가 끝난 뒤 삭제한다.
 
 ## 쓰지 않는 스킬
 
@@ -53,7 +53,8 @@
 
 ## 파일 관리 원칙
 
-- **1회용 파일과 지속 파일을 구분한다.** 지속 파일(이 파일, `AGENTS.md`, `docs/agents/`, `CONTEXT.md`, `docs/adr/`, 스펙)은 한국어로 쓰고 유지한다. 1회용 파일(리서치 결과, 브리프, 임시 취합본, `docs/superpowers/plans/`의 계획 파일, `.superpowers/`의 SDD 워크스페이스, `.scratch/handoff*.md`)은 목적을 다하면 정리한다.
+- **1회용 파일과 지속 파일을 구분한다.** 지속 파일(이 파일, `AGENTS.md`, `docs/agents/`, `CONTEXT.md`, `docs/adr/`, 스펙)은 한국어로 쓰고 유지한다. 1회용 파일(리서치 결과, 임시 취합본, 계획 파일과 `.superpowers/` 워크스페이스(둘 다 미추적), `.scratch/handoff*.md`)은 목적을 다하면 정리한다.
+- **기록용 문서를 새로 만들지 않는다.** 사실은 `docs/agents/project.md`, 결정은 스펙·ADR, 증거는 PR 본문·이슈 코멘트에 둔다.
 - 1회용 파일에서 오래 남길 가치가 있는 내용은 그 부분만 추출해 지속 파일(ADR, `CONTEXT.md`, `docs/agents/project.md`)로 옮긴다.
 - 불필요한 파일은 저장하지 않는다. 임시 산출물은 스크래치패드를 쓴다.
 
@@ -65,12 +66,12 @@
 
 ### Issue tracker
 
-`gh` CLI로 GitHub Issues를 사용한다. `docs/agents/issue-tracker.md` 참고.
+`gh` CLI로 GitHub Issues를 사용한다. 명령과 차단 규칙은 `docs/agents/project.md` "이슈·라벨".
 
 ### Triage labels
 
-기본 역할 다섯 개, 라벨 문자열은 역할 이름과 동일. `docs/agents/triage-labels.md` 참고.
+기본 역할 다섯 개, 라벨 문자열은 역할 이름과 동일. 목록은 `docs/agents/project.md` "이슈·라벨".
 
 ### Domain docs
 
-단일 컨텍스트: 저장소 루트의 `CONTEXT.md` + `docs/adr/`. `docs/agents/domain.md` 참고.
+단일 컨텍스트: 저장소 루트의 `CONTEXT.md` + `docs/adr/`. 규칙은 `docs/agents/project.md` "도메인 규칙".

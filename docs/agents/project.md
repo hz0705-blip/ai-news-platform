@@ -7,6 +7,19 @@ ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 
 - 결정과 범위, 마일스톤: `docs/spec/v1.md`. 여기에 없는 것은 구현하지 않고 티켓 코멘트로 묻는다.
 - 용어: `CONTEXT.md`. 산출물(이슈·PR·테스트 이름)에서 피하라고 한 동의어를 쓰지 않는다.
 - 되돌리기 어려운 결정: `docs/adr/0001~0009`. 구현 방식(superpowers 사이클, 역할 분담)은 0007, 호스팅·복구는 0008.
+- 기록용 문서를 새로 만들지 않는다. 사실은 이 파일, 결정은 스펙·ADR, 증거는 PR 본문·이슈 코멘트에 둔다.
+
+## 이슈·라벨
+
+- GitHub Issues를 `gh`로 쓴다: `gh issue create/view --comments/list --label/comment/edit --add-label --add-assignee/close --comment`. 이슈 본문이 곧 브리프다.
+- 라벨 다섯: `needs-triage`(평가 필요), `needs-info`(보고자 정보 대기), `ready-for-agent`(명세 완료, 에이전트 착수 가능), `ready-for-human`(사람이 함), `wontfix`. 스킬이 말하는 역할 이름과 라벨 문자열이 같다. `research`는 Codex 몫 표시.
+- 차단은 GitHub 네이티브 이슈 의존성이 정본: `gh api --method POST repos/<owner>/<repo>/issues/<child>/dependencies/blocked_by -F issue_id=<차단 이슈의 데이터베이스 id>`(id는 `gh api repos/<owner>/<repo>/issues/<n> --jq .id`). 열린 차단자가 있거나 담당자가 있는 이슈는 착수하지 않는다.
+- 외부 PR은 분류 대상이 아니다.
+
+## 도메인 규칙
+
+- 산출물(이슈 제목, PR, 테스트 이름, 코드 식별자)의 도메인 개념은 `CONTEXT.md` 용어를 쓰고, 용어집이 피하라는 동의어는 쓰지 않는다. 필요한 개념이 용어집에 없으면 만들어 쓰지 말고 티켓 코멘트로 묻는다.
+- 산출물이 ADR과 충돌하면 조용히 덮어쓰지 않고 "ADR-000N과 충돌한다. 이유는 …"으로 드러낸다.
 
 ## 스택
 
@@ -48,8 +61,7 @@ ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 
 - 커밋: Conventional Commits. 타입은 영어, 제목은 한국어, 스코프는 패키지명. 패키지에 속하지 않는 저장소 전역 변경의 스코프는 `repo`. 예: `feat(domain): 상충 상태 전이 규칙`, `chore(repo): 루트 Biome 설정`.
 - 브랜치 `ticket/<이슈번호>-<slug>`. 티켓당 PR 하나, 스쿼시 머지.
 - PR 본문: `Closes #N` + 무엇을 했나 / 어떻게 테스트했나 / 무엇을 남겼나. 400줄 이내, 하루 안에 리뷰 가능한 크기.
-- "무엇을 남겼나"에 원장에서 옮기는 것: Ruling 전체(무엇을·왜·틀리면 비용), deferred Minor, parked, blocked, 태스크별 커밋 범위와 리뷰 판정·수정/재검토 결과, 최종 테스트 명령과 출력 요약.
-- 실측 뒤에만 정할 수 있는 값(유사도 임계, 게이트 임계, 튜닝값)은 결정 시점과 측정값을 PR에 남긴다.
+- "무엇을 남겼나"에 원장에서 옮기는 것: Ruling(무엇을·왜), deferred Minor, parked, blocked, 실측으로 정한 값과 결정 시점. 커밋 범위·리뷰 판정·테스트 출력은 `git log`·CI·원장에 있으므로 옮기지 않는다.
 
 ## 테스트
 
@@ -64,9 +76,9 @@ ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 
 
 - **승인 버전**: superpowers 6.3.0, 소스 SHA `b36e0829c6d0140e93cfef2ca599b1b07d4a7797`. 프로젝트 스코프 플러그인(`.claude/settings.json`의 `enabledPlugins`), `claude-plugins-official` 마켓플레이스 자동 갱신 끔.
 - **대조 절차**(사이클 시작마다): `claude plugin list`에서 superpowers 버전 = 6.3.0, `~/.claude/plugins/marketplaces/claude-plugins-official/.claude-plugin/marketplace.json`의 superpowers `source.sha` = 위 SHA. 갱신은 수동으로 하고 스킬 원문을 다시 검토한 뒤 이 값을 고친다.
-- **단계**: 버전 대조 → 격리(Step 0 → `EnterWorktree` → 브랜치 이름 변경 → 계획 파일·설정 존재 확인) → writing-plans → subagent-driven-development(`scripts/sdd-workspace`, `scripts/task-brief`는 워크트리 안에서) → finishing-a-development-branch "Push and Create PR" → `/code-review <merge-base> #<이슈>` → 코멘트 게시 → 사용자 승인 → 스쿼시 머지 → `git worktree remove` + 원격 브랜치 삭제 → 워크스페이스 삭제.
-- **격리**: `EnterWorktree`는 `.claude/worktrees/<name>/`에 `worktree-<name>` 브랜치를 저장소 기본 브랜치에서 만든다. 계획 파일과 `.claude/settings.json`·`.gitignore`가 main에 푸시되어 있어야 워크트리에 들어온다. 같은 워크트리에 구현자 동시 실행 없음.
-- **계획 파일**: `docs/superpowers/plans/YYYY-MM-DD-<이슈번호>-<slug>.md`. `**Spec:**`에 `docs/spec/v1.md` 해당 절 + 이슈 번호. 설명은 한국어, 코드는 TypeScript. 구조 표식은 영문 유지: `## Global Constraints`, `### Task N:`, `**Files:**`, `**Interfaces:**`(task-brief가 `Task N` 헤딩으로 추출). 1회용, M6 정리에서 삭제.
+- **단계**: 버전 대조 → 격리(Step 0 → `EnterWorktree` → 브랜치 이름 변경 → 설정 존재 확인) → writing-plans → subagent-driven-development(`scripts/sdd-workspace`, `scripts/task-brief`는 워크트리 안에서) → finishing-a-development-branch "Push and Create PR" → `/code-review <merge-base> #<이슈>` → 코멘트 게시 → 사용자 승인 → 스쿼시 머지 → `git worktree remove` + 원격 브랜치 삭제 → 워크스페이스 삭제.
+- **격리**: `EnterWorktree`는 `.claude/worktrees/<name>/`에 `worktree-<name>` 브랜치를 저장소 기본 브랜치에서 만든다. `.claude/settings.json`·`.gitignore`가 main에 있어야 워크트리에 들어온다. 같은 워크트리에 구현자 동시 실행 없음.
+- **계획 파일**: `docs/superpowers/plans/YYYY-MM-DD-<이슈번호>-<slug>.md`. `**Spec:**`에 `docs/spec/v1.md` 해당 절 + 이슈 번호. 설명은 한국어, 코드는 TypeScript. 구조 표식은 영문 유지: `## Global Constraints`, `### Task N:`, `**Files:**`, `**Interfaces:**`(task-brief가 `Task N` 헤딩으로 추출). 미추적(`.gitignore`)이며 워크트리 안에서 쓰고 워크트리와 함께 사라진다. 남길 내용은 PR 본문에 둔다.
 - **원장**: `.superpowers/sdd/<계획 파일명>/progress.md`. 첫 줄이 계획 파일 경로. `Task N: complete`는 완료, 마지막 줄이 fix round면 그 다음 회차부터 재개. PR 이관 확인과 `/code-review` 종료 뒤 삭제.
 - **기준 커밋**: `/code-review`에 넘기는 기준은 `git merge-base origin/main HEAD`.
 - **첫 사이클(M0)**: Task 1은 manifest·pnpm 워크스페이스·Vitest 실행 기반 구축. 이후 태스크부터 실패 테스트 → 구현.
