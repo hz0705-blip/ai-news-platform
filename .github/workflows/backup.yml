@@ -1,0 +1,129 @@
+# 야간 pg_dump 암호화 백업과 검증(이슈 #18, 스펙 "배포와 운영" 백업·복구, ADR-0008).
+# 시크릿은 GitHub 환경 Production의 환경 시크릿만 읽는다: DATABASE_MIGRATION_URL(세션 풀러 5432), BACKUP_ENCRYPTION_KEY(64자 hex).
+# 스케줄은 기본 브랜치에서만 돈다. 로그에 URL·사용자명·프로젝트 ref를 남기지 않는다.
+name: backup
+
+on:
+  schedule:
+    - cron: "30 18 * * *" # KST 03:30
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash # -eo pipefail: tee 뒤에서도 node 실패가 잡 실패가 된다
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+env:
+  PG_MAJOR: "17"
+  RETENTION_DAYS: "90"
+
+jobs:
+  dump:
+    runs-on: ubuntu-24.04
+    environment: Production
+    timeout-minutes: 30
+    outputs:
+      stamp: ${{ steps.stamp.outputs.stamp }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+      - name: PostgreSQL 17 클라이언트 설치(PGDG)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y "postgresql-client-${PG_MAJOR}"
+          pg_dump --version
+      - name: 타임스탬프
+        id: stamp
+        run: echo "stamp=$(date -u +%Y%m%dT%H%M%SZ)" >> "$GITHUB_OUTPUT"
+      - name: pg_dump(custom 형식, public·drizzle 스키마)
+        env:
+          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+        run: |
+          mkdir -p work
+          pg_dump --dbname "$DATABASE_MIGRATION_URL" \
+            --format=custom --no-owner --no-privileges \
+            --schema=public --schema=drizzle \
+            --file work/newsplatform.dump
+          echo "dump_bytes=$(stat -c %s work/newsplatform.dump)" >> "$GITHUB_ENV"
+      - name: 암호화·체크섬
+        env:
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+        run: |
+          node packages/db/scripts/backup-encrypt.ts --in work/newsplatform.dump --out-dir artifact | tee work/encrypt.json
+          rm -f work/newsplatform.dump
+      - name: 요약
+        run: |
+          {
+            echo "## dump"
+            echo "- 아티팩트: db-backup-${{ steps.stamp.outputs.stamp }}-${{ github.run_id }} (보관 ${RETENTION_DAYS}일)"
+            echo "- 평문 바이트: ${dump_bytes}"
+            echo "- 암호문 바이트: $(jq -r .encryptedBytes work/encrypt.json)"
+            echo "- SHA-256: $(cut -d' ' -f1 artifact/newsplatform.dump.enc.sha256)"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: db-backup-${{ steps.stamp.outputs.stamp }}-${{ github.run_id }}
+          path: artifact/
+          retention-days: 90
+          compression-level: 0
+          if-no-files-found: error
+
+  verify:
+    needs: dump
+    runs-on: ubuntu-24.04
+    environment: Production
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+      - name: PostgreSQL 17 클라이언트 설치(PGDG)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y "postgresql-client-${PG_MAJOR}"
+          pg_restore --version
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: db-backup-${{ needs.dump.outputs.stamp }}-${{ github.run_id }}
+          path: artifact
+      - name: 체크섬 대조
+        working-directory: artifact
+        run: sha256sum -c newsplatform.dump.enc.sha256
+      - name: 복호화
+        env:
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+        run: node packages/db/scripts/backup-decrypt.ts --in artifact/newsplatform.dump.enc --out newsplatform.dump | tee decrypt.json
+      - name: pg_restore --list
+        run: |
+          pg_restore --list newsplatform.dump > toc.txt
+          entries=$(grep -c '^[0-9]' toc.txt || true)
+          echo "toc_entries=${entries}" >> "$GITHUB_ENV"
+          echo "TOC 항목 ${entries}개"
+          rm -f newsplatform.dump
+      - name: 요약
+        run: |
+          {
+            echo "## verify"
+            echo "- 체크섬: 일치(sha256sum -c)"
+            echo "- 복호화: $(jq -r '"\(.checksum), \(.plainBytes) bytes"' decrypt.json)"
+            echo "- pg_restore --list 항목: ${toc_entries}"
+            echo "- manifest: $(jq -c . artifact/manifest.json)"
+          } >> "$GITHUB_STEP_SUMMARY"
