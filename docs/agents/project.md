@@ -40,7 +40,7 @@ ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 
 
 - **Supabase**: 조직 Pro, 프로젝트 `ai-news-platform`(ref `dhmwspzugsxrahzkggxx`), 서울 `ap-northeast-2`, PostgreSQL 17.6, Micro. 일일 백업 7일. pgvector 0.8.2 활성(2026-09-19 #16 첫 마이그레이션 `0000_enable_pgvector`, HNSW 게이트 통과). 직접 연결 호스트 `db.dhmwspzugsxrahzkggxx.supabase.co`는 IPv6 전용(AAAA만, A 없음)이라 IPv4 전용 환경(개발 Mac, GitHub 호스티드 러너)에서 쓸 수 없다. 대신 풀러 호스트 `aws-0-ap-northeast-2.pooler.supabase.com`(IPv4, 사용자 `postgres.dhmwspzugsxrahzkggxx`)의 세션 모드 5432를 마이그레이션·백업에, 트랜잭션 모드 6543을 런타임에 쓴다.
 - **GitHub Actions**: 환경 이름 `Production`(대문자 P, 보호 규칙 없음). 환경 시크릿 `DATABASE_MIGRATION_URL`(세션 풀러 5432). 워크플로는 `environment: Production`을 선언해야 읽는다. `BACKUP_ENCRYPTION_KEY`는 #18이 형식을 정한 뒤 같은 환경에 등록. 저장소 시크릿은 쓰지 않는다.
-- **Vercel**: 팀 `hz`(슬러그 `hz23`) Hobby, 프로젝트 `ai-news-platform`, Git `hz0705-blip/ai-news-platform` `main`, Root Directory `apps/web`, Next.js, Node 24, 함수 리전 `icn1`. 환경변수 `DATABASE_URL`(Production만, Sensitive). 자동 도메인 `ai-news-platform-six.vercel.app`. 첫 배포는 `next` 미설치로 실패 상태(#17이 해결).
+- **Vercel**: 팀 `hz`(슬러그 `hz23`) Hobby, 프로젝트 `ai-news-platform`, Git `hz0705-blip/ai-news-platform` `main`, Root Directory `apps/web`, Next.js, Node 24, 함수 리전 `icn1`. 환경변수 `DATABASE_URL`(Production만, Sensitive). 자동 도메인 `ai-news-platform-six.vercel.app`. 배포는 `main` 푸시마다 Git 연동이 자동 수행(빌드 `next build`, 설치 `pnpm install --frozen-lockfile`). 첫 성공 배포는 #17(2026-09-19). PR 브랜치는 자격 없는 프리뷰로 빌드된다.
 - **프리뷰 자격 없음**: 프리뷰는 프로덕션 DB 자격을 쓰지 않는다. 필요해지면 별도 결정.
 - **로컬**: `.gitignore`가 `.env*`를 무시하고 `.env.example`만 허용. 루트 `.env.example`이 변수 이름을 정의한다. 마이그레이션·게이트: `pnpm db:migrate`, `pnpm db:gate`(둘 다 `.env`의 `DATABASE_MIGRATION_URL`만 읽음).
 - DB 비밀번호는 비밀번호 관리자에 없다. 재설정하면 위 두 시크릿을 함께 갱신한다.
