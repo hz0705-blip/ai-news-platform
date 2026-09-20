@@ -12,6 +12,6 @@ describe("TOPICS", () => {
   });
 
   it("중복 없이 정확히 4개다", () => {
-    expect(new Set(TOPICS).size).toBe(5);
+    expect(new Set(TOPICS).size).toBe(4);
   });
 });
