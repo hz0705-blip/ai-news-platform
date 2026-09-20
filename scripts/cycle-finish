@@ -16,12 +16,17 @@ state="$(gh issue view "$issue" --json state --jq .state)"
 [ "$state" = "CLOSED" ] || { echo "FAIL: #$issue 상태 $state — 머지·닫힘 뒤에 실행한다." >&2; exit 1; }
 
 pattern="ticket/$issue-"
-mapfile -t worktrees < <(git worktree list --porcelain | awk -v p="refs/heads/$pattern" '
+# macOS 기본 bash 3.2에는 mapfile이 없다(2026-09-20 #19 정리에서 발견). while-read로 채운다.
+read_lines() { # read_lines <배열이름>: stdin의 각 줄을 그 배열에 넣는다
+  local name="$1" line; eval "$name=()"
+  while IFS= read -r line; do [ -n "$line" ] && eval "$name+=(\"\$line\")"; done
+}
+read_lines worktrees < <(git worktree list --porcelain | awk -v p="refs/heads/$pattern" '
   /^worktree /{wt=substr($0,10)} /^branch /{if (index($0,p)==8) print wt}')
-mapfile -t local_branches < <(git for-each-ref --format='%(refname:short)' "refs/heads/$pattern*")
+read_lines local_branches < <(git for-each-ref --format='%(refname:short)' "refs/heads/$pattern*")
 git fetch --prune origin >/dev/null 2>&1 || true
-mapfile -t remote_branches < <(git ls-remote --heads origin "$pattern*" | awk '{sub("refs/heads/","",$2); print $2}')
-mapfile -t workspaces < <(for wt in "${worktrees[@]}" "$main_root"; do
+read_lines remote_branches < <(git ls-remote --heads origin "$pattern*" | awk '{sub("refs/heads/","",$2); print $2}')
+read_lines workspaces < <(for wt in ${worktrees[@]+"${worktrees[@]}"} "$main_root"; do
   [ -d "$wt/.superpowers/sdd" ] && find "$wt/.superpowers/sdd" -mindepth 1 -maxdepth 1 -type d -name "*-$issue-*"; done 2>/dev/null | sort -u)
 
 echo "#$issue CLOSED. 삭제 대상:"
@@ -34,10 +39,10 @@ if [ "$yes" -ne 1 ]; then
   echo "멈춤: 사용자 확인 뒤 --yes로 다시 실행한다."; exit 3
 fi
 
-for wt in "${worktrees[@]}"; do git worktree remove "$wt" && echo "removed worktree $wt"; done
-for b in "${local_branches[@]}"; do git branch -D "$b" >/dev/null && echo "deleted branch $b"; done
-for b in "${remote_branches[@]}"; do git push origin --delete "$b" >/dev/null 2>&1 && echo "deleted origin/$b"; done
-for w in "${workspaces[@]}"; do rm -rf "$w" && echo "deleted $w"; done
+for wt in ${worktrees[@]+"${worktrees[@]}"}; do git worktree remove "$wt" && echo "removed worktree $wt"; done
+for b in ${local_branches[@]+"${local_branches[@]}"}; do git branch -D "$b" >/dev/null && echo "deleted branch $b"; done
+for b in ${remote_branches[@]+"${remote_branches[@]}"}; do git push origin --delete "$b" >/dev/null 2>&1 && echo "deleted origin/$b"; done
+for w in ${workspaces[@]+"${workspaces[@]}"}; do rm -rf "$w" && echo "deleted $w"; done
 git worktree prune
 
 echo "--- 남은 것"
