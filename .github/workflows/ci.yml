@@ -1,0 +1,92 @@
+# PR 체크(이슈 #19, 스펙 "배포와 운영" 배포 흐름, "골든셋과 평가" CI는 결정론 검사만).
+# 시크릿 없이 돈다. 유료 모델을 호출하지 않는다.
+# 일회용 PostgreSQL 17 + pgvector 서비스 컨테이너(프로덕션 Supabase와 같은 메이저 17, pgvector는 0.8.x)에
+# 빈 DB 마이그레이션을 적용한 뒤 pgvector 게이트를 읽기 스모크로 돈다.
+# "이전 릴리스 픽스처 DB"에 마이그레이션을 적용하는 검사는 픽스처 DB가 생기는 M2a로 미룬다(스펙 배포 흐름의 양쪽 적용 중 빈 DB만 여기서 돈다).
+name: ci
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PG_MAJOR: "17"
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          cache: pnpm
+      - name: 고정 설치
+        run: pnpm install --frozen-lockfile
+      - name: 린트
+        run: pnpm lint
+      - name: 타입 검사
+        run: pnpm typecheck
+      - name: 테스트
+        run: pnpm test
+      - name: 웹 프로덕션 빌드
+        run: pnpm --filter @newsplatform/web build
+
+  migration-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg17@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci-${{ github.run_id }} # 일회용. 시크릿이 아니다.
+          POSTGRES_DB: newsplatform_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d newsplatform_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # 마이그레이션·게이트 스크립트는 이 변수만 읽는다(packages/db/scripts/migration-connection.ts).
+      DATABASE_MIGRATION_URL: postgresql://ci:ci-${{ github.run_id }}@localhost:5432/newsplatform_ci
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          cache: pnpm
+      - name: 고정 설치
+        run: pnpm install --frozen-lockfile
+      - name: 서버 메이저 확인(17)
+        run: |
+          version_num=$(docker exec "${{ job.services.postgres.id }}" psql -U ci -d newsplatform_ci -Atc "show server_version_num")
+          echo "server_version_num=${version_num}"
+          [ "${version_num:0:2}" = "${PG_MAJOR}" ] || {
+            echo "PostgreSQL 메이저가 ${PG_MAJOR}이 아니다: ${version_num}" >&2
+            exit 1
+          }
+      - name: 빈 DB 마이그레이션 적용(drizzle)
+        run: pnpm db:migrate
+      - name: pgvector 게이트 스모크(읽기)
+        run: pnpm db:gate
