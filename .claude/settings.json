@@ -57,9 +57,11 @@
             "timeout": 5
           }
         ]
-      },
+      }
+    ],
+    "PreToolUse": [
       {
-        "matcher": "startup|resume|clear",
+        "matcher": "Agent|Bash",
         "hooks": [
           {
             "type": "command",

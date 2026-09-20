@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 # 이 세션의 서브에이전트·백그라운드 작업 트랜스크립트(<scratchpad>/tasks/*.output)를 한 화면에 실시간으로 보여준다.
-# 사용: scripts/agent-monitor <tasks-dir> [--interval 초]
-# Herdr 옆 pane에서 돌리는 용도. Ctrl+C로 종료.
+# 사용: scripts/agent-monitor <tasks-dir> [--interval 초] [--idle-exit 초]
+# Herdr 옆 pane에서 돌리는 용도. Ctrl+C로 종료. --idle-exit N: 모든 태스크가 done이거나 60초 이상 갱신 없는 상태가 N초 지속되면 종료.
 set -euo pipefail
-dir="${1:-}"; interval="${3:-1}"
-[ -n "$dir" ] || { echo "사용: scripts/agent-monitor <tasks-dir> [--interval 초]" >&2; exit 2; }
-exec python3 - "$dir" "$interval" <<'PY'
+dir="${1:-}"; shift || true; interval=1; idle_exit=0
+while [ $# -gt 0 ]; do case "$1" in --interval) interval="$2"; shift 2;; --idle-exit) idle_exit="$2"; shift 2;; *) shift;; esac; done
+[ -n "$dir" ] || { echo "사용: scripts/agent-monitor <tasks-dir> [--interval 초] [--idle-exit 초]" >&2; exit 2; }
+exec python3 - "$dir" "$interval" "$idle_exit" <<'PY'
 import glob, json, os, sys, time, shutil
-d, interval = sys.argv[1], float(sys.argv[2])
+d, interval, idle_exit = sys.argv[1], float(sys.argv[2]), float(sys.argv[3])
+idle_since = None
+start_time = time.time()
 DIM, BOLD, GREEN, YELLOW, CYAN, RESET = "\033[2m", "\033[1m", "\033[32m", "\033[33m", "\033[36m", "\033[0m"
 
 def short(s, n):
@@ -28,9 +31,11 @@ def parse(path):
     except OSError:
         return None
     if not lines:
+        st["empty"] = True  # 포그라운드 Bash도 빈 .output을 만들고 끝나면 지운다. 표시·진행 판정에서 제외.
         return st
     if not lines[0].startswith("{"):
         st["raw"] = [short(l, 90) for l in lines[-3:]]
+        st["done"] = any(l.startswith("[exited with code") for l in lines[-3:])  # 백그라운드 Bash 종료 표식
         return st
     for l in lines:
         try:
@@ -70,12 +75,12 @@ while True:
     out = [f"{BOLD}agents{RESET} {DIM}{d}{RESET}", f"{DIM}{time.strftime('%H:%M:%S')} · {len(files)} task(s) · 갱신 {interval:g}s{RESET}", "─" * min(cols, 120)]
     for p in files[:12]:
         st = parse(p)
-        if st is None:
+        if st is None or st.get("empty"):
             continue
         age = fmt_age(p)
         if st["raw"] is not None:
-            mark = f"{CYAN}▸{RESET}"
-            out.append(f"{mark} {BOLD}{st['id']}{RESET} {DIM}bash · {age}s 전 갱신{RESET}")
+            mark = f"{GREEN}✓{RESET}" if st["done"] else f"{CYAN}▸{RESET}"
+            out.append(f"{mark} {BOLD}{st['id']}{RESET} {DIM}bash{' · done' if st['done'] else ''} · {age}s 전 갱신{RESET}")
             out += [f"    {DIM}{l}{RESET}" for l in st["raw"]]
         else:
             if st["done"]:
@@ -92,8 +97,22 @@ while True:
             if st["last_text"]:
                 out.append(f"    {DIM}{short(st['last_text'], cols - 8)}{RESET}")
         out.append("")
-    if not files:
+    if len(out) <= 3:
         out.append(f"{DIM}아직 서브에이전트·백그라운드 작업 없음{RESET}")
+    if idle_exit > 0:
+        # 진행 중 판정: JSONL 태스크는 done 아님 + 300초 안 갱신, 백그라운드 bash는 300초 안 갱신. 시작 10초는 파일 생성 유예.
+        active = any(st and not st.get("empty") and not st["done"] and fmt_age(p) <= 300
+                     for p, st in ((p, parse(p)) for p in files[:12]))
+        if active or (not files and time.time() - start_time < 10):
+            idle_since = None
+        elif idle_since is None:
+            idle_since = time.time()
+        if idle_since is not None:
+            left = int(idle_exit - (time.time() - idle_since))
+            out.append(f"{DIM}idle · {max(left, 0)}s 뒤 pane 닫힘{RESET}")
+            if left <= 0:
+                sys.stdout.write("\033[H\033[2J" + "\n".join(out) + "\n"); sys.stdout.flush()
+                break
     sys.stdout.write("\033[H\033[2J" + "\n".join(out) + "\n")
     sys.stdout.flush()
     time.sleep(interval)
