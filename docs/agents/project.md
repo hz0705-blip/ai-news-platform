@@ -129,4 +129,4 @@ superpowers SDD는 티어를 fast/standard/most-capable로만 말하고 브리�
 - 확인 명령은 스크립트 하나로: 시작 `scripts/cycle-start`, 상태 `scripts/handoff-state`, 정리 `scripts/cycle-finish`.
 - diff·리뷰·로그는 서브에이전트가 읽고 컨트롤러는 판정만 받는다. PR 본문·코멘트 초안은 스크래치패드 파일로 만들어 `--body-file`로 넘긴다.
 - 세션당 작업 단위 하나. 예산 30%를 넘길 것 같으면 다음 경계(태스크 완료·PR 생성·머지)에서 `.scratch/.task-done`을 만들고 인계한다.
-- Herdr 안에서는 SessionStart 훅 `.claude/hooks/agent-monitor-start.sh`가 오른쪽 pane(id는 `.scratch/.agent-monitor-pane`)에 `scripts/agent-monitor <스크래치패드>/tasks`를 띄워 서브에이전트·백그라운드 작업(프롬프트 첫 줄, 마지막 도구 호출, 마지막 응답, done 여부)을 실시간으로 보인다. Herdr 밖이나 서브에이전트 세션에서는 아무것도 하지 않는다.
+- Herdr 안에서는 PreToolUse(`Agent`, 또는 `run_in_background`인 `Bash`) 훅 `.claude/hooks/agent-monitor-start.sh`가 오른쪽 pane(메인 50 : 모니터 50, id는 `.scratch/.agent-monitor-pane`)에 `scripts/agent-monitor <스크래치패드>/tasks --idle-exit 90`을 띄워 서브에이전트·백그라운드 작업(프롬프트 첫 줄, 마지막 도구 호출, 마지막 응답, done 여부)을 실시간으로 보인다. 모든 태스크가 done이거나 300초 이상 갱신이 없는 상태가 90초 지속되면 모니터가 종료되고 pane도 닫힌다(다음 호출 때 다시 열림). Herdr 밖, 서브에이전트 세션, 포그라운드 Bash에서는 아무것도 하지 않는다.
