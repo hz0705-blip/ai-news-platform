@@ -124,6 +124,16 @@ superpowers SDD는 티어를 fast/standard/most-capable로만 말하고 브리�
 - 보고 형식: 판정 한 줄, 근거 항목마다 1~2줄과 `파일:행`. diff·로그 원문은 붙이지 않는다. 컨트롤러는 판정만 읽는다.
 - 용어는 `CONTEXT.md`, 산출물 규칙은 이 파일 "도메인 규칙".
 
+## Codex 브리프 표준 문구
+
+`ui` 티켓에서 Codex 세션을 워크트리에 띄울 때 첫 블록에 그대로 넣는다.
+
+- 너는 메인 세션이고 검토자다. 코드는 직접 쓰지 말고 태스크 단위(실패 테스트 → 구현)로 서브에이전트에 맡긴 뒤 diff와 테스트 출력을 직접 읽어 검토한다. 절차는 `AGENTS.md` "구현 분업".
+- 커밋 트레일러는 붙이지 않는다(`Co-Authored-By: Claude …`는 Claude 서브에이전트 전용).
+- 테스트 명령은 워크트리 루트에서 `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm --filter @newsplatform/web build`, `pnpm --filter @newsplatform/web test:e2e`.
+- 티켓 범위 밖의 값·용어·ADR 충돌은 구현하지 말고 이슈 코멘트로 Claude에 묻고 기다린다.
+- 보고 형식: 판정 한 줄, 근거 항목마다 1~2줄과 `파일:행`. PR 생성까지가 범위이고 머지는 하지 않는다.
+
 ## 컨트롤러 운영
 
 - 확인 명령은 스크립트 하나로: 시작 `scripts/cycle-start`, 상태 `scripts/handoff-state`, 정리 `scripts/cycle-finish`.
