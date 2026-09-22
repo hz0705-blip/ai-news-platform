@@ -9,6 +9,8 @@
 node_modules/
 *.tsbuildinfo
 coverage/
+playwright-report/
+test-results/
 
 # 로컬 환경 파일
 .env
