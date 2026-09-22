@@ -1,0 +1,119 @@
+/* B sRGB → OKLCH: culori 4.0.2. 정본·#20 Ruling은 tokens.test.ts로 검산. */
+:root {
+  --font-size-meta: 0.875rem;
+  --font-size-body: 1.0625rem;
+  --font-size-card-title: 1.1875rem;
+  --font-size-section: 1.25rem;
+  --font-size-title: 1.625rem;
+
+  --background: oklch(0.98415187 0.0034127 247.857775);
+  --foreground: oklch(0.20768192 0.03982433 265.754875);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.20768192 0.03982433 265.754875);
+  --primary: oklch(0.38074408 0.1660794 304.987383);
+  --primary-foreground: oklch(1 0 0);
+  --muted: oklch(0.96826035 0.00685362 247.89568);
+  --muted-foreground: oklch(0.4455331 0.03744668 257.280842);
+  --input: oklch(0.4455331 0.03744668 257.280842);
+  --border: oklch(0.92876127 0.01261877 255.507885);
+  --status-single: oklch(0.96695564 0.00287404 264.542001);
+  --status-single-foreground: oklch(0.37292706 0.03062046 259.732854);
+  --status-agree: oklch(0.95265067 0.0497958 180.801272);
+  --status-agree-foreground: oklch(0.43696783 0.07052358 188.216379);
+  --status-conflicting: oklch(0.96189616 0.05802698 95.617449);
+  --status-conflicting-foreground: oklch(0.41370733 0.10536483 45.903758);
+  --status-resolved: oklch(0.96241294 0.04337822 156.742649);
+  --status-resolved-foreground: oklch(0.39253243 0.08961923 152.535282);
+  --status-corrected: oklch(0.94643041 0.03274181 307.174442);
+  --status-corrected-foreground: oklch(0.38074408 0.1660794 304.987383);
+  --demo: oklch(0.92317504 0.00256266 48.716588);
+  --demo-foreground: oklch(0.37411572 0.00867831 67.558118);
+  --evidence-highlight: oklch(0.9451022 0.12430321 101.539861);
+  --evidence-highlight-foreground: oklch(0.28565452 0.06393094 53.81325);
+  --ring: var(--input);
+  --popover: var(--card);
+  --popover-foreground: var(--card-foreground);
+  --secondary: var(--muted);
+  --secondary-foreground: var(--muted-foreground);
+  --accent: var(--muted);
+  --accent-foreground: var(--muted-foreground);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.20768192 0.03982433 265.754875);
+    --foreground: oklch(0.96826035 0.00685362 247.89568);
+    --card: oklch(0.27949524 0.03684813 260.030987);
+    --card-foreground: oklch(0.96826035 0.00685362 247.89568);
+    --primary: oklch(0.82675911 0.10822904 306.382692);
+    --primary-foreground: oklch(0.29052186 0.14324224 302.716749);
+    --muted: oklch(0.27949524 0.03684813 260.030987);
+    --muted-foreground: oklch(0.86898144 0.01984771 252.89433);
+    --input: oklch(0.86898144 0.01984771 252.89433);
+    --border: oklch(0.37169635 0.03915646 257.286955);
+    --status-single: oklch(0.37292706 0.03062046 259.732854);
+    --status-single-foreground: oklch(0.92758231 0.00581354 264.531323);
+    --status-agree: oklch(0.38605932 0.0590166 188.41579);
+    --status-agree-foreground: oklch(0.90995638 0.09269519 180.425638);
+    --status-conflicting: oklch(0.41370733 0.10536483 45.903758);
+    --status-conflicting-foreground: oklch(0.92427683 0.11512681 95.745863);
+    --status-resolved: oklch(0.39253243 0.08961923 152.535282);
+    --status-resolved-foreground: oklch(0.92502285 0.08055023 155.994703);
+    --status-corrected: oklch(0.38074408 0.1660794 304.987383);
+    --status-corrected-foreground: oklch(0.90235949 0.06040841 306.70298);
+    --demo: oklch(0.37411572 0.00867831 67.558118);
+    --demo-foreground: oklch(0.92317504 0.00256266 48.716588);
+    --evidence-highlight: oklch(0.28565452 0.06393094 53.81325);
+    --evidence-highlight-foreground: oklch(0.97291863 0.0693486 103.193277);
+    --ring: var(--input);
+    --popover: var(--card);
+    --popover-foreground: var(--card-foreground);
+    --secondary: var(--muted);
+    --secondary-foreground: var(--muted-foreground);
+    --accent: var(--muted);
+    --accent-foreground: var(--muted-foreground);
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-status-single: var(--status-single);
+  --color-status-single-foreground: var(--status-single-foreground);
+  --color-status-agree: var(--status-agree);
+  --color-status-agree-foreground: var(--status-agree-foreground);
+  --color-status-conflicting: var(--status-conflicting);
+  --color-status-conflicting-foreground: var(--status-conflicting-foreground);
+  --color-status-resolved: var(--status-resolved);
+  --color-status-resolved-foreground: var(--status-resolved-foreground);
+  --color-status-corrected: var(--status-corrected);
+  --color-status-corrected-foreground: var(--status-corrected-foreground);
+  --color-demo: var(--demo);
+  --color-demo-foreground: var(--demo-foreground);
+  --color-evidence-highlight: var(--evidence-highlight);
+  --color-evidence-highlight-foreground: var(--evidence-highlight-foreground);
+  --color-ring: var(--ring);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --font-sans: "Pretendard Variable", sans-serif;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.25rem;
+  --text-meta: var(--font-size-meta);
+  --text-body: var(--font-size-body);
+  --text-card-title: var(--font-size-card-title);
+  --text-section: var(--font-size-section);
+  --text-title: var(--font-size-title);
+}

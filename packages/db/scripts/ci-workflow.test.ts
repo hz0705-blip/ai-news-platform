@@ -41,17 +41,31 @@ describe("ci.yml 트리거·권한", () => {
     expect(workflow.concurrency["cancel-in-progress"]).toBe(true);
   });
 
-  it("checks·migration-smoke 두 잡이 있고 서로 의존하지 않는다(병렬)", () => {
-    expect(Object.keys(jobs).sort()).toEqual(["checks", "migration-smoke"]);
+  it("checks·e2e·migration-smoke 잡이 있고 서로 의존하지 않는다(병렬)", () => {
+    expect(Object.keys(jobs).sort()).toEqual(["checks", "e2e", "migration-smoke"]);
+    expect(jobs.e2e.needs).toBeUndefined();
     expect(jobs.checks.needs).toBeUndefined();
     expect(jobs["migration-smoke"].needs).toBeUndefined();
   });
 
-  it("두 잡 모두 ubuntu-24.04에서 돌고 시간 제한이 있다", () => {
+  it("모든 잡이 ubuntu-24.04에서 돌고 시간 제한이 있다", () => {
     for (const job of Object.values(jobs)) {
       expect(job["runs-on"]).toBe("ubuntu-24.04");
       expect(typeof job["timeout-minutes"]).toBe("number");
     }
+  });
+});
+
+describe("ci.yml 프로덕션 E2E", () => {
+  it("고정 설치·브라우저 설치·프로덕션 빌드 이후 Playwright를 실행한다", () => {
+    const r = runs("e2e");
+    expect(r).toContain("pnpm install --frozen-lockfile");
+    expect(r).toContain("playwright install --with-deps chromium firefox webkit");
+    expect(r.indexOf("@newsplatform/web build")).toBeLessThan(
+      r.indexOf("@newsplatform/web test:e2e"),
+    );
+    expect(r).toContain("pnpm --filter @newsplatform/web test:e2e");
+    expect(r).not.toContain("next dev");
   });
 });
 
