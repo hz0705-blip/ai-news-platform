@@ -6,8 +6,9 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/pnpm-lock.yaml"]
+    "includes": ["**", "!**/pnpm-lock.yaml", "!apps/web/public/fonts/pretendard"]
   },
+  "css": { "parser": { "tailwindDirectives": true } },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
