@@ -7,6 +7,18 @@ import { SourceTile } from "../components/source-tile.tsx";
 import { StatusBadge } from "../components/status-badge.tsx";
 import { Button } from "../components/ui/button.tsx";
 
+export function typographyFixture(): string {
+  return renderToStaticMarkup(
+    <section aria-label="타이포 유틸 검사">
+      <Button>본문 크기</Button>
+      <p className="text-body">본문 유틸 크기</p>
+      <p className="text-card-title">카드 제목 크기</p>
+      <p className="text-section">구획 제목 크기</p>
+      <p className="text-title">제목 크기</p>
+    </section>,
+  );
+}
+
 export function componentFixture(): string {
   return renderToStaticMarkup(
     <section aria-label="기본 컴포넌트 검사" className="flex flex-col items-start gap-4">

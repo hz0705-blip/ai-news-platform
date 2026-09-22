@@ -1,6 +1,24 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { componentFixture } from "./component-fixture.tsx";
+import { componentFixture, typographyFixture } from "./component-fixture.tsx";
+
+test("타이포 유틸은 64rem 경계에서 모바일·데스크톱 크기로 전환된다", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("main").evaluate((main, html) => {
+    main.innerHTML = html;
+  }, typographyFixture());
+
+  const check = expect.configure({ soft: true, timeout: 1000 });
+  for (const width of [1023, 1024, 1440, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    const desktop = width >= 1024;
+    await check(page.getByRole("button")).toHaveCSS("font-size", desktop ? "18px" : "17px");
+    await check(page.locator(".text-body")).toHaveCSS("font-size", desktop ? "18px" : "17px");
+    await check(page.locator(".text-card-title")).toHaveCSS("font-size", desktop ? "21px" : "19px");
+    await check(page.locator(".text-section")).toHaveCSS("font-size", desktop ? "24px" : "20px");
+    await check(page.locator(".text-title")).toHaveCSS("font-size", desktop ? "32px" : "26px");
+  }
+});
 
 for (const colorScheme of ["light", "dark"] as const) {
   // 640×450은 1280×900에서 200% 확대했을 때의 CSS 가용 영역 대체 검사다.

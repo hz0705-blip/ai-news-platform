@@ -1,5 +1,11 @@
 /* B sRGB → OKLCH: culori 4.0.2. 정본·#20 Ruling은 tokens.test.ts로 검산. */
 :root {
+  --font-size-meta: 0.875rem;
+  --font-size-body: 1.0625rem;
+  --font-size-card-title: 1.1875rem;
+  --font-size-section: 1.25rem;
+  --font-size-title: 1.625rem;
+
   --background: oklch(0.98415187 0.0034127 247.857775);
   --foreground: oklch(0.20768192 0.03982433 265.754875);
   --card: oklch(1 0 0);
@@ -105,9 +111,9 @@
   --radius-sm: 0.25rem;
   --radius-md: 0.25rem;
   --radius-lg: 0.25rem;
-  --text-meta: 0.875rem;
-  --text-body: 1.0625rem;
-  --text-card-title: 1.1875rem;
-  --text-section: 1.25rem;
-  --text-title: 1.625rem;
+  --text-meta: var(--font-size-meta);
+  --text-body: var(--font-size-body);
+  --text-card-title: var(--font-size-card-title);
+  --text-section: var(--font-size-section);
+  --text-title: var(--font-size-title);
 }

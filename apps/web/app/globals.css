@@ -11,7 +11,7 @@
     background: var(--background);
     color: var(--foreground);
     font-family: "Pretendard Variable", sans-serif;
-    font-size: var(--text-body);
+    font-size: var(--font-size-body);
     line-height: 1.75;
     word-break: keep-all;
     overflow-wrap: anywhere;
@@ -21,17 +21,17 @@
     line-height: 1.65;
   }
   h1 {
-    font-size: var(--text-title);
+    font-size: var(--font-size-title);
     line-height: 1.35;
     font-weight: 700;
   }
   h2 {
-    font-size: var(--text-section);
+    font-size: var(--font-size-section);
     line-height: 1.4;
     font-weight: 600;
   }
   h3 {
-    font-size: var(--text-card-title);
+    font-size: var(--font-size-card-title);
     line-height: 1.4;
     font-weight: 600;
   }
@@ -52,10 +52,10 @@
 
 @media (min-width: 64rem) {
   :root {
-    --text-body: 1.125rem;
-    --text-card-title: 1.3125rem;
-    --text-section: 1.5rem;
-    --text-title: 2rem;
+    --font-size-body: 1.125rem;
+    --font-size-card-title: 1.3125rem;
+    --font-size-section: 1.5rem;
+    --font-size-title: 2rem;
   }
 }
 
