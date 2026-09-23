@@ -107,11 +107,22 @@ interface RawRevision extends Omit<Revision, "publishedAt" | "claims" | "sources
   readonly sources: readonly RawRevisionSource[];
 }
 
+/** 픽스처 루트(`packages/pipeline/fixtures/`). `golden-set.json`과 `<slug>/` 디렉터리가 이 아래에 있다. */
+const FIXTURES_ROOT = fileURLToPath(new URL("../fixtures/", import.meta.url));
+
 function fixtureDir(slug: string): string {
   if (slug.length === 0 || slug.includes("/") || slug.includes("\\") || slug.includes("..")) {
     throw new Error(`픽스처 slug가 올바르지 않다: ${slug}`);
   }
-  return fileURLToPath(new URL(`../fixtures/${slug}/`, import.meta.url));
+  return `${FIXTURES_ROOT}${slug}/`;
+}
+
+/** `golden-set.json`에 등록된 slug를 등록 순서대로 돌려준다(#22 브리프 "Produces"). */
+export function listGoldenSetSlugs(): readonly string[] {
+  const entries = readJson<readonly { readonly storySlug: string }[]>(
+    `${FIXTURES_ROOT}golden-set.json`,
+  );
+  return entries.map((entry) => entry.storySlug);
 }
 
 /** JSON 파일을 좁은 인터페이스 `T`로 읽는다. `JSON.parse`는 `any`를 돌려주므로 변수 타입만 좁힌다(단언 없음). */

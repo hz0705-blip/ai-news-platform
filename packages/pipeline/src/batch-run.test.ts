@@ -1,7 +1,8 @@
+import type { Source } from "@newsplatform/domain";
 import { describe, expect, it } from "vitest";
 import { runBatch } from "./batch-run.ts";
 import { DEMO_REFERENCE_TIME, loadDemoStoryFixture } from "./fixtures.ts";
-import { createRecordedModelClient } from "./recorded.ts";
+import { createRecordedModelClient, type RecordedModelClientOptions } from "./recorded.ts";
 import { BatchReportSchema } from "./schemas.ts";
 
 const fixture = loadDemoStoryFixture("demo-1-agreement");
@@ -280,5 +281,58 @@ describe("배치 실행", () => {
     } finally {
       globalThis.fetch = original;
     }
+  });
+});
+
+/** 여러 사건의 출처 목록을 합칠 때 같은 id가 두 번 들어가지 않게 한다. */
+function dedupeById(sources: readonly Source[]): Source[] {
+  return [...new Map(sources.map((s) => [s.id, s])).values()];
+}
+
+describe("두 사건 배치", () => {
+  const one = loadDemoStoryFixture("demo-1-agreement");
+  const two = loadDemoStoryFixture("demo-2-conflict");
+  const both = () => ({
+    articles: [...one.articles, ...two.articles].map((a) => ({ ...a.meta, rawBody: a.rawBody })),
+    now: DEMO_REFERENCE_TIME,
+    dailyBudget: { tokens: 1_000_000, spend: 10 },
+    sources: dedupeById([...one.sources, ...two.sources]),
+    existingStories: [{ story: one.story }, { story: two.story }],
+  });
+  const bothDeps = (override?: RecordedModelClientOptions["override"]) => ({
+    modelClient: createRecordedModelClient(
+      ["demo-1-agreement", "demo-2-conflict"],
+      override === undefined ? {} : { override },
+    ),
+    embeddingClient: { embed: async () => [] },
+    clock: () => DEMO_REFERENCE_TIME,
+  });
+  it("데모 ①·② 리플레이가 둘 다 골든과 같다", async () => {
+    const result = await runBatch(both(), bothDeps());
+    expect(result.revisions).toEqual([one.golden, two.golden]);
+    const again = await runBatch(both(), bothDeps());
+    expect(JSON.stringify(again.revisions)).toBe(JSON.stringify(result.revisions));
+  });
+  it("한 사건의 게이트 실패는 그 사건만 미발행이고 다른 사건은 발행된다(스펙 159행)", async () => {
+    const broken = one.recorded.evidenceExtract["av-meridian"];
+    if (broken === undefined) throw new Error("데모 ① 근거 추출 기록이 없다");
+    const result = await runBatch(
+      both(),
+      bothDeps({
+        "evidence-extract": {
+          "av-meridian": {
+            quotes: broken.quotes.map((q, i) =>
+              i === 0 ? { ...q, quote: "이 문장은 기사에 없다" } : q,
+            ),
+          },
+        },
+      }),
+    );
+    expect(result.revisions.map((r) => r.storyId)).toEqual([two.story.id]);
+    expect(result.report.failed).toBe(1);
+    expect(result.report.failures[0]).toMatchObject({
+      storyId: one.story.id,
+      reason: expect.stringMatching(/구간 없음/),
+    });
   });
 });

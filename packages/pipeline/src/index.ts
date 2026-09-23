@@ -6,6 +6,7 @@ export {
   type DemoArticleMeta,
   type DemoStoryFixture,
   type EvidenceExtractRecord,
+  listGoldenSetSlugs,
   loadDemoStoryFixture,
   loadDemoStoryInputs,
 } from "./fixtures.ts";
