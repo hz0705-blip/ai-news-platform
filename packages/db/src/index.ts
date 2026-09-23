@@ -5,7 +5,8 @@ export {
   parseRuntimeConfig,
   type RuntimeConfig,
 } from "./config.ts";
-export { type PublishRevisionInput, publishRevision } from "./publish.ts";
+export { confirmRevision, type PublishRevisionInput, publishRevision } from "./publish.ts";
+export { loadLatestRevision } from "./queries/revision.ts";
 export { loadPublishedStory, type StoryPageData } from "./queries/story.ts";
 export { loadPublishedToday, type TodayData, type TodayStoryCard } from "./queries/today.ts";
 export { createRuntimeDb, type RuntimeDb } from "./runtime.ts";

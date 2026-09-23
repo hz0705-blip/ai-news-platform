@@ -17,7 +17,9 @@ const data: StoryPageData = {
   revision: {
     id: "rev-1",
     revisionNumber: 1,
+    title: "가상 항만 협정에 세 나라가 서명했다",
     publishedAt: new Date("2026-09-17T00:30:00.000Z"),
+    checkedAt: new Date("2026-09-17T00:30:00.000Z"),
     contradictionStatus: "복수 출처 일치",
   },
   claims: [
