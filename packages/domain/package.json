@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./relative-time": "./src/relative-time.ts",
+    "./topic": "./src/topic.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

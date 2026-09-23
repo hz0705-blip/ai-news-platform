@@ -251,6 +251,9 @@ importers:
       culori:
         specifier: 4.0.2
         version: 4.0.2
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
       shadcn:
         specifier: 4.21.0
         version: 4.21.0(typescript@7.0.2)

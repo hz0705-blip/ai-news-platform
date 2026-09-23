@@ -23,6 +23,7 @@ export {
   type GateStage1Result,
 } from "./gate-stage1.ts";
 export { sha256Hex } from "./hash.ts";
+export { formatRelativeTime } from "./relative-time.ts";
 export { countReportingOrigins } from "./reporting-origin.ts";
 export type { Revision, RevisionSource } from "./revision.ts";
 export { RIGHTS_TIERS, type RightsTier } from "./rights.ts";
