@@ -1,0 +1,35 @@
+{
+  "story-demo-1-agreement:7a6c2057b89c": {
+    "title": "칼데라와 밴티지, 손홀트에서 어업 기본협정 체결",
+    "claims": [
+      {
+        "claimKey": "c-1",
+        "text": "칼데라와 밴티지는 손홀트에서 어업 자원 공유를 규정하는 기본협정에 서명했다.",
+        "claimType": "보도된 사실",
+        "modality": "단정",
+        "quoteIds": ["q-m-1", "q-h-1"]
+      },
+      {
+        "claimKey": "c-2",
+        "text": "보스는 이번 협정이 공유 수역을 둘러싼 양국의 오랜 분쟁을 끝냈다고 말했다.",
+        "claimType": "귀속 입장",
+        "modality": "단정",
+        "quoteIds": ["q-m-2", "q-h-2"]
+      },
+      {
+        "claimKey": "c-3",
+        "text": "칼데라와 밴티지 양국은 내년 초까지 공동 어업 감시 체계를 도입할 것으로 예상된다.",
+        "claimType": "전망",
+        "modality": "예상",
+        "quoteIds": ["q-m-3", "q-h-3"]
+      },
+      {
+        "claimKey": "c-4",
+        "text": "이 기본협정은 양국 의회의 비준을 거쳐야만 발효되는 조건부 효력을 가진다.",
+        "claimType": "보도된 사실",
+        "modality": "조건부",
+        "quoteIds": ["q-m-4", "q-h-4"]
+      }
+    ]
+  }
+}
