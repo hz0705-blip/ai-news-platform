@@ -7,6 +7,7 @@ export {
   type DemoStoryFixture,
   type EvidenceExtractRecord,
   loadDemoStoryFixture,
+  loadDemoStoryInputs,
 } from "./fixtures.ts";
 export {
   createRecordedModelClient,
@@ -24,6 +25,8 @@ export {
   CHANGE_KINDS,
   type Change,
   type ChangeKind,
+  type ConfirmedRevision,
+  type DroppedClaim,
   type EmbeddingClient,
   type ModelClient,
   StageFailure,

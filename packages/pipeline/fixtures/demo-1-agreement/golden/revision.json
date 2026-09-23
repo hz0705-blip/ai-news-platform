@@ -21,7 +21,7 @@
       "contradictionStatus": "복수 출처 일치",
       "evidence": [
         {
-          "id": "demo-1-agreement:c-1:q-m-1",
+          "id": "demo-1-agreement:rev-1/demo-1-agreement:c-1:q-m-1",
           "claimId": "demo-1-agreement:c-1",
           "articleId": "article-meridian-wire",
           "articleVersionId": "av-meridian",
@@ -47,7 +47,7 @@
           "verifiedAt": "2026-09-17T00:30:00.000Z"
         },
         {
-          "id": "demo-1-agreement:c-1:q-h-1",
+          "id": "demo-1-agreement:rev-1/demo-1-agreement:c-1:q-h-1",
           "claimId": "demo-1-agreement:c-1",
           "articleId": "article-harbor-ledger",
           "articleVersionId": "av-harbor",
@@ -83,7 +83,7 @@
       "contradictionStatus": "복수 출처 일치",
       "evidence": [
         {
-          "id": "demo-1-agreement:c-2:q-m-2",
+          "id": "demo-1-agreement:rev-1/demo-1-agreement:c-2:q-m-2",
           "claimId": "demo-1-agreement:c-2",
           "articleId": "article-meridian-wire",
           "articleVersionId": "av-meridian",
@@ -109,7 +109,7 @@
           "verifiedAt": "2026-09-17T00:30:00.000Z"
         },
         {
-          "id": "demo-1-agreement:c-2:q-h-2",
+          "id": "demo-1-agreement:rev-1/demo-1-agreement:c-2:q-h-2",
           "claimId": "demo-1-agreement:c-2",
           "articleId": "article-harbor-ledger",
           "articleVersionId": "av-harbor",
@@ -145,7 +145,7 @@
       "contradictionStatus": "복수 출처 일치",
       "evidence": [
         {
-          "id": "demo-1-agreement:c-3:q-m-3",
+          "id": "demo-1-agreement:rev-1/demo-1-agreement:c-3:q-m-3",
           "claimId": "demo-1-agreement:c-3",
           "articleId": "article-meridian-wire",
           "articleVersionId": "av-meridian",
@@ -171,7 +171,7 @@
           "verifiedAt": "2026-09-17T00:30:00.000Z"
         },
         {
-          "id": "demo-1-agreement:c-3:q-h-3",
+          "id": "demo-1-agreement:rev-1/demo-1-agreement:c-3:q-h-3",
           "claimId": "demo-1-agreement:c-3",
           "articleId": "article-harbor-ledger",
           "articleVersionId": "av-harbor",
@@ -207,7 +207,7 @@
       "contradictionStatus": "복수 출처 일치",
       "evidence": [
         {
-          "id": "demo-1-agreement:c-4:q-m-4",
+          "id": "demo-1-agreement:rev-1/demo-1-agreement:c-4:q-m-4",
           "claimId": "demo-1-agreement:c-4",
           "articleId": "article-meridian-wire",
           "articleVersionId": "av-meridian",
@@ -233,7 +233,7 @@
           "verifiedAt": "2026-09-17T00:30:00.000Z"
         },
         {
-          "id": "demo-1-agreement:c-4:q-h-4",
+          "id": "demo-1-agreement:rev-1/demo-1-agreement:c-4:q-h-4",
           "claimId": "demo-1-agreement:c-4",
           "articleId": "article-harbor-ledger",
           "articleVersionId": "av-harbor",

@@ -1,11 +1,25 @@
-import { createArticleVersion, type Revision, type RevisionSource } from "@newsplatform/domain";
+import {
+  createArticleVersion,
+  isSameRevisionContent,
+  type Revision,
+  type RevisionSource,
+} from "@newsplatform/domain";
 import { BatchInputSchema } from "./schemas.ts";
 import * as claimGenerate from "./stages/claim-generate.ts";
 import * as contradiction from "./stages/contradiction.ts";
 import * as evidenceExtract from "./stages/evidence-extract.ts";
 import * as gate from "./stages/gate.ts";
 import * as revisionStage from "./stages/revision.ts";
-import type { ArticleInput, BatchDeps, BatchInput, BatchReport, BatchResult } from "./types.ts";
+import {
+  type ArticleInput,
+  type BatchDeps,
+  type BatchInput,
+  type BatchReport,
+  type BatchResult,
+  type ConfirmedRevision,
+  type DroppedClaim,
+  StageFailure,
+} from "./types.ts";
 
 /** 개정판이 기록하는 프롬프트 버전(`<단계>@<정수>`). */
 export const PROMPT_VERSIONS = {
@@ -28,11 +42,18 @@ const STAGES = [
 
 type Usage = { tokens: number; spend: number };
 
+/** 사건 하나의 처리 결과: 새 개정판, 또는 이전 개정판과 같아 확인만 함(Ruling 22-11). */
+type StoryOutcome =
+  | { readonly kind: "revision"; readonly revision: Revision }
+  | { readonly kind: "confirmed"; readonly confirmed: ConfirmedRevision };
+
 /**
  * 배치 한 번(docs/spec/v1.md "배치와 비용"). 기사를 사건별로 묶어 사건마다
  * 근거 추출 → 주장 생성 → 게이트 1단계 → 상충 판정 → 개정판 생성을 돈다.
  * 사건 단위 원자성: 한 단계라도 실패하면 그 사건의 개정판을 만들지 않고 리포트에 사유를
  * 남긴 뒤 다음 사건으로 넘어간다. 배치 자체는 입력 스키마 위반이 아니면 던지지 않는다.
+ * 상충 판정이 미발행(가드 ①)으로 정한 주장은 그 주장만 빼고 `droppedClaims`에 남긴다(Ruling 22-4).
+ * 이전 개정판과 내용이 같으면 개정판 대신 `confirmed`에 확인만 남긴다(스펙 134행, Ruling 22-11).
  */
 export async function runBatch(rawInput: BatchInput, deps: BatchDeps): Promise<BatchResult> {
   const input = BatchInputSchema.parse(rawInput);
@@ -41,7 +62,10 @@ export async function runBatch(rawInput: BatchInput, deps: BatchDeps): Promise<B
   // 사용량을 돌려주게 되면 단계 호출마다 여기에 더한다.
   const usage = new Map<string, Usage>(STAGES.map((stage) => [stage, { tokens: 0, spend: 0 }]));
   const revisions: Revision[] = [];
+  const confirmed: ConfirmedRevision[] = [];
   const failures: { storyId: string; reason: string }[] = [];
+  // 실패한 사건의 빠진 주장도 남긴다(이유 추적용).
+  const droppedClaims: DroppedClaim[] = [];
   let deferred = 0;
 
   for (const [storyId, articles] of groupByStory(input.articles)) {
@@ -50,22 +74,25 @@ export async function runBatch(rawInput: BatchInput, deps: BatchDeps): Promise<B
       continue;
     }
     try {
-      revisions.push(await processStory(storyId, articles, input, deps));
+      const outcome = await processStory(storyId, articles, input, deps, droppedClaims);
+      if (outcome.kind === "revision") revisions.push(outcome.revision);
+      else confirmed.push(outcome.confirmed);
     } catch (error) {
       failures.push({ storyId, reason: error instanceof Error ? error.message : String(error) });
     }
   }
 
   const report: BatchReport = {
-    processed: revisions.length,
+    processed: revisions.length + confirmed.length,
     deferred,
     failed: failures.length,
     failures,
+    droppedClaims,
     usage: STAGES.map((stage) => ({ stage, ...(usage.get(stage) ?? { tokens: 0, spend: 0 }) })),
     budgetReached: budgetReached(usage, input),
   };
 
-  return { revisions, changes: [], report };
+  return { revisions, confirmed, changes: [], report };
 }
 
 /** 입력 순서를 지키며 기사를 `storyId`별로 묶는다. */
@@ -94,10 +121,13 @@ async function processStory(
   articles: readonly ArticleInput[],
   input: BatchInput,
   deps: BatchDeps,
-): Promise<Revision> {
+  droppedClaims: DroppedClaim[],
+): Promise<StoryOutcome> {
   // 사건 배정은 #21에서 통과 단계다: 기사가 이미 가진 storyId가 아는 사건이어야 한다(M2a에서 채운다).
   const state = input.existingStories.find((s) => s.story.id === storyId);
   if (storyId === "" || state === undefined) throw new Error("실패: 사건 미배정");
+  const { story, latestRevision: latest } = state;
+  const revisionNumber = (latest?.revisionNumber ?? 0) + 1;
 
   const versions = articles.map((article) => {
     const source = input.sources.find((s) => s.id === article.sourceId);
@@ -161,29 +191,37 @@ async function processStory(
       if (origin === undefined) throw new Error(`기사 버전 없음: ${item.articleVersionId}`);
       return { ...item, origin };
     });
-    const { contradictionStatus } = await contradiction.runContradictionLabel(
+    const claimId = `${story.slug}:${claim.claimKey}`;
+    const { result, differsIn } = await contradiction.runContradictionLabel(
       {
         storyId,
         claimKey: claim.claimKey,
+        previous: latest?.claims.find((c) => c.id === claimId)?.contradictionStatus,
         evidence: evidence.map((item) => ({
           quoteId: item.quoteId,
           sourceId: item.origin.source.id,
           rightsTier: item.origin.source.rightsTier,
+          ...(item.origin.source.wireId === undefined ? {} : { wireId: item.origin.source.wireId }),
         })),
       },
       deps.modelClient,
     );
+    if (!result.publish) {
+      droppedClaims.push({ storyId, claimKey: claim.claimKey, reason: result.reason });
+      continue;
+    }
     claims.push({
       claimKey: claim.claimKey,
       text: claim.text,
       claimType: claim.claimType,
       modality: claim.modality,
-      contradictionStatus,
+      contradictionStatus: result.status,
       evidence: evidence.map(({ origin, ...item }) => ({
         ...item,
         articleId: origin.article.id,
         sourceId: origin.source.id,
         sourceUrl: origin.article.url,
+        differsIn: differsIn[item.quoteId],
       })),
     });
   }
@@ -197,8 +235,23 @@ async function processStory(
     publishedAt: article.publishedAt,
     rightsTier: source.rightsTier,
   }));
-  return revisionStage.runRevision({
-    story: { id: state.story.id, slug: state.story.slug },
+  if (claims.length === 0) {
+    throw new StageFailure(
+      revisionStage.STAGE,
+      `${story.id}:rev:${revisionNumber}`,
+      "표시할 주장이 없다",
+    );
+  }
+  // Ruling 22-8: 이전 개정판에서 보도 상충이던 주장이 이번 개정판에 없으면 그 에피소드는 아직 열려 있다.
+  const publishedClaimIds = new Set(claims.map((c) => `${story.slug}:${c.claimKey}`));
+  const openEpisodes =
+    latest?.claims.filter(
+      (c) => c.contradictionStatus === "보도 상충" && !publishedClaimIds.has(c.id),
+    ).length ?? 0;
+  const draft = revisionStage.runRevision({
+    story: { id: story.id, slug: story.slug },
+    revisionNumber,
+    openEpisodes,
     title: generated.title,
     publishedAt: deps.clock(),
     promptVersions: PROMPT_VERSIONS,
@@ -206,4 +259,11 @@ async function processStory(
     claims,
     sources,
   });
+  if (latest !== undefined && isSameRevisionContent(latest, draft)) {
+    return {
+      kind: "confirmed",
+      confirmed: { storyId: story.id, revisionId: latest.id, checkedAt: input.now },
+    };
+  }
+  return { kind: "revision", revision: draft };
 }
