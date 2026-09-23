@@ -8,7 +8,11 @@
   "files": {
     "includes": ["**", "!**/pnpm-lock.yaml", "!apps/web/public/fonts/pretendard"]
   },
-  "css": { "parser": { "tailwindDirectives": true } },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
@@ -26,6 +30,16 @@
       "preset": "recommended",
       "suspicious": {
         "noExplicitAny": "error"
+      },
+      "style": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "@newsplatform/db/testing": "@newsplatform/db/testing는 테스트 전용이다(마이그레이션 자격 연결·테이블 비우기). *.test.ts에서만 import한다"
+            }
+          }
+        }
       }
     }
   },
@@ -46,9 +60,14 @@
               "level": "error",
               "options": {
                 "paths": {
-                  "@newsplatform/worker": "웹은 워커를 import하지 않는다 (docs/spec/v1.md 시스템 구조)"
+                  "@newsplatform/worker": "웹은 워커를 import하지 않는다 (docs/spec/v1.md 시스템 구조)",
+                  "@newsplatform/db/testing": "@newsplatform/db/testing는 테스트 전용이다(마이그레이션 자격 연결·테이블 비우기). *.test.ts에서만 import한다"
                 },
-                "patterns": [{ "group": ["@newsplatform/worker/*"] }]
+                "patterns": [
+                  {
+                    "group": ["@newsplatform/worker/*"]
+                  }
+                ]
               }
             }
           }
@@ -64,9 +83,68 @@
               "level": "error",
               "options": {
                 "paths": {
+                  "@newsplatform/web": "워커는 웹을 import하지 않는다 (docs/spec/v1.md 시스템 구조)",
+                  "@newsplatform/db/testing": "@newsplatform/db/testing는 테스트 전용이다(마이그레이션 자격 연결·테이블 비우기). *.test.ts에서만 import한다"
+                },
+                "patterns": [
+                  {
+                    "group": ["@newsplatform/web/*"]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.test.ts", "**/*.test.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/web/**/*.test.ts", "apps/web/**/*.test.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@newsplatform/worker": "웹은 워커를 import하지 않는다 (docs/spec/v1.md 시스템 구조)"
+                },
+                "patterns": [
+                  {
+                    "group": ["@newsplatform/worker/*"]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/worker/**/*.test.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
                   "@newsplatform/web": "워커는 웹을 import하지 않는다 (docs/spec/v1.md 시스템 구조)"
                 },
-                "patterns": [{ "group": ["@newsplatform/web/*"] }]
+                "patterns": [
+                  {
+                    "group": ["@newsplatform/web/*"]
+                  }
+                ]
               }
             }
           }

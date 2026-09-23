@@ -238,7 +238,7 @@ export function toArticleRow(article: Article, storyId: string): ArticleRow {
 }
 
 /**
- * 기사 버전 행. 본문 만료 = 기사 발행 시각 + 30일, 기사를 모르면(발행 시각 불명) 수집 시각 + 30일
+ * 기사 버전 행. 본문 보존 기한 = 기사 발행 시각 + 30일, 기사를 모르면(발행 시각 불명) 수집 시각 + 30일
  * (#21 Ruling 12).
  */
 export function toArticleVersionRow(
