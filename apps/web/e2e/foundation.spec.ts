@@ -1,12 +1,28 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { componentFixture, typographyFixture } from "./component-fixture.tsx";
 
-test("타이포 유틸은 64rem 경계에서 모바일·데스크톱 크기로 전환된다", async ({ page }) => {
+async function mountFoundation(page: Page, content: string) {
   await page.goto("/");
-  await page.locator("main").evaluate((main, html) => {
-    main.innerHTML = html;
-  }, typographyFixture());
+  await expect(page.getByRole("group", { name: "토픽", exact: true })).toBeVisible();
+  const shell = await page.evaluate(() => ({
+    links: [...document.querySelectorAll('link[rel="stylesheet"], link[as="font"]')]
+      .map((node) => node.outerHTML)
+      .join(""),
+    mainClass: document.querySelector("main")?.className ?? "",
+  }));
+  // Isolate static component specimens from Next's streaming/hydration ownership.
+  await page.route("**/__foundation_fixture", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>기본 컴포넌트 검사</title>${shell.links}</head><body><main class="${shell.mainClass}">${content}</main></body></html>`,
+    }),
+  );
+  await page.goto("/__foundation_fixture");
+}
+
+test("타이포 유틸은 64rem 경계에서 모바일·데스크톱 크기로 전환된다", async ({ page }) => {
+  await mountFoundation(page, typographyFixture());
 
   const check = expect.configure({ soft: true, timeout: 1000 });
   for (const width of [1023, 1024, 1440, 320]) {
@@ -28,6 +44,10 @@ for (const colorScheme of ["light", "dark"] as const) {
       await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
       await page.setViewportSize({ width, height: width === 640 ? 450 : 900 });
       const response = await page.goto("/");
+      await expect(page.getByRole("group", { name: "토픽", exact: true })).toBeVisible();
+      await expect(
+        page.getByRole("region", { name: "데모 사건", exact: true }).getByRole("link"),
+      ).toBeVisible();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText("사건으로 읽는 해외 보도");
       await page.evaluate(() => document.fonts.ready);
       expect(await page.evaluate(() => document.fonts.check('17px "Pretendard Variable"'))).toBe(
@@ -82,10 +102,7 @@ for (const colorScheme of ["light", "dark"] as const) {
   test(`${colorScheme} 기본 컴포넌트 색·키보드·줄바꿈`, async ({ page, browserName }, testInfo) => {
     await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
     await page.setViewportSize({ width: 320, height: 900 });
-    await page.goto("/");
-    await page.locator("main").evaluate((main, html) => {
-      main.innerHTML = html;
-    }, componentFixture());
+    await mountFoundation(page, componentFixture());
     await page.evaluate(() => document.fonts.ready);
     const button = page.getByRole("button");
     const corrected = page.getByText("정정됨").locator("..");
