@@ -50,6 +50,25 @@ jobs:
   e2e:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg17@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci-${{ github.run_id }} # 일회용. 시크릿이 아니다.
+          POSTGRES_DB: newsplatform_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d newsplatform_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # 마이그레이션·실 DB 테스트·데모 적재는 DATABASE_MIGRATION_URL, 웹 서버(Playwright webServer)는 DATABASE_URL을 읽는다.
+      # CI 컨테이너에는 풀러가 없으므로 둘 다 같은 일회용 URL이다.
+      DATABASE_MIGRATION_URL: postgresql://ci:ci-${{ github.run_id }}@localhost:5432/newsplatform_ci
+      DATABASE_URL: postgresql://ci:ci-${{ github.run_id }}@localhost:5432/newsplatform_ci
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -63,6 +82,14 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: 브라우저 설치
         run: pnpm --filter @newsplatform/web exec playwright install --with-deps chromium firefox webkit
+      - name: 빈 DB 마이그레이션 적용(drizzle)
+        run: pnpm db:migrate
+      # checks 잡에서는 DATABASE_MIGRATION_URL이 없어 실 DB 테스트가 skip된다. 여기서 반드시 돈다.
+      - name: 실 DB 테스트(db·worker)
+        run: pnpm test --project db --project worker
+      # 실 DB 테스트는 테이블을 비우므로 적재는 그 뒤에 한다.
+      - name: 데모 사건 적재
+        run: pnpm --filter @newsplatform/worker demo:load
       - name: 웹 프로덕션 빌드
         run: pnpm --filter @newsplatform/web build
       - name: Playwright·axe

@@ -1,0 +1,42 @@
+{
+  "av-meridian": {
+    "quotes": [
+      {
+        "quoteId": "q-m-1",
+        "quote": "Ministers agreed on the framework."
+      },
+      {
+        "quoteId": "q-m-2",
+        "quote": "Voss said the deal ends years of disputes over shared waters."
+      },
+      {
+        "quoteId": "q-m-3",
+        "quote": "Officials expect a joint monitoring system to begin operating early next year."
+      },
+      {
+        "quoteId": "q-m-4",
+        "quote": "The framework takes effect only after ratification by both parliaments."
+      }
+    ]
+  },
+  "av-harbor": {
+    "quotes": [
+      {
+        "quoteId": "q-h-1",
+        "quote": "The agreement was signed in Thornholt on Tuesday."
+      },
+      {
+        "quoteId": "q-h-2",
+        "quote": "Voss said the agreement ends years of disputes over shared waters."
+      },
+      {
+        "quoteId": "q-h-3",
+        "quote": "A joint monitoring system is expected to begin operating early next year, officials said."
+      },
+      {
+        "quoteId": "q-h-4",
+        "quote": "Ratification by both parliaments is required before the framework takes effect."
+      }
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "story": {
+    "id": "story-demo-1-agreement",
+    "slug": "demo-1-agreement",
+    "title": "칼데라와 밴티지, 손홀트에서 어업 기본협정 체결",
+    "topics": ["국제 정치·외교·안보"],
+    "isDemo": true,
+    "lifecycle": "종료"
+  },
+  "sources": [
+    {
+      "id": "source-meridian-wire",
+      "name": "Meridian Wire (가상 출처)",
+      "rightsTier": "본문 처리 + 발췌 표시",
+      "region": "가상 지역: 메리디언 해협권",
+      "ownership": "민간 소유",
+      "language": "영어",
+      "isFictional": true
+    },
+    {
+      "id": "source-harbor-ledger",
+      "name": "Harbor Ledger (가상 출처)",
+      "rightsTier": "본문 처리 + 발췌 표시",
+      "region": "가상 지역: 손홀트 항만권",
+      "ownership": "협동조합 소유",
+      "language": "영어",
+      "isFictional": true
+    },
+    {
+      "id": "source-atlas-dispatch",
+      "name": "Atlas Dispatch (가상 출처)",
+      "rightsTier": "링크만",
+      "region": "가상 지역: 대륙 통신망",
+      "ownership": "국영",
+      "language": "영어",
+      "isFictional": true
+    }
+  ],
+  "articles": [
+    {
+      "id": "article-meridian-wire",
+      "sourceId": "source-meridian-wire",
+      "storyId": "story-demo-1-agreement",
+      "articleVersionId": "av-meridian",
+      "url": "https://meridianwire.example/world/thornholt-framework-agreement",
+      "title": "Caldera, Vantage Federation Sign Framework in Thornholt",
+      "publishedAt": "2026-09-16T09:00:00.000Z",
+      "topic": "국제 정치·외교·안보",
+      "file": "articles/meridian-wire.txt"
+    },
+    {
+      "id": "article-harbor-ledger",
+      "sourceId": "source-harbor-ledger",
+      "storyId": "story-demo-1-agreement",
+      "articleVersionId": "av-harbor",
+      "url": "https://harborledger.example/politics/thornholt-fisheries-pact",
+      "title": "Caldera and Vantage Federation Conclude Fisheries Pact",
+      "publishedAt": "2026-09-16T10:30:00.000Z",
+      "topic": "국제 정치·외교·안보",
+      "file": "articles/harbor-ledger.txt"
+    },
+    {
+      "id": "article-atlas-dispatch",
+      "sourceId": "source-atlas-dispatch",
+      "storyId": "story-demo-1-agreement",
+      "articleVersionId": "av-atlas",
+      "url": "https://atlasdispatch.example/briefs/caldera-vantage-agreement",
+      "title": "Caldera-Vantage Fisheries Deal Announced",
+      "publishedAt": "2026-09-16T12:00:00.000Z",
+      "topic": "국제 정치·외교·안보",
+      "file": "articles/atlas-dispatch.txt"
+    }
+  ]
+}

@@ -1,0 +1,290 @@
+{
+  "id": "demo-1-agreement:rev-1",
+  "storyId": "story-demo-1-agreement",
+  "revisionNumber": 1,
+  "title": "칼데라와 밴티지, 손홀트에서 어업 기본협정 체결",
+  "publishedAt": "2026-09-17T00:30:00.000Z",
+  "contradictionStatus": "복수 출처 일치",
+  "promptVersions": {
+    "evidenceExtract": "evidence-extract@1",
+    "claimGenerate": "claim-generate@1",
+    "contradictionLabel": "contradiction-label@1"
+  },
+  "modelId": "recorded",
+  "claims": [
+    {
+      "id": "demo-1-agreement:c-1",
+      "text": "칼데라와 밴티지는 손홀트에서 어업 자원 공유를 규정하는 기본협정에 서명했다.",
+      "claimType": "보도된 사실",
+      "modality": "단정",
+      "order": 0,
+      "contradictionStatus": "복수 출처 일치",
+      "evidence": [
+        {
+          "id": "demo-1-agreement:c-1:q-m-1",
+          "claimId": "demo-1-agreement:c-1",
+          "articleId": "article-meridian-wire",
+          "articleVersionId": "av-meridian",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 182,
+            "end": 216
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Ministers agreed on the framework.",
+          "spanHash": "3e06e37721a8d24dc41ceaf58f7726f8eadb1435b081f28d72f1462db4e4398c",
+          "excerpt": "Ministers agreed on the framework.",
+          "excerptSpan": {
+            "start": 182,
+            "end": 216
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 34
+          },
+          "sourceUrl": "https://meridianwire.example/world/thornholt-framework-agreement",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        },
+        {
+          "id": "demo-1-agreement:c-1:q-h-1",
+          "claimId": "demo-1-agreement:c-1",
+          "articleId": "article-harbor-ledger",
+          "articleVersionId": "av-harbor",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 146,
+            "end": 195
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The agreement was signed in Thornholt on Tuesday.",
+          "spanHash": "cf91be55e3f9892fc15fc9f666ede146f6b2652ce9e6a9a4ffa59856303729fe",
+          "excerpt": "The agreement was signed in Thornholt on Tuesday.",
+          "excerptSpan": {
+            "start": 146,
+            "end": 195
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 49
+          },
+          "sourceUrl": "https://harborledger.example/politics/thornholt-fisheries-pact",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "demo-1-agreement:c-2",
+      "text": "보스는 이번 협정이 공유 수역을 둘러싼 양국의 오랜 분쟁을 끝냈다고 말했다.",
+      "claimType": "귀속 입장",
+      "modality": "단정",
+      "order": 1,
+      "contradictionStatus": "복수 출처 일치",
+      "evidence": [
+        {
+          "id": "demo-1-agreement:c-2:q-m-2",
+          "claimId": "demo-1-agreement:c-2",
+          "articleId": "article-meridian-wire",
+          "articleVersionId": "av-meridian",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 217,
+            "end": 278
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Voss said the deal ends years of disputes over shared waters.",
+          "spanHash": "853e9c5c2c13bcc838785b1c1c7d52d3ef230d804de35386c516f9a92bbcdcaf",
+          "excerpt": "Voss said the deal ends years of disputes over shared waters.",
+          "excerptSpan": {
+            "start": 217,
+            "end": 278
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 61
+          },
+          "sourceUrl": "https://meridianwire.example/world/thornholt-framework-agreement",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        },
+        {
+          "id": "demo-1-agreement:c-2:q-h-2",
+          "claimId": "demo-1-agreement:c-2",
+          "articleId": "article-harbor-ledger",
+          "articleVersionId": "av-harbor",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 196,
+            "end": 262
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Voss said the agreement ends years of disputes over shared waters.",
+          "spanHash": "b3221538284168e9a5d745c9ce449bc47f7db9dbb6e09f089f6728db686c1d6c",
+          "excerpt": "Voss said the agreement ends years of disputes over shared waters.",
+          "excerptSpan": {
+            "start": 196,
+            "end": 262
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 66
+          },
+          "sourceUrl": "https://harborledger.example/politics/thornholt-fisheries-pact",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "demo-1-agreement:c-3",
+      "text": "칼데라와 밴티지 양국은 내년 초까지 공동 어업 감시 체계를 도입할 것으로 예상된다.",
+      "claimType": "전망",
+      "modality": "예상",
+      "order": 2,
+      "contradictionStatus": "복수 출처 일치",
+      "evidence": [
+        {
+          "id": "demo-1-agreement:c-3:q-m-3",
+          "claimId": "demo-1-agreement:c-3",
+          "articleId": "article-meridian-wire",
+          "articleVersionId": "av-meridian",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 358,
+            "end": 436
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Officials expect a joint monitoring system to begin operating early next year.",
+          "spanHash": "9faa2b4f84f58204f8c5bf6f945bc39538801a4f26c45d3a04cb38c75cf28234",
+          "excerpt": "Officials expect a joint monitoring system to begin operating early next year.",
+          "excerptSpan": {
+            "start": 358,
+            "end": 436
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 78
+          },
+          "sourceUrl": "https://meridianwire.example/world/thornholt-framework-agreement",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        },
+        {
+          "id": "demo-1-agreement:c-3:q-h-3",
+          "claimId": "demo-1-agreement:c-3",
+          "articleId": "article-harbor-ledger",
+          "articleVersionId": "av-harbor",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 346,
+            "end": 435
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "A joint monitoring system is expected to begin operating early next year, officials said.",
+          "spanHash": "f3b043c854d34d7e5c14b9586baa2ab29e1c765a75881d030bb77e5388deeee4",
+          "excerpt": "A joint monitoring system is expected to begin operating early next year, officials said.",
+          "excerptSpan": {
+            "start": 346,
+            "end": 435
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 89
+          },
+          "sourceUrl": "https://harborledger.example/politics/thornholt-fisheries-pact",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "demo-1-agreement:c-4",
+      "text": "이 기본협정은 양국 의회의 비준을 거쳐야만 발효되는 조건부 효력을 가진다.",
+      "claimType": "보도된 사실",
+      "modality": "조건부",
+      "order": 3,
+      "contradictionStatus": "복수 출처 일치",
+      "evidence": [
+        {
+          "id": "demo-1-agreement:c-4:q-m-4",
+          "claimId": "demo-1-agreement:c-4",
+          "articleId": "article-meridian-wire",
+          "articleVersionId": "av-meridian",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 437,
+            "end": 508
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The framework takes effect only after ratification by both parliaments.",
+          "spanHash": "b99a3987858d55e09946d9fc73a735e697841e1c8272d4bb9d7c0fd6d044a2be",
+          "excerpt": "The framework takes effect only after ratification by both parliaments.",
+          "excerptSpan": {
+            "start": 437,
+            "end": 508
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 71
+          },
+          "sourceUrl": "https://meridianwire.example/world/thornholt-framework-agreement",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        },
+        {
+          "id": "demo-1-agreement:c-4:q-h-4",
+          "claimId": "demo-1-agreement:c-4",
+          "articleId": "article-harbor-ledger",
+          "articleVersionId": "av-harbor",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 436,
+            "end": 515
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Ratification by both parliaments is required before the framework takes effect.",
+          "spanHash": "9e5c56b8d5b02b9ba9e1cd1b1a4b00ea59f497431712839288817e63eb84331a",
+          "excerpt": "Ratification by both parliaments is required before the framework takes effect.",
+          "excerptSpan": {
+            "start": 436,
+            "end": 515
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 79
+          },
+          "sourceUrl": "https://harborledger.example/politics/thornholt-fisheries-pact",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "sourceId": "source-meridian-wire",
+      "articleId": "article-meridian-wire",
+      "articleTitle": "Caldera, Vantage Federation Sign Framework in Thornholt",
+      "articleUrl": "https://meridianwire.example/world/thornholt-framework-agreement",
+      "publishedAt": "2026-09-16T09:00:00.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    },
+    {
+      "sourceId": "source-harbor-ledger",
+      "articleId": "article-harbor-ledger",
+      "articleTitle": "Caldera and Vantage Federation Conclude Fisheries Pact",
+      "articleUrl": "https://harborledger.example/politics/thornholt-fisheries-pact",
+      "publishedAt": "2026-09-16T10:30:00.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    },
+    {
+      "sourceId": "source-atlas-dispatch",
+      "articleId": "article-atlas-dispatch",
+      "articleTitle": "Caldera-Vantage Fisheries Deal Announced",
+      "articleUrl": "https://atlasdispatch.example/briefs/caldera-vantage-agreement",
+      "publishedAt": "2026-09-16T12:00:00.000Z",
+      "rightsTier": "링크만"
+    }
+  ]
+}
