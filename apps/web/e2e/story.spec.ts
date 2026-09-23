@@ -54,6 +54,17 @@ test("핵심 루프: 주장 → 근거 펼침 → 원문 링크 → 변화 구�
   ).toBeVisible();
 });
 
+test("사건 머리에 상태 설명 문구와 상태별 개수 링크가 있다", async ({ page }) => {
+  await page.goto(STORY_URL);
+  const header = page.locator("header");
+  await expect(header.getByText("여러 출처의 보도가 이 주장에 일치합니다.")).toBeVisible();
+  const counts = page.getByRole("list", { name: "주장 상태별 개수" });
+  await expect(counts.getByRole("link", { name: /복수 출처 일치 4개/ })).toHaveAttribute(
+    "href",
+    "#claim-1-label",
+  );
+});
+
 test("Space로도 펼치고 접는다", async ({ page }) => {
   await page.goto(STORY_URL);
   const trigger = page.getByRole("button", { name: /근거 \d+개 보기/ }).first();
