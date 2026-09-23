@@ -43,6 +43,11 @@ export {
   toUtf16Range,
 } from "./span.ts";
 export { STORY_LIFECYCLES, type Story, type StoryLifecycle } from "./story.ts";
-export { deriveStoryStatus } from "./story-status.ts";
+export {
+  countClaimStatuses,
+  deriveStoryStatus,
+  type StatusCounts,
+  type StoryStatusInput,
+} from "./story-status.ts";
 export { NORMALIZATION_VERSION, normalizeBody } from "./text.ts";
 export { TOPICS, type Topic } from "./topic.ts";
