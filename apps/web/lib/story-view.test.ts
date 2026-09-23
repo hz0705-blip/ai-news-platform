@@ -1,4 +1,5 @@
 import type { StoryPageData } from "@newsplatform/db";
+import type { ContradictionStatus } from "@newsplatform/domain";
 import { describe, expect, it } from "vitest";
 import { buildStoryView } from "./story-view.ts";
 
@@ -71,6 +72,59 @@ const data: StoryPageData = {
   ],
 };
 
+/** 기본 데이터를 바탕으로 주장·근거·출처를 옵션만큼 다시 만든다. 주장 i의 저장 순서는 i(0부터). */
+function dataWith(options: {
+  readonly revisionTitle?: string;
+  readonly statuses: readonly ContradictionStatus[];
+  readonly evidenceTimes?: readonly string[];
+  readonly sourceNames?: readonly string[];
+  readonly differsIn?: readonly string[];
+}): StoryPageData {
+  const count = Math.max(
+    options.evidenceTimes?.length ?? 0,
+    options.sourceNames?.length ?? 0,
+    options.differsIn?.length ?? 0,
+    1,
+  );
+  const indexes = Array.from({ length: count }, (_, j) => j);
+  const timeAt = (j: number) =>
+    new Date(options.evidenceTimes?.[j] ?? `2026-09-16T0${j}:00:00.000Z`);
+  const baseEvidence = data.claims[0]?.evidence[0];
+  if (baseEvidence === undefined) throw new Error("기본 근거가 없다");
+  return {
+    ...data,
+    revision: { ...data.revision, title: options.revisionTitle ?? data.revision.title },
+    claims: options.statuses.map((status, i) => ({
+      id: `claim-${i}`,
+      order: i,
+      text: `주장 ${i}`,
+      contradictionStatus: status,
+      evidence: indexes.map((j) => {
+        const differsIn = options.differsIn?.[j];
+        return {
+          ...baseEvidence,
+          sourceId: `src-${j}`,
+          publishedAt: timeAt(j),
+          sourceUrl: `https://src-${j}.invalid/${i}`,
+          ...(differsIn === undefined ? {} : { differsIn }),
+        };
+      }),
+    })),
+    sources: indexes.map((j) => ({
+      id: `src-${j}`,
+      name: options.sourceNames?.[j] ?? `Source ${j}`,
+      isFictional: true,
+      rightsTier: "본문 처리 + 발췌 표시",
+      region: "가상",
+      ownership: "가상",
+      language: "en",
+      articleTitle: `Article ${j}`,
+      articleUrl: `https://src-${j}.invalid/article`,
+      publishedAt: timeAt(j),
+    })),
+  };
+}
+
 describe("buildStoryView", () => {
   it("근거는 발췌와 그 안의 UTF-16 강조 범위만 가진다", () => {
     const view = buildStoryView(data);
@@ -91,5 +145,54 @@ describe("buildStoryView", () => {
 
   it("헤더 출처 개수는 출처 구획의 수와 같다", () => {
     expect(buildStoryView(data).header.sourceCount).toBe(2);
+  });
+  it("헤더 제목은 개정판 제목이고 상태별 개수는 0을 빼고 상태 순서대로 주장 번호를 단다", () => {
+    const view = buildStoryView(
+      dataWith({
+        revisionTitle: "개정판 제목",
+        statuses: ["복수 출처 일치", "보도 상충", "복수 출처 일치"],
+      }),
+    );
+    expect(view.header.title).toBe("개정판 제목");
+    expect(view.header.statusCounts).toEqual([
+      { status: "복수 출처 일치", count: 2, claimOrders: [1, 3] },
+      { status: "보도 상충", count: 1, claimOrders: [2] },
+    ]);
+  });
+
+  it("근거는 발행 시각 순, 같으면 출처명 순이고 상충 주장만 isComparison", () => {
+    const view = buildStoryView(
+      dataWith({
+        statuses: ["보도 상충", "복수 출처 일치"],
+        evidenceTimes: ["2026-09-16T08:40:00Z", "2026-09-16T07:15:00Z"],
+      }),
+    );
+    expect(view.claims[0]?.isComparison).toBe(true);
+    expect(view.claims[1]?.isComparison).toBe(false);
+    expect(view.claims[0]?.evidence.map((e) => e.publishedAt.toISOString())).toEqual([
+      "2026-09-16T07:15:00.000Z",
+      "2026-09-16T08:40:00.000Z",
+    ]);
+  });
+
+  it("발행 시각이 같으면 출처명 오름차순", () => {
+    const view = buildStoryView(
+      dataWith({
+        statuses: ["보도 상충"],
+        evidenceTimes: ["2026-09-16T07:15:00Z", "2026-09-16T07:15:00Z"],
+        sourceNames: ["Harbor Ledger (가상 출처)", "Atlas Dispatch (가상 출처)"],
+      }),
+    );
+    expect(view.claims[0]?.evidence.map((e) => e.sourceName)).toEqual([
+      "Atlas Dispatch (가상 출처)",
+      "Harbor Ledger (가상 출처)",
+    ]);
+  });
+
+  it("differsIn은 있는 그대로 전달된다", () => {
+    const view = buildStoryView(
+      dataWith({ statuses: ["보도 상충"], differsIn: ["모두 중단", "일부 계속"] }),
+    );
+    expect(view.claims[0]?.evidence.map((e) => e.differsIn)).toEqual(["모두 중단", "일부 계속"]);
   });
 });

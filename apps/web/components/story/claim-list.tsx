@@ -28,7 +28,7 @@ export function ClaimList({
               <span id={labelId} className="text-meta font-semibold">
                 {claimLabel(claim.order)}
               </span>
-              <StatusBadge status={claim.status} />
+              <StatusBadge status={claim.status} description="sr-only" />
             </p>
             <p>{claim.text}</p>
             <ClaimDisclosure
@@ -38,8 +38,14 @@ export function ClaimList({
               defaultExpanded={defaultExpanded.includes(claim.id)}
             >
               <ul className="flex flex-col gap-4">
-                {claim.evidence.map((item) => (
-                  <EvidenceRow key={`${item.sourceUrl}#${item.highlight.start}`} evidence={item} />
+                {claim.evidence.map((item, i) => (
+                  <EvidenceRow
+                    key={`${item.sourceUrl}#${item.highlight.start}`}
+                    evidence={item}
+                    {...(claim.isComparison
+                      ? { position: { index: i + 1, total: claim.evidence.length } }
+                      : {})}
+                  />
                 ))}
               </ul>
             </ClaimDisclosure>
