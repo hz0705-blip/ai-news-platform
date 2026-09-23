@@ -8,18 +8,29 @@ export function isSameRevisionContent(previous: Revision, next: Revision): boole
   return contentKey(previous) === contentKey(next);
 }
 
+/**
+ * 구조를 값으로 정렬한 배열로 만든다(안정적인 순서 비교용). 요소 각각을 JSON 문자열로
+ * 비교하므로, 자유 텍스트 필드에 구분자로 쓸 만한 문자가 섞여도 JSON.stringify의
+ * 이스케이프가 그대로 보존되어 경계가 흐려지지 않는다.
+ */
+function sortByJson<T>(items: readonly T[]): T[] {
+  return [...items].sort((a, b) => {
+    const ka = JSON.stringify(a);
+    const kb = JSON.stringify(b);
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
+  });
+}
+
 function contentKey(revision: Revision): string {
-  const sources = revision.sources
-    .map((s) => `${s.sourceId}|${s.articleId}`)
-    .sort()
-    .join(",");
+  const sources = sortByJson(revision.sources.map((s) => [s.sourceId, s.articleId] as const));
   const claims = [...revision.claims]
     .sort((a, b) => a.order - b.order)
     .map((claim) => {
-      const evidence = claim.evidence
-        .map((e) => `${e.articleVersionId}|${e.span.start}|${e.span.end}|${e.differsIn ?? ""}`)
-        .sort()
-        .join(";");
+      const evidence = sortByJson(
+        claim.evidence.map(
+          (e) => [e.articleVersionId, e.span.start, e.span.end, e.differsIn ?? null] as const,
+        ),
+      );
       return [
         claim.order,
         claim.text,
@@ -27,8 +38,7 @@ function contentKey(revision: Revision): string {
         claim.modality,
         claim.contradictionStatus,
         evidence,
-      ].join("|");
-    })
-    .join("\n");
+      ] as const;
+    });
   return JSON.stringify({ status: revision.contradictionStatus, sources, claims });
 }
