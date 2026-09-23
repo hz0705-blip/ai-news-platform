@@ -173,3 +173,31 @@ describe("ci.yml migration-smoke 잡", () => {
     expect(text).not.toMatch(/OPENAI/i);
   });
 });
+
+describe("e2e 잡은 적재된 DB 위에서 돈다", () => {
+  it("Postgres 서비스를 고정 digest로 띄운다", () => {
+    const image = String(jobs.e2e.services.postgres.image);
+    expect(image).toMatch(/^pgvector\/pgvector:0\.8\.6-pg17@sha256:[0-9a-f]{64}$/);
+  });
+
+  it("마이그레이션 → 실 DB 테스트 → 데모 적재 → 빌드 순서다", () => {
+    const names = steps("e2e").map((s) => String(s.name ?? ""));
+    const migrate = names.indexOf("빈 DB 마이그레이션 적용(drizzle)");
+    const dbTests = names.indexOf("실 DB 테스트(db·worker)");
+    const load = names.indexOf("데모 사건 적재");
+    const build = names.indexOf("웹 프로덕션 빌드");
+    expect(migrate).toBeGreaterThanOrEqual(0);
+    expect(migrate).toBeLessThan(dbTests);
+    expect(dbTests).toBeLessThan(load);
+    expect(load).toBeLessThan(build);
+    expect(runs("e2e")).toContain("pnpm test --project db --project worker");
+    expect(runs("e2e")).toContain("pnpm --filter @newsplatform/worker demo:load");
+  });
+
+  it("e2e 잡은 마이그레이션 URL과 런타임 URL을 둘 다 갖는다(시크릿 아님)", () => {
+    const env = jobs.e2e.env as Record<string, string>;
+    expect(env.DATABASE_MIGRATION_URL).toMatch(/^postgresql:\/\/ci:/);
+    expect(env.DATABASE_URL).toMatch(/^postgresql:\/\/ci:/);
+    expect(text).not.toMatch(/secrets\./);
+  });
+});
