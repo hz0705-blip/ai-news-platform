@@ -1,0 +1,9 @@
+[
+  {
+    "id": "demo-1-agreement",
+    "storySlug": "demo-1-agreement",
+    "labelSource": "운영자 저작",
+    "license": "CC-BY-4.0",
+    "expected": "fixtures/demo-1-agreement/golden/revision.json"
+  }
+]
