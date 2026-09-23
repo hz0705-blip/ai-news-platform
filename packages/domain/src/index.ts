@@ -8,10 +8,12 @@ export {
   type Modality,
 } from "./claim.ts";
 export {
+  type ClaimStatusGuard,
+  type ClaimStatusInput,
+  type ClaimStatusResult,
   deriveClaimStatus,
   RELATION_LABELS,
   type RelationLabel,
-  UnpublishableClaimError,
 } from "./claim-status.ts";
 export { CONTRADICTION_STATUSES, type ContradictionStatus } from "./contradiction-status.ts";
 export { DISPLAY_POLICY_VERSION } from "./display-policy.ts";
@@ -24,7 +26,11 @@ export {
 } from "./gate-stage1.ts";
 export { sha256Hex } from "./hash.ts";
 export { formatRelativeTime } from "./relative-time.ts";
-export { countReportingOrigins } from "./reporting-origin.ts";
+export {
+  countReportingOrigins,
+  type OriginEvidence,
+  reportingOrigins,
+} from "./reporting-origin.ts";
 export type { Revision, RevisionSource } from "./revision.ts";
 export { RIGHTS_TIERS, type RightsTier } from "./rights.ts";
 export { splitSentences } from "./sentence.ts";
