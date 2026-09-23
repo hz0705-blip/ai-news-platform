@@ -1,9 +1,13 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
+  CLAIM_TYPES,
+  CONTRADICTION_STATUSES,
   checkEvidenceSpan,
   findSpan,
+  MODALITIES,
   normalizeBody,
+  RIGHTS_TIERS,
   sha256Hex,
   spanText,
 } from "@newsplatform/domain";
@@ -70,6 +74,18 @@ describe("데모 사건 ① 픽스처", () => {
   it("시각은 데모 기준 시각 이전으로 고정돼 있다", () => {
     for (const article of fixture.articles) {
       expect(article.meta.publishedAt.getTime()).toBeLessThanOrEqual(DEMO_REFERENCE_TIME.getTime());
+    }
+  });
+
+  it("열거값이 도메인 상수 안에 있다(오타가 tsc를 통과해도 여기서 잡힌다)", () => {
+    for (const source of fixture.sources) {
+      expect(RIGHTS_TIERS).toContain(source.rightsTier);
+    }
+    expect(CONTRADICTION_STATUSES).toContain(fixture.golden.contradictionStatus);
+    for (const claim of fixture.golden.claims) {
+      expect(CLAIM_TYPES).toContain(claim.claimType);
+      expect(MODALITIES).toContain(claim.modality);
+      expect(CONTRADICTION_STATUSES).toContain(claim.contradictionStatus);
     }
   });
 
