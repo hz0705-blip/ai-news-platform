@@ -147,8 +147,13 @@ const PairSchema = z
   })
   .superRefine((pair, ctx) => {
     if (pair.label === "양립 불가") {
-      if (!pair.differsIn || !(pair.a in pair.differsIn) || !(pair.b in pair.differsIn)) {
+      const { differsIn } = pair;
+      if (!differsIn || !Object.hasOwn(differsIn, pair.a) || !Object.hasOwn(differsIn, pair.b)) {
         ctx.addIssue({ code: "custom", message: "양립 불가 쌍은 a·b 모두의 differsIn이 필요하다" });
+      } else if (
+        Object.keys(differsIn).some((quoteId) => quoteId !== pair.a && quoteId !== pair.b)
+      ) {
+        ctx.addIssue({ code: "custom", message: "양립 불가 쌍의 differsIn 키는 a·b뿐이다" });
       }
     } else if (pair.differsIn !== undefined) {
       ctx.addIssue({ code: "custom", message: `${pair.label} 쌍은 differsIn을 갖지 않는다` });

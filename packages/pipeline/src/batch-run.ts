@@ -128,6 +128,13 @@ async function processStory(
   if (storyId === "" || state === undefined) throw new Error("실패: 사건 미배정");
   const { story, latestRevision: latest } = state;
   const revisionNumber = (latest?.revisionNumber ?? 0) + 1;
+  if (latest !== undefined && latest.storyId !== story.id) {
+    throw new StageFailure(
+      revisionStage.STAGE,
+      `${story.id}:rev:${revisionNumber}`,
+      "이전 개정판의 사건이 다르다",
+    );
+  }
 
   const versions = articles.map((article) => {
     const source = input.sources.find((s) => s.id === article.sourceId);

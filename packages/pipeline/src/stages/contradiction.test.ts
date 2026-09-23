@@ -120,4 +120,87 @@ describe("상충 판정 단계", () => {
     const out = await runContradictionLabel(linkOnly, client({ pairs: [] }));
     expect(out.result).toMatchObject({ publish: false, guard: 1 });
   });
+
+  describe("주장 쪽·반대 쪽 분리(Ruling 22-1 개정)", () => {
+    const three = {
+      ...input,
+      evidence: [...input.evidence, { quoteId: "q-c", sourceId: "source-c", rightsTier: tier }],
+    };
+    const conflict = (a: string, b: string) => ({
+      a,
+      b,
+      label: "양립 불가",
+      differsIn: { [a]: `${a} 쪽`, [b]: `${b} 쪽` },
+    });
+    const agree = (a: string, b: string) => ({ a, b, label: "뒷받침 일치" });
+
+    it("반대 쪽 인용과 뒷받침 일치로 이어진 인용은 반대 쪽이다 — 상충이 사라지지 않는다", async () => {
+      const out = await runContradictionLabel(
+        three,
+        client({ pairs: [conflict("q-a", "q-b"), agree("q-b", "q-c")] }),
+      );
+      expect(out.result).toMatchObject({ status: "보도 상충", guard: 2 });
+      expect(out.origins).toEqual({ supporting: 1, conflicting: 2 });
+    });
+    it("양립 불가가 없으면 뒷받침 일치 쌍의 인용은 모두 주장 쪽이다", async () => {
+      const out = await runContradictionLabel(input, client({ pairs: [agree("q-a", "q-b")] }));
+      expect(out.origins).toEqual({ supporting: 2, conflicting: 0 });
+    });
+    it("같은 인용 쌍에 라벨이 둘이면 응답 스키마 불일치", async () => {
+      await expect(
+        runContradictionLabel(
+          input,
+          client({ pairs: [agree("q-a", "q-b"), conflict("q-a", "q-b")] }),
+        ),
+      ).rejects.toThrow(/응답 스키마 불일치/);
+    });
+    it("(a,b)와 (b,a)가 모두 양립 불가면 응답 스키마 불일치", async () => {
+      await expect(
+        runContradictionLabel(
+          input,
+          client({ pairs: [conflict("q-a", "q-b"), conflict("q-b", "q-a")] }),
+        ),
+      ).rejects.toThrow(/응답 스키마 불일치/);
+    });
+    it("전파 끝에 양쪽에 모두 속하는 인용이 있으면 응답 스키마 불일치", async () => {
+      await expect(
+        runContradictionLabel(
+          three,
+          client({ pairs: [conflict("q-a", "q-b"), agree("q-a", "q-c"), agree("q-b", "q-c")] }),
+        ),
+      ).rejects.toThrow(/응답 스키마 불일치/);
+    });
+    it("한 인용의 다른 점이 양립 불가 쌍마다 다르면 응답 스키마 불일치, 같으면 통과", async () => {
+      const differing = [
+        conflict("q-a", "q-b"),
+        { a: "q-a", b: "q-c", label: "양립 불가", differsIn: { "q-a": "다른 글", "q-c": "c 쪽" } },
+      ];
+      await expect(runContradictionLabel(three, client({ pairs: differing }))).rejects.toThrow(
+        /응답 스키마 불일치/,
+      );
+      const same = [
+        conflict("q-a", "q-b"),
+        { a: "q-a", b: "q-c", label: "양립 불가", differsIn: { "q-a": "q-a 쪽", "q-c": "c 쪽" } },
+      ];
+      const out = await runContradictionLabel(three, client({ pairs: same }));
+      expect(out.differsIn).toEqual({ "q-a": "q-a 쪽", "q-b": "q-b 쪽", "q-c": "c 쪽" });
+    });
+    it("양립 불가 쌍의 differsIn에 a·b 밖의 키가 있으면 응답 스키마 불일치", async () => {
+      await expect(
+        runContradictionLabel(
+          three,
+          client({
+            pairs: [
+              {
+                a: "q-a",
+                b: "q-b",
+                label: "양립 불가",
+                differsIn: { "q-a": "x", "q-b": "y", "q-c": "z" },
+              },
+            ],
+          }),
+        ),
+      ).rejects.toThrow(/응답 스키마 불일치/);
+    });
+  });
 });

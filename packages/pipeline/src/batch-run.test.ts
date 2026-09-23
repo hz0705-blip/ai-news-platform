@@ -203,6 +203,22 @@ describe("배치 실행", () => {
     );
   });
 
+  it("이전 개정판의 사건이 다르면 그 사건을 실패로 리포트한다", async () => {
+    const latest = await publishFirst();
+    const result = await runBatch(
+      {
+        ...input(),
+        existingStories: [
+          { story: fixture.story, latestRevision: { ...latest, storyId: "story-other" } },
+        ],
+      },
+      deps(),
+    );
+    expect(result.revisions).toEqual([]);
+    expect(result.confirmed).toEqual([]);
+    expect(result.report.failures[0]?.reason).toMatch(/이전 개정판의 사건이 다르다/);
+  });
+
   it("양립 불가 쌍의 다른 점은 그 주장 근거의 differsIn으로 개정판에 남는다(Ruling 22-6)", async () => {
     const result = await runBatch(input(), {
       ...deps(),
