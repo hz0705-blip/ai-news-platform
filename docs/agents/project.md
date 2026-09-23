@@ -52,7 +52,7 @@ ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 
 - 설치: `pnpm install`. npm·yarn은 쓰지 않는다. lockfile이 생긴 뒤에는 `pnpm install --frozen-lockfile`.
 - 의존성 빌드 스크립트: pnpm 12는 승인 없이 막는다(`ERR_PNPM_IGNORED_BUILDS`). `drizzle-kit`의 `esbuild`는 `pnpm approve-builds`로 승인했고 결과가 `pnpm-workspace.yaml`의 `allowBuilds`에 있다. 새 패키지가 같은 오류를 내면 같은 방법으로 승인하고 커밋한다.
 - 개발 서버: `pnpm dev`
-- 테스트: `pnpm test` (Vitest), `pnpm test:e2e` (Playwright, 웹 앱 아래)
+- 테스트: `pnpm test` (Vitest), 패키지 하나만은 `pnpm test --project <domain|db|pipeline|worker|web>`(여러 개는 `--project`를 반복). **`pnpm test -- --project x`처럼 `--`를 넣으면 pnpm 12가 필터를 잔여 인자로 넘겨 전체가 돈다**(2026-09-23 실측). `pnpm --filter @newsplatform/web test:e2e` (Playwright, 웹 앱 아래)
 - 린트·포맷: `pnpm lint`, `pnpm format` (Biome)
 - 타입 검사: `pnpm typecheck`
 
@@ -61,7 +61,7 @@ ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 
 - Biome으로 린트와 포맷. `any` 금지. TypeScript strict 전부.
 - 커밋: Conventional Commits. 타입은 영어, 제목은 한국어, 스코프는 패키지명. 패키지에 속하지 않는 저장소 전역 변경의 스코프는 `repo`. 예: `feat(domain): 상충 상태 전이 규칙`, `chore(repo): 루트 Biome 설정`.
 - 브랜치 `ticket/<이슈번호>-<slug>`. 티켓당 PR 하나, 스쿼시 머지.
-- PR 본문: `Closes #N` + 무엇을 했나 / 어떻게 테스트했나 / 무엇을 남겼나. 400줄 이내, 하루 안에 리뷰 가능한 크기.
+- PR 본문: `Closes #N` + 무엇을 했나 / 어떻게 테스트했나 / 무엇을 남겼나. 크기 기준은 **패키지당 400줄**(lockfile·픽스처 본문·생성 파일·상류 스냅샷 제외), 하루 안에 리뷰 가능. 트레이서·기반 티켓처럼 넘는 것이 정상인 티켓은 PR 본문에 한 줄로 밝힌다(2026-09-23. 이전 "PR 전체 400줄"은 M1 티켓 전부가 넘겨 형식 비용만 남았다).
 - "무엇을 남겼나"에 원장에서 옮기는 것: Ruling(무엇을·왜), deferred Minor, parked, blocked, 실측으로 정한 값과 결정 시점. 커밋 범위·리뷰 판정·테스트 출력은 `git log`·CI·원장에 있으므로 옮기지 않는다.
 
 ## 테스트
@@ -138,5 +138,7 @@ superpowers SDD는 티어를 fast/standard/most-capable로만 말하고 브리�
 
 - 확인 명령은 스크립트 하나로: 시작 `scripts/cycle-start`, 상태 `scripts/handoff-state`, 정리 `scripts/cycle-finish`.
 - diff·리뷰·로그는 서브에이전트가 읽고 컨트롤러는 판정만 받는다. PR 본문·코멘트 초안은 스크래치패드 파일로 만들어 `--body-file`로 넘긴다.
-- 세션당 작업 단위 하나. 예산 30%를 넘길 것 같으면 다음 경계(태스크 완료·PR 생성·머지)에서 `.scratch/.task-done`을 만들고 인계한다.
+- 인계는 사용자가 세션을 끝낸다고 말할 때만(`CLAUDE.md` "세션 인계"). 1M 컨텍스트 창에서는 별도 예산 상한을 두지 않되, diff·리뷰·로그는 계속 서브에이전트가 읽는다. 인계 문서에 Herdr 에이전트는 이름과 pane ID를 함께 적는다(Codex 재시작 뒤 이름 등록이 풀린다 — 2026-09-23 `u20`).
+- **워크트리 세션의 가드**(Claude Code 워크트리 격리): git이 아닌 Bash 명령도 변수(`$PWD`, `S=…`)·서브셸·heredoc·`&&`로 엮인 긴 파이프가 섞이면 "워크트리 안인지 검증 불가"로 거부하고, Edit/Write는 메인 체크아웃 경로를 거부한다. 외부 CLI(`codex exec`, `herdr`)는 절대경로·리터럴 인자로만 쓰고, 긴 입력은 파일로 빼서 `< 파일`로 넘기며, 파일 append·수정은 Edit 도구로 한다. 지속 문서 편집·커밋은 `ExitWorktree`(keep) → 메인에서 편집·커밋·push → `EnterWorktree`(path) 순서로 하고, 그 사이에 구현 서브에이전트를 띄우지 않는다.
+- `git push`가 응답 없이 매달리는 것을 막기 위해 저장소 git config에 `http.lowSpeedLimit 1000`·`http.lowSpeedTime 45`를 두었다(2026-09-23. 2시간 매달린 push가 계기. 로컬 설정이라 새 클론마다 다시 넣는다).
 - Herdr 안에서는 PreToolUse(`Agent`, 또는 `run_in_background`인 `Bash`) 훅 `.claude/hooks/agent-monitor-start.sh`가 오른쪽 pane(메인 50 : 모니터 50, id는 `.scratch/.agent-monitor-pane`)에 `scripts/agent-monitor <스크래치패드>/tasks --idle-exit 90`을 띄워 서브에이전트·백그라운드 작업(프롬프트 첫 줄, 마지막 도구 호출, 마지막 응답, done 여부)을 실시간으로 보인다. 모든 태스크가 done이거나 300초 이상 갱신이 없는 상태가 90초 지속되면 모니터가 종료되고 pane도 닫힌다(다음 호출 때 다시 열림). Herdr 밖, 서브에이전트 세션, 포그라운드 Bash에서는 아무것도 하지 않는다.
