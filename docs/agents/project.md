@@ -20,6 +20,7 @@ ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 
 
 - 산출물(이슈 제목, PR, 테스트 이름, 코드 식별자)의 도메인 개념은 `CONTEXT.md` 용어를 쓰고, 용어집이 피하라는 동의어는 쓰지 않는다. 필요한 개념이 용어집에 없으면 만들어 쓰지 말고 티켓 코멘트로 묻는다.
 - 산출물이 ADR과 충돌하면 조용히 덮어쓰지 않고 "ADR-000N과 충돌한다. 이유는 …"으로 드러낸다.
+- 기사 본문 30일 만료는 `article_versions` 행 삭제가 아니라 `body`를 null로 바꾸는 것이다. 근거(`evidence`)가 기사 버전을 FK로 참조하므로 행은 남는다(2026-09-23 #21 Ruling 12).
 
 ## 스택
 
@@ -52,6 +53,7 @@ ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 
 - 설치: `pnpm install`. npm·yarn은 쓰지 않는다. lockfile이 생긴 뒤에는 `pnpm install --frozen-lockfile`.
 - 의존성 빌드 스크립트: pnpm 12는 승인 없이 막는다(`ERR_PNPM_IGNORED_BUILDS`). `drizzle-kit`의 `esbuild`는 `pnpm approve-builds`로 승인했고 결과가 `pnpm-workspace.yaml`의 `allowBuilds`에 있다. 새 패키지가 같은 오류를 내면 같은 방법으로 승인하고 커밋한다.
 - 개발 서버: `pnpm dev`
+- 데모 적재: `pnpm --filter @newsplatform/worker demo:load` — 데모 사건 픽스처를 파이프라인으로 돌려 DB에 적재한다. 멱등. `db:migrate`와 같은 부류의 운영자 시드 명령이라 `.env`의 `DATABASE_MIGRATION_URL`(마이그레이션 자격)을 쓴다(2026-09-23 #21).
 - 테스트: `pnpm test` (Vitest), 패키지 하나만은 `pnpm test --project <domain|db|pipeline|worker|web>`(여러 개는 `--project`를 반복). **`pnpm test -- --project x`처럼 `--`를 넣으면 pnpm 12가 필터를 잔여 인자로 넘겨 전체가 돈다**(2026-09-23 실측). `pnpm --filter @newsplatform/web test:e2e` (Playwright, 웹 앱 아래)
 - 린트·포맷: `pnpm lint`, `pnpm format` (Biome)
 - 타입 검사: `pnpm typecheck`
@@ -70,6 +72,8 @@ ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 
 - 보조: 도메인 규칙은 순수 함수라 픽스처만으로 단위 테스트. 경계 매퍼 단위 테스트. 수집 어댑터는 기록된 API 응답으로.
 - 외부에서 관찰되는 행동만 검증한다. 내부 호출 순서나 DB 행 구조를 단언하지 않는다. 모델 호출은 실제 네트워크를 타지 않되 기록은 실제 응답에서 만든다.
 - 테스트는 각 패키지에 병치. E2E는 웹 앱 아래. 구현 서브에이전트는 테스트를 먼저 쓴다.
+- `packages/db`·`apps/worker`의 실 DB 테스트는 `.env`의 dev DB에 붙어 여덟 테이블을 truncate한다. 로컬 `pnpm test` 뒤에는 `pnpm --filter @newsplatform/worker demo:load`로 데모 사건을 다시 적재한다(2026-09-23 #21).
+- `@newsplatform/db/testing`은 테스트 전용 서브패스(truncate 등 헬퍼). Biome `noRestrictedImports`가 비테스트 파일에서의 import를 금지한다.
 
 ## UI 스킬 (ui-skills.com)
 
