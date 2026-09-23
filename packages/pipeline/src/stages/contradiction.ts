@@ -13,6 +13,7 @@ export const STAGE = "contradiction-label";
 
 /** 게이트 1단계를 통과한 주장 하나의 근거들(인용문 식별자와 출처). */
 export const InputSchema = z.object({
+  storyId: z.string(),
   claimKey: z.string(),
   evidence: z.array(
     z.object({ quoteId: z.string(), sourceId: z.string(), rightsTier: z.enum(RIGHTS_TIERS) }),
@@ -27,8 +28,9 @@ export const OutputSchema = z.object({
 export type ContradictionInput = z.infer<typeof InputSchema>;
 export type ContradictionOutput = z.infer<typeof OutputSchema>;
 
+/** `<storyId>:<claimKey>` — 주장 키는 사건마다 `c-1`부터 다시 시작하므로 사건 식별자를 앞에 붙인다. */
 export function idempotencyKey(input: ContradictionInput): string {
-  return input.claimKey;
+  return `${input.storyId}:${input.claimKey}`;
 }
 
 /**

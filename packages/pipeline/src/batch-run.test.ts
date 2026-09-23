@@ -87,7 +87,7 @@ describe("배치 실행", () => {
     const client = createRecordedModelClient("demo-1-agreement", {
       override: {
         "contradiction-label": {
-          "c-1": { pairs: [{ a: "q-m-1", b: "q-h-1", label: "판정 불가" }] },
+          "story-demo-1-agreement:c-1": { pairs: [{ a: "q-m-1", b: "q-h-1", label: "판정 불가" }] },
         },
       },
     });

@@ -163,6 +163,7 @@ async function processStory(
     });
     const { contradictionStatus } = await contradiction.runContradictionLabel(
       {
+        storyId,
         claimKey: claim.claimKey,
         evidence: evidence.map((item) => ({
           quoteId: item.quoteId,

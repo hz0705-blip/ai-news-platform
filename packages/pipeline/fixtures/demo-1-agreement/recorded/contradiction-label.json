@@ -1,5 +1,5 @@
 {
-  "c-1": {
+  "story-demo-1-agreement:c-1": {
     "pairs": [
       {
         "a": "q-m-1",
@@ -8,7 +8,7 @@
       }
     ]
   },
-  "c-2": {
+  "story-demo-1-agreement:c-2": {
     "pairs": [
       {
         "a": "q-m-2",
@@ -17,7 +17,7 @@
       }
     ]
   },
-  "c-3": {
+  "story-demo-1-agreement:c-3": {
     "pairs": [
       {
         "a": "q-m-3",
@@ -26,7 +26,7 @@
       }
     ]
   },
-  "c-4": {
+  "story-demo-1-agreement:c-4": {
     "pairs": [
       {
         "a": "q-m-4",

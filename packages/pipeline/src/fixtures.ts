@@ -42,9 +42,9 @@ export interface ClaimGenerateRecord {
   };
 }
 
-/** `recorded/contradiction-label.json`의 모양. 최상위 키는 `claimKey`다. */
+/** `recorded/contradiction-label.json`의 모양. 최상위 키는 상충 판정 멱등키 `<storyId>:<claimKey>`다. */
 export interface ContradictionLabelRecord {
-  readonly [claimKey: string]: {
+  readonly [idempotencyKey: string]: {
     readonly pairs: readonly { readonly a: string; readonly b: string; readonly label: string }[];
   };
 }
