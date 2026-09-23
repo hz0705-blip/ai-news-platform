@@ -32,6 +32,7 @@ export {
   reportingOrigins,
 } from "./reporting-origin.ts";
 export type { Revision, RevisionSource } from "./revision.ts";
+export { isSameRevisionContent } from "./revision-equality.ts";
 export { RIGHTS_TIERS, type RightsTier } from "./rights.ts";
 export { splitSentences } from "./sentence.ts";
 export type { Source } from "./source.ts";

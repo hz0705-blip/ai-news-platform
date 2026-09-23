@@ -29,4 +29,6 @@ export interface Evidence {
   readonly highlightInExcerpt: CodePointSpan;
   readonly sourceUrl: string;
   readonly verifiedAt: Date;
+  /** `양립 불가` 쌍에서 이 근거가 무엇을 다르게 말했는지(한국어 한 문장). 상충 주장의 근거에만 있다(#22 Ruling 22-6). */
+  readonly differsIn?: string;
 }
