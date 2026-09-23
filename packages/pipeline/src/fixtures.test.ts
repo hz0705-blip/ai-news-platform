@@ -89,6 +89,10 @@ describe("데모 사건 ① 픽스처", () => {
     }
   });
 
+  it("slug에 경로 조작 문자가 있으면 던진다", () => {
+    expect(() => loadDemoStoryFixture("../demo-1-agreement" as never)).toThrow(/올바르지 않다/);
+  });
+
   it("골든셋에는 항목이 하나만 등록돼 있다", () => {
     const goldenSetPath = fileURLToPath(new URL("../fixtures/golden-set.json", import.meta.url));
     const goldenSet = JSON.parse(readFileSync(goldenSetPath, "utf8")) as unknown[];

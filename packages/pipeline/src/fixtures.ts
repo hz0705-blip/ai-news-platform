@@ -103,6 +103,9 @@ interface RawRevision extends Omit<Revision, "publishedAt" | "claims" | "sources
 }
 
 function fixtureDir(slug: string): string {
+  if (slug.length === 0 || slug.includes("/") || slug.includes("\\") || slug.includes("..")) {
+    throw new Error(`픽스처 slug가 올바르지 않다: ${slug}`);
+  }
   return fileURLToPath(new URL(`../fixtures/${slug}/`, import.meta.url));
 }
 

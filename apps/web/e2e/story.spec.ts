@@ -127,11 +127,11 @@ for (const colorScheme of ["light", "dark"] as const) {
     await page.goto(STORY_URL);
 
     for (const state of ["collapsed", "expanded"] as const) {
-      if (state === "expanded")
-        await page
-          .getByRole("button", { name: /근거 \d+개 보기/ })
-          .first()
-          .click();
+      if (state === "expanded") {
+        const trigger = page.getByRole("button", { name: /근거 \d+개 보기/ }).first();
+        await trigger.click();
+        await expect(trigger).toHaveAttribute("aria-expanded", "true");
+      }
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22a", "wcag22aa"])
         .analyze();
