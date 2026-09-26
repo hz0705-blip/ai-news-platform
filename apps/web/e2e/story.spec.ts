@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { expectNoAxeViolations } from "./axe.ts";
 
+// 이 파일은 인라인 아코디언 계약을 단언한다 — 모바일 폭으로 고정한다(데스크톱 패널은 Ruling 24-7).
+test.use({ viewport: { width: 390, height: 844 } });
+
 const STORY_URL = "/story/demo-1-agreement";
 // 픽스처 기사 본문에만 있고 어떤 근거 발췌(허용 발췌 창)에도 들어가지 않는 문장.
 // Task 4의 픽스처를 쓸 때 이 문장을 articles/meridian-wire.txt 끝에 두고 어느 근거도 그 문장을 발췌하지 않게 한다.

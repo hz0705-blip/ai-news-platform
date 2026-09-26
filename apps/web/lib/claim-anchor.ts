@@ -1,6 +1,9 @@
 /** 주장 딥링크 형식(Ruling 23-1): `#claim-N`, N은 화면 번호(1부터). 주장 식별자에는 `:`가 들어갈 수 있어 DOM id는 번호로 만든다. */
 export const claimAnchorId = (order: number): string => `claim-${order}`;
 export const claimEvidenceId = (order: number): string => `claim-${order}-evidence`;
+/** 데스크톱 근거 패널(Ruling 24-2). */
+export const EVIDENCE_PANEL_ID = "evidence-panel";
+export const EVIDENCE_PANEL_HEADING_ID = "evidence-panel-heading";
 export const claimHref = (order: number): string => `#${claimAnchorId(order)}`;
 
 const CLAIM_HASH = /^#claim-([1-9]\d*)$/;

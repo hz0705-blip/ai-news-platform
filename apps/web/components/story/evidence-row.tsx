@@ -12,7 +12,7 @@ import {
   TRANSLATE_PENDING,
 } from "../../app/story/copy.ts";
 import { formatAbsolute } from "../../lib/format-time.ts";
-import type { EvidenceView } from "../../lib/story-view.ts";
+import type { ClaimView, EvidenceView } from "../../lib/story-view.ts";
 import { EvidenceHighlight } from "../evidence-highlight.tsx";
 import { Badge } from "../ui/badge.tsx";
 import { Button } from "../ui/button.tsx";
@@ -105,5 +105,22 @@ export function EvidenceRow({
         </span>
       </div>
     </li>
+  );
+}
+
+/** 주장 하나의 근거 행 목록. 모바일 인라인 영역과 데스크톱 패널이 같은 규칙(비교 행 순서)으로 쓴다. */
+export function EvidenceList({ claim }: { claim: ClaimView }) {
+  return (
+    <ul className="flex flex-col gap-4">
+      {claim.evidence.map((item, i) => (
+        <EvidenceRow
+          key={`${item.sourceUrl}#${item.publishedAt.getTime()}`}
+          evidence={item}
+          {...(claim.isComparison
+            ? { position: { index: i + 1, total: claim.evidence.length } }
+            : {})}
+        />
+      ))}
+    </ul>
   );
 }
