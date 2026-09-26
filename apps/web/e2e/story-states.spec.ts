@@ -106,15 +106,13 @@ for (const width of [320, 640, 1440]) {
       for (const trigger of await triggers.all()) await trigger.click();
       if (width >= DESKTOP_MIN) {
         // 데스크톱: 패널은 마지막으로 활성화한 주장 2만 보이고, 그 트리거만 펼침 상태다.
-        await expect(evidenceOf(page, 2, width).getByRole("heading", { level: 2 })).toHaveText(
+        await expect(evidenceOf(page, 2).getByRole("heading", { level: 2 })).toHaveText(
           "주장 2의 근거",
         );
         await expect(triggers.nth(0)).toHaveAttribute("aria-expanded", "false");
         await expect(triggers.nth(1)).toHaveAttribute("aria-expanded", "true");
         await expect(page.getByText("근거 발췌를 표시할 수 없음")).toHaveCount(1);
-        await expect(
-          evidenceOf(page, 2, width).getByText("근거 발췌를 표시할 수 없음"),
-        ).toBeVisible();
+        await expect(evidenceOf(page, 2).getByText("근거 발췌를 표시할 수 없음")).toBeVisible();
       } else {
         await expect(page.getByText("근거 발췌를 표시할 수 없음")).toHaveCount(2);
       }

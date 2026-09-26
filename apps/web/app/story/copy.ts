@@ -34,7 +34,10 @@ export const evidenceTrigger = (count: number): string => `근거 ${count}개 �
 /** 데스크톱 근거 패널(Ruling 24-2·24-3·24-4). */
 export const SELECTED = "선택됨";
 export const GO_TO_SELECTED_EVIDENCE = "선택한 근거로 이동";
-export const backToClaim = (order: number): string => `주장 ${order}로 돌아가기`;
+// 마지막 숫자의 한국어 읽기가 ㄹ 외의 받침으로 끝나면(영·삼·육) "으로", 받침이 없거나 ㄹ이면(일·이·사·오·칠·팔·구) "로".
+const takesEuro = (order: number): boolean => [0, 3, 6].includes(order % 10);
+export const backToClaim = (order: number): string =>
+  `주장 ${order}${takesEuro(order) ? "으로" : "로"} 돌아가기`;
 export const panelHeading = (order: number): string => `주장 ${order}의 근거`;
 export const PANEL_EMPTY_HEADING = "근거";
 export const PANEL_EMPTY_HINT = "주장의 근거 보기를 누르면 여기에 보입니다";

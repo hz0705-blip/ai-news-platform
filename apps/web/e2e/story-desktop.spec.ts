@@ -47,6 +47,13 @@ test("포커스만 옮기면 패널이 바뀌지 않고 활성화하면 바뀐�
   await expect(trigger).toBeFocused();
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
   await expect(page.locator("#claim-2-evidence > *")).toHaveCount(0);
+
+  // 선택된 상태에서도 포커스 이동만으로는 패널이 바뀌지 않는다.
+  await activate(page, 1);
+  await trigger.focus();
+  await expect(trigger).toBeFocused();
+  await expect(panelHeading(page)).toHaveText("주장 1의 근거");
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
 });
 
 test("이동 링크 둘의 포커스 도착 지점", async ({ page }) => {
@@ -126,6 +133,7 @@ test("640×450(200% 확대)으로 좁히면 모바일 배치로 전환되고 선
   page,
 }) => {
   await page.goto(STORY_URL);
+  await activate(page, 1);
   await activate(page, 2);
   // 640×450 is the CSS viewport equivalent of 1280×900 at 200%, not browser-menu zoom (Ruling 24-8).
   await page.setViewportSize({ width: 640, height: 450 });
@@ -134,6 +142,10 @@ test("640×450(200% 확대)으로 좁히면 모바일 배치로 전환되고 선
   await expect(trigger).toHaveAttribute("aria-controls", "claim-2-evidence");
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
   await expect(page.locator("#claim-2-evidence")).toBeVisible();
+  // 데스크톱에서 본 주장만 펼침으로 남는다 — 다른 주장의 인라인 영역은 닫혀 있다.
+  for (const order of [1, 3, 4]) {
+    await expect(page.locator(`#claim-${order}-evidence`)).toBeHidden();
+  }
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await expect(page.locator("#evidence-panel")).toBeVisible();
@@ -147,7 +159,7 @@ test("전환 폭 실측", async ({ page }, testInfo) => {
   const first = triggersOf(page).first();
   await first.click();
   await expect(first).toHaveAttribute("aria-expanded", "true");
-  await expect(evidenceOf(page, 1, 1023)).toBeVisible();
+  await expect(evidenceOf(page, 1)).toBeVisible();
 
   for (const width of [1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });

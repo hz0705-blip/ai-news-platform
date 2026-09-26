@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { TOPICS } from "@newsplatform/domain/topic";
 import { expect, type Page, test } from "@playwright/test";
 import { build } from "esbuild";
-import { evidenceOf } from "./evidence.ts";
+import { DESKTOP_MIN, evidenceOf } from "./evidence.ts";
 import { firstStory, LONG_SUMMARY, liveStories } from "./today-data.ts";
 
 // Worker-local memory bundle: actual UI, no public fixture route or persisted fake live rows.
@@ -83,7 +83,15 @@ test("실제 오늘: 미발행·동일 크기 0건 타일·데모 앵커 → 사
     .first()
     .click();
   // 기본 뷰포트(1280)는 데스크톱이라 근거는 옆 패널에 보인다(Ruling 24-7).
-  await expect(evidenceOf(page, 1, page.viewportSize()?.width ?? 0)).toBeVisible();
+  await expect(evidenceOf(page, 1)).toBeVisible();
+  // 빈 패널·빈 영역으로는 통과하지 않는다: 데스크톱은 패널 헤딩, 그 아래 폭은 인라인 근거 행.
+  if ((page.viewportSize()?.width ?? 0) >= DESKTOP_MIN) {
+    await expect(evidenceOf(page, 1).getByRole("heading", { level: 2 })).toHaveText(
+      "주장 1의 근거",
+    );
+  } else {
+    await expect(evidenceOf(page, 1).getByRole("listitem").first()).toBeVisible();
+  }
   expect(errors).toEqual([]);
 });
 

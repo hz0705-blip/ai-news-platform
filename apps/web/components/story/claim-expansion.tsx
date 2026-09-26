@@ -28,8 +28,8 @@ const withoutOrder = (set: ReadonlySet<number>, order: number): ReadonlySet<numb
 /**
  * 주장 목록 하나의 펼침·선택 상태. 서버 렌더는 항상 모두 접힘이고, 마운트 뒤 URL 해시 `#claim-N`이 있으면
  * 그 주장을 펼치고 선택하며 헤딩에 포커스한다(Ruling 23-1·23-2·24-1). 페이지 안 해시 변경도 같은 규칙으로 추가 펼침만 한다.
- * 모바일은 여러 패널이 동시에 열릴 수 있고(상충 비교), 데스크톱은 선택된 주장 하나의 근거를 옆 패널에 보인다.
- * 두 모드가 같은 펼침 집합을 공유하므로 폭이 바뀌어도 선택 주장은 열린 채로 남는다.
+ * 모바일은 여러 패널이 동시에 열릴 수 있고(상충 비교), 데스크톱은 선택된 주장 하나의 근거를 옆 패널에 보이며
+ * 활성화가 펼침 집합을 그 주장 하나로 바꾼다. 두 모드가 같은 펼침 집합을 공유하므로 폭이 바뀌어도 선택 주장은 열린 채로 남는다.
  */
 export function ClaimExpansionProvider({
   initialExpanded = [],
@@ -47,16 +47,15 @@ export function ClaimExpansionProvider({
     (order: number) => {
       setState(({ expanded, selected }) => {
         if (isDesktop) {
+          // 데스크톱은 독자가 패널에서 본 주장만 펼침으로 남긴다 — 좁히면 그 주장만 열려 있다.
           return selected === order
-            ? { expanded: withoutOrder(expanded, order), selected: undefined }
-            : { expanded: withOrder(expanded, order), selected: order };
+            ? { expanded: new Set(), selected: undefined }
+            : { expanded: new Set([order]), selected: order };
         }
-        return expanded.has(order)
-          ? {
-              expanded: withoutOrder(expanded, order),
-              selected: selected === order ? undefined : selected,
-            }
-          : { expanded: withOrder(expanded, order), selected: order };
+        if (!expanded.has(order)) return { expanded: withOrder(expanded, order), selected: order };
+        const rest = withoutOrder(expanded, order);
+        // 선택된 주장을 접으면 남은 펼침 중 마지막(삽입 순서)이 선택된다.
+        return { expanded: rest, selected: selected === order ? [...rest].at(-1) : selected };
       });
     },
     [isDesktop],

@@ -37,7 +37,7 @@ test.describe("데모 사건 ② — 동시 보도 상충", () => {
     const claim = page.getByRole("listitem").filter({ has: page.locator("#claim-2") });
     await expect(claim.getByText("보도 상충", { exact: true })).toBeVisible();
     await claim.getByRole("button", { name: /근거 2개 보기/ }).click();
-    const region = evidenceOf(page, 2, page.viewportSize()?.width ?? 0);
+    const region = evidenceOf(page, 2);
     const rows = region.getByRole("listitem");
     await expect(rows).toHaveCount(2);
     await expect(rows.nth(0)).toContainText("보도 1/2");
@@ -61,7 +61,7 @@ test.describe("데모 사건 ② — 동시 보도 상충", () => {
     await page.goto(STORY_URL);
     const claim = page.getByRole("listitem").filter({ has: page.locator("#claim-1") });
     await claim.getByRole("button", { name: /근거 2개 보기/ }).click();
-    const region = evidenceOf(page, 1, page.viewportSize()?.width ?? 0);
+    const region = evidenceOf(page, 1);
     await expect(region.getByRole("listitem")).toHaveCount(2);
     await expect(region.getByText(/^보도 \d\/\d$/)).toHaveCount(0);
     await expect(region.getByText("다른 점")).toHaveCount(0);
@@ -118,9 +118,9 @@ test.describe("데모 사건 ② — 동시 보도 상충", () => {
         await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
         await page.goto(`${STORY_URL}#claim-2`);
         await expect(page.locator("#claim-2")).toBeFocused();
-        await expect(evidenceOf(page, 2, width)).toBeVisible();
+        await expect(evidenceOf(page, 2)).toBeVisible();
         if (width >= DESKTOP_MIN) {
-          await expect(evidenceOf(page, 2, width).getByRole("heading", { level: 2 })).toHaveText(
+          await expect(evidenceOf(page, 2).getByRole("heading", { level: 2 })).toHaveText(
             "주장 2의 근거",
           );
         }
@@ -157,15 +157,15 @@ test.describe("데모 사건 ② — 동시 보도 상충", () => {
         }
         if (viewport.width >= DESKTOP_MIN) {
           // 데스크톱: 패널은 마지막으로 활성화한 주장 3만 보이고, 마지막 트리거만 펼침 상태다.
-          await expect(
-            evidenceOf(page, 3, viewport.width).getByRole("heading", { level: 2 }),
-          ).toHaveText("주장 3의 근거");
+          await expect(evidenceOf(page, 3).getByRole("heading", { level: 2 })).toHaveText(
+            "주장 3의 근거",
+          );
           for (const i of [0, 1]) {
             await expect(triggers.nth(i)).toHaveAttribute("aria-expanded", "false");
           }
           await expect(triggers.nth(2)).toHaveAttribute("aria-expanded", "true");
         } else {
-          await expect(evidenceOf(page, 2, viewport.width)).toBeVisible();
+          await expect(evidenceOf(page, 2)).toBeVisible();
         }
 
         await expectNoAxeViolations(page, testInfo, `${cell}-expanded`);

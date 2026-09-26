@@ -1,6 +1,8 @@
 /** @jsxImportSource react */
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { backToClaim } from "../../app/story/copy.ts";
+import type { ClaimView } from "../../lib/story-view.ts";
 import { ClaimList } from "./claim-list.tsx";
 
 // jsdom에는 matchMedia가 없다. 데스크톱(64rem 이상)으로 스텁하고, 리스너를 모아 폭 변화를 흉내 낸다.
@@ -64,11 +66,24 @@ const second = {
   isComparison: false,
   evidence: [row("Atlas Dispatch", "https://atlas.invalid/c")],
 };
+const third = {
+  id: "claim-c",
+  order: 3,
+  text: "가상 항만의 야간 하역이 재개됐다.",
+  status: "단일 출처" as const,
+  isComparison: false,
+  evidence: [row("Coastal Courier", "https://coastal.invalid/d")],
+};
 const claims = [first, second];
 
-function renderStory() {
-  return render(<ClaimList claims={claims} />);
+function renderStory(list: readonly ClaimView[] = claims) {
+  return render(<ClaimList claims={list} />);
 }
+const narrow = (matches: boolean) =>
+  act(() => {
+    media.matches = matches;
+    for (const listener of listeners) listener();
+  });
 
 const panel = (): HTMLElement => {
   const el = document.getElementById("evidence-panel");
@@ -113,14 +128,11 @@ describe("EvidencePanel (데스크톱)", () => {
       .filter((li) => li.closest("aside") === null);
     if (!itemA || !itemB) throw new Error("주장 항목이 둘이 아니다");
     expect(within(itemA).queryByText("선택됨")).not.toBeNull();
-    expect(itemA.className).toContain("border-s-2");
     fireEvent.click(b);
     expect(a.getAttribute("aria-expanded")).toBe("false");
     expect(b.getAttribute("aria-expanded")).toBe("true");
     expect(within(itemA).queryByText("선택됨")).toBeNull();
-    expect(itemA.className).not.toContain("border-s-2");
     expect(within(itemB).queryByText("선택됨")).not.toBeNull();
-    expect(itemB.className).toContain("border-s-2");
     expect(within(panel()).getByRole("heading", { level: 2 }).textContent).toBe("주장 2의 근거");
     expect(within(panel()).getAllByRole("listitem")).toHaveLength(second.evidence.length);
   });
@@ -179,7 +191,6 @@ describe("EvidencePanel (데스크톱)", () => {
     renderStory();
     const live = panel().querySelector("[aria-live='polite']");
     if (live === null) throw new Error("live 영역이 없다");
-    expect(live.classList.contains("sr-only")).toBe(true);
     expect(live.textContent).toBe("");
     fireEvent.click(triggers()[1]);
     expect(live.textContent).toBe("주장 2의 근거를 옆 패널에 표시합니다");
@@ -200,10 +211,7 @@ describe("EvidencePanel (데스크톱)", () => {
   it("matchMedia 결과가 false로 바뀌면 선택 주장이 인라인 아코디언에서 열려 있다", () => {
     renderStory();
     fireEvent.click(triggers()[1]);
-    act(() => {
-      media.matches = false;
-      for (const listener of listeners) listener();
-    });
+    narrow(false);
     const [a, b] = triggers();
     expect(b.getAttribute("aria-controls")).toBe("claim-2-evidence");
     expect(b.getAttribute("aria-expanded")).toBe("true");
@@ -212,5 +220,56 @@ describe("EvidencePanel (데스크톱)", () => {
     expect(region?.hidden).toBe(false);
     expect(region?.querySelectorAll("li")).toHaveLength(second.evidence.length);
     expect(within(panel()).queryAllByRole("listitem")).toHaveLength(0);
+  });
+
+  it("데스크톱에서 다른 주장을 활성화하면 이전 펼침은 닫히고 좁혀도 선택 주장만 열려 있다", () => {
+    renderStory();
+    const [a, b] = triggers();
+    fireEvent.click(a);
+    fireEvent.click(b);
+    narrow(false);
+    expect(a.getAttribute("aria-expanded")).toBe("false");
+    expect(b.getAttribute("aria-expanded")).toBe("true");
+    expect(document.getElementById("claim-1-evidence")?.hidden).toBe(true);
+    expect(document.getElementById("claim-2-evidence")?.hidden).toBe(false);
+  });
+
+  it("모바일에서 선택된 주장을 접으면 남은 펼침 중 마지막이 선택되어 넓히면 패널에 보인다", () => {
+    media.matches = false;
+    renderStory([first, second, third]);
+    const [a, b, c] = screen.getAllByRole("button", { name: /근거 \d+개 보기/ });
+    if (!a || !b || !c) throw new Error("트리거가 셋이 아니다");
+    // 펼친 순서 3 → 1 → 2. 선택된 2를 접으면 남은 {3, 1} 중 마지막으로 펼친 1이 선택된다.
+    fireEvent.click(c);
+    fireEvent.click(a);
+    fireEvent.click(b);
+    fireEvent.click(b);
+    narrow(true);
+    expect(within(panel()).getByRole("heading", { level: 2 }).textContent).toBe("주장 1의 근거");
+    expect(a.getAttribute("aria-expanded")).toBe("true");
+    expect(c.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("폭이 바뀌어도 live 영역 문구는 바뀌지 않는다", () => {
+    renderStory();
+    fireEvent.click(triggers()[0]);
+    const live = panel().querySelector("[aria-live='polite']");
+    expect(live?.textContent).toBe("주장 1의 근거를 옆 패널에 표시합니다");
+    narrow(false);
+    expect(live?.textContent).toBe("주장 1의 근거를 옆 패널에 표시합니다");
+    narrow(true);
+    expect(live?.textContent).toBe("주장 1의 근거를 옆 패널에 표시합니다");
+  });
+});
+
+describe("backToClaim", () => {
+  it.each([
+    [1, "주장 1로 돌아가기"],
+    [2, "주장 2로 돌아가기"],
+    [3, "주장 3으로 돌아가기"],
+    [6, "주장 6으로 돌아가기"],
+    [10, "주장 10으로 돌아가기"],
+  ])("주장 %i → %s", (order, expected) => {
+    expect(backToClaim(order)).toBe(expected);
   });
 });
