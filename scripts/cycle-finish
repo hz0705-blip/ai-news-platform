@@ -20,6 +20,11 @@ done
 cd "$(git rev-parse --show-toplevel)"
 branch="$(gh pr view "$pr" --json headRefName --jq .headRefName)"
 echo "PR #$pr ($branch): CI 대기"
+# push 직후에는 체크가 아직 등록되지 않으므로 나타날 때까지 최대 2분 기다린다.
+for _ in $(seq 1 24); do
+  gh pr checks "$pr" >/dev/null 2>&1 && break
+  sleep 5
+done
 if ! gh pr checks "$pr" --watch --fail-fast; then
   echo "FAIL: CI 실패"; gh pr checks "$pr" || true; exit 1
 fi
