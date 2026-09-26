@@ -2,24 +2,36 @@ import type { StoryPageData } from "@newsplatform/db";
 import {
   CONTRADICTION_STATUSES,
   type ContradictionStatus,
+  canDisplayExcerpt,
   countClaimStatuses,
   type RightsTier,
   type Topic,
   toUtf16Range,
 } from "@newsplatform/domain";
 
-/** 근거 행 하나. 허용 발췌와 그 발췌 안의 UTF-16 강조 범위만 가진다 — 기사 본문은 없다. */
-export interface EvidenceView {
+/** 근거 행의 공통 필드. 기사 본문은 없다. */
+export interface EvidenceViewBase {
   readonly sourceName: string;
   readonly isFictional: boolean;
   readonly articleTitle: string;
   readonly publishedAt: Date;
-  readonly excerpt: string;
-  readonly highlight: { readonly start: number; readonly end: number };
   readonly sourceUrl: string;
   /** 같은 주장의 다른 근거와 다른 점. 양립 불가 쌍의 근거에만 있다. */
   readonly differsIn?: string;
 }
+
+/**
+ * 근거 행 하나. `발췌`는 허용 발췌와 그 안의 UTF-16 강조 범위를 가진다.
+ * `발췌 불가`는 출처의 현재 권리 등급으로 구간을 보일 수 없는 근거이며 구간 텍스트를 싣지 않는다
+ * (스펙 "근거 발췌를 표시할 수 없음", ADR-0002 하향 즉시 반영). 상충 상태가 아니다.
+ */
+export type EvidenceView =
+  | (EvidenceViewBase & {
+      readonly display: "발췌";
+      readonly excerpt: string;
+      readonly highlight: { readonly start: number; readonly end: number };
+    })
+  | (EvidenceViewBase & { readonly display: "발췌 불가" });
 
 export interface ClaimView {
   readonly id: string;
@@ -107,17 +119,17 @@ export function buildStoryView(data: StoryPageData): StoryView {
             const source = sourceById.get(item.sourceId);
             if (source === undefined)
               throw new Error(`근거의 출처를 찾지 못했다: ${item.sourceId}`);
-            const { start, end } = toUtf16Range(item.excerpt, item.highlightInExcerpt);
-            return {
+            const base: EvidenceViewBase = {
               sourceName: source.name,
               isFictional: source.isFictional,
               articleTitle: item.articleTitle,
               publishedAt: item.publishedAt,
-              excerpt: item.excerpt,
-              highlight: { start, end },
               sourceUrl: item.sourceUrl,
               ...(item.differsIn === undefined ? {} : { differsIn: item.differsIn }),
             };
+            if (!canDisplayExcerpt(source.rightsTier)) return { ...base, display: "발췌 불가" };
+            const { start, end } = toUtf16Range(item.excerpt, item.highlightInExcerpt);
+            return { ...base, display: "발췌", excerpt: item.excerpt, highlight: { start, end } };
           })
           .sort(
             (a, b) =>

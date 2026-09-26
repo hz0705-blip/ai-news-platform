@@ -29,7 +29,7 @@ describe("StoryHeader", () => {
     const list = screen.getByRole("list", { name: "주장 상태별 개수" });
     expect(list.textContent).toContain("복수 출처 일치 2개");
     expect(screen.getByRole("link", { name: /보도 상충 1개/ }).getAttribute("href")).toBe(
-      "#claim-2-label",
+      "#claim-2",
     );
   });
 });

@@ -129,6 +129,7 @@ describe("buildStoryView", () => {
   it("근거는 발췌와 그 안의 UTF-16 강조 범위만 가진다", () => {
     const view = buildStoryView(data);
     const ev = view.claims[0]?.evidence[0];
+    if (ev?.display !== "발췌") throw new Error("발췌 근거가 아니다");
     expect(ev?.excerpt).toBe(excerpt);
     expect(ev?.excerpt.slice(ev.highlight.start, ev.highlight.end)).toBe(highlightText);
     expect(JSON.stringify(view)).not.toContain("highlightInExcerpt");
@@ -194,5 +195,61 @@ describe("buildStoryView", () => {
       dataWith({ statuses: ["보도 상충"], differsIn: ["모두 중단", "일부 계속"] }),
     );
     expect(view.claims[0]?.evidence.map((e) => e.differsIn)).toEqual(["모두 중단", "일부 계속"]);
+  });
+
+  it("발췌 가능 근거는 display 발췌이며 발췌와 강조를 가진다", () => {
+    const ev = buildStoryView(data).claims[0]?.evidence[0];
+    expect(ev?.display).toBe("발췌");
+  });
+
+  it("출처의 현재 권리 등급이 링크만이면 근거는 발췌 불가이고 구간 텍스트가 뷰 어디에도 없다", () => {
+    const base = data.claims[0]?.evidence[0];
+    if (base === undefined) throw new Error("기본 근거가 없다");
+    const downgraded: StoryPageData = {
+      ...data,
+      claims: [
+        {
+          ...(data.claims[0] as StoryPageData["claims"][number]),
+          evidence: [
+            base,
+            {
+              ...base,
+              sourceId: "src-atlas",
+              sourceUrl: "https://atlas.invalid/ports",
+              articleTitle: "Port deal reached",
+              publishedAt: new Date("2026-09-16T23:00:00.000Z"),
+              excerpt: "The berth allocation was suspended pending review.",
+              highlightInExcerpt: { start: 4, end: 20 },
+            },
+          ],
+        },
+      ],
+    };
+    const view = buildStoryView(downgraded);
+    const rows = view.claims[0]?.evidence ?? [];
+    expect(rows.map((r) => r.display)).toEqual(["발췌", "발췌 불가"]);
+    const unavailable = rows[1];
+    expect(unavailable?.sourceName).toBe("Atlas Dispatch");
+    expect(unavailable?.sourceUrl).toBe("https://atlas.invalid/ports");
+    expect(JSON.stringify(view)).not.toContain("berth allocation");
+    expect(JSON.stringify(view)).not.toContain("highlightInExcerpt");
+  });
+
+  it("발췌 불가 근거도 발행 시각 순서에 그대로 참여한다", () => {
+    const base = data.claims[0]?.evidence[0];
+    if (base === undefined) throw new Error("기본 근거가 없다");
+    const view = buildStoryView({
+      ...data,
+      claims: [
+        {
+          ...(data.claims[0] as StoryPageData["claims"][number]),
+          evidence: [
+            base, // 22:00 발췌
+            { ...base, sourceId: "src-atlas", publishedAt: new Date("2026-09-16T21:00:00.000Z") },
+          ],
+        },
+      ],
+    });
+    expect(view.claims[0]?.evidence.map((r) => r.display)).toEqual(["발췌 불가", "발췌"]);
   });
 });

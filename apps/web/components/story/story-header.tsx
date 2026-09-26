@@ -10,6 +10,7 @@ import {
   statusCountClaims,
   TOPICS_LABEL,
 } from "../../app/story/copy.ts";
+import { claimHref } from "../../lib/claim-anchor.ts";
 import { formatAbsolute } from "../../lib/format-time.ts";
 import type { StoryView } from "../../lib/story-view.ts";
 import { DemoBadge } from "../demo-badge.tsx";
@@ -46,7 +47,7 @@ export function StoryHeader({ header }: { header: StoryView["header"] }) {
       <ul aria-label={STATUS_COUNTS_LABEL} className="flex flex-wrap gap-x-4 gap-y-1 text-meta">
         {header.statusCounts.map(({ status, count, claimOrders }) => (
           <li key={status}>
-            <a href={`#claim-${claimOrders[0]}-label`} className="underline">
+            <a href={claimHref(claimOrders[0] ?? 1)} className="underline">
               {statusCount(status, count)}
               {claimOrders.length > 1 ? (
                 <span className="sr-only"> {statusCountClaims(claimOrders)}</span>
