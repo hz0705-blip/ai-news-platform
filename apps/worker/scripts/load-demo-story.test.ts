@@ -1,6 +1,8 @@
+import { loadPublishedStory } from "@newsplatform/db";
 import { createMigrationDb } from "@newsplatform/db/testing";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { loadDemoStory } from "./load-demo-story.ts";
+import { DEMO_REFERENCE_TIME } from "@newsplatform/pipeline";
+import { describe, expect, it } from "vitest";
+import { loadAllDemoStories, loadDemoStory } from "./load-demo-story.ts";
 
 const url = process.env.DATABASE_MIGRATION_URL;
 const maybe = url === undefined ? describe.skip : describe;
@@ -8,21 +10,56 @@ const maybe = url === undefined ? describe.skip : describe;
 if (url === undefined) process.stderr.write("DATABASE_MIGRATION_URL 없음 — 실 DB 테스트 건너뜀\n");
 
 maybe("데모 사건 적재", () => {
-  // 빈 테이블에서 시작하고 끝나면 비운다. 잠금으로 packages/db의 실 DB 테스트와 겹치지 않는다.
-  let cleanup: () => Promise<void> = async () => undefined;
-  beforeAll(async () => {
-    ({ cleanup } = await createMigrationDb(url as string));
-  });
-  afterAll(async () => {
-    await cleanup();
+  // 테스트마다 빈 DB에서 시작하고 끝나면 비운다(공유 beforeAll 없음 — 앞 테스트의 적재가 남으면
+  // `inserted: true` 기대가 깨진다). 잠금으로 packages/db의 실 DB 테스트와 겹치지 않는다.
+
+  it("재실행은 개정판을 만들지 않고 확인 시각만 갱신한다(스펙 134행)", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      const first = await loadDemoStory({ url: url as string, slug: "demo-1-agreement" });
+      expect(first).toMatchObject({
+        inserted: true,
+        confirmed: false,
+        revisionCount: 1,
+        storyIsDemo: true,
+      });
+      const later = new Date("2026-09-18T00:30:00.000Z");
+      const second = await loadDemoStory({
+        url: url as string,
+        slug: "demo-1-agreement",
+        now: later,
+      });
+      expect(second).toMatchObject({
+        inserted: false,
+        confirmed: true,
+        revisionCount: 1,
+        checkedAt: later,
+      });
+      const page = await loadPublishedStory(db, { slug: "demo-1-agreement" });
+      expect(page?.revision.checkedAt).toEqual(later);
+      expect(page?.revision.publishedAt).toEqual(DEMO_REFERENCE_TIME);
+    } finally {
+      await cleanup();
+    }
   });
 
-  it("두 번 실행해도 개정판은 하나이고 데모 표식이 있다", async () => {
-    const first = await loadDemoStory({ url: url as string, slug: "demo-1-agreement" });
-    const second = await loadDemoStory({ url: url as string, slug: "demo-1-agreement" });
-    expect(first.inserted).toBe(true);
-    expect(second.inserted).toBe(false);
-    expect(second.revisionCount).toBe(1);
-    expect(second.storyIsDemo).toBe(true);
+  it("인자 없는 적재는 골든셋 두 사건을 모두 넣고 데모 ②는 보도 상충으로 적재된다", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      const results = await loadAllDemoStories({ url: url as string });
+      expect(results.map((r) => [r.slug, r.inserted, r.revisionCount])).toEqual([
+        ["demo-1-agreement", true, 1],
+        ["demo-2-conflict", true, 1],
+      ]);
+      const page = await loadPublishedStory(db, { slug: "demo-2-conflict" });
+      expect(page?.revision.contradictionStatus).toBe("보도 상충");
+      const conflictClaim = page?.claims.find((c) => c.contradictionStatus === "보도 상충");
+      expect(conflictClaim?.evidence.map((e) => e.differsIn)).toEqual([
+        expect.stringContaining("중단"),
+        expect.stringContaining("계속"),
+      ]);
+    } finally {
+      await cleanup();
+    }
   });
 });

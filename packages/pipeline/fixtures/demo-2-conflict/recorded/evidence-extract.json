@@ -1,0 +1,34 @@
+{
+  "av-meridian-beryl": {
+    "quotes": [
+      {
+        "quoteId": "q-m-1",
+        "quote": "Dockworkers at the Beryl Port container terminal began a strike on Tuesday after wage talks collapsed."
+      },
+      {
+        "quoteId": "q-m-2",
+        "quote": "The terminal suspended all container operations on Tuesday, the port authority said."
+      },
+      {
+        "quoteId": "q-m-3",
+        "quote": "The union and the port authority are expected to resume talks on Thursday."
+      }
+    ]
+  },
+  "av-harbor-beryl": {
+    "quotes": [
+      {
+        "quoteId": "q-h-1",
+        "quote": "A strike by dockworkers at the Beryl Port container terminal began on Tuesday after wage negotiations broke down."
+      },
+      {
+        "quoteId": "q-h-2",
+        "quote": "Two of the terminal's four berths continued handling containers on Tuesday, according to the port authority's operations log."
+      },
+      {
+        "quoteId": "q-h-3",
+        "quote": "Both sides are expected to return to the negotiating table on Thursday."
+      }
+    ]
+  }
+}

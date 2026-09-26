@@ -73,8 +73,9 @@ test("실제 오늘: 미발행·동일 크기 0건 타일·데모 앵커 → 사
   );
   await latest(page).getByRole("link", { name: "데모 사건 보기" }).click();
   await expect(page).toHaveURL(/#demo-stories$/);
-  await expect(demos(page).getByRole("link")).toHaveCount(1);
-  await demos(page).getByRole("link").click();
+  // demo:load는 데모 사건 ①·②를 모두 적재한다(#22).
+  await expect(demos(page).getByRole("link")).toHaveCount(2);
+  await demos(page).locator('a[href="/story/demo-1-agreement"]').click();
   await expect(page).toHaveURL(/\/story\/demo-1-agreement$/);
   await page
     .getByRole("button", { name: /근거 \d+개 보기/ })

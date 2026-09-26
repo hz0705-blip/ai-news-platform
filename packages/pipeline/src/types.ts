@@ -18,6 +18,22 @@ export interface Budget {
 /** 배치가 이미 아는 사건 하나. 슬러그는 결정론 식별자(개정판·주장·근거)의 접두사가 된다. */
 export interface StoryState {
   readonly story: Story;
+  /** 마지막 발행 개정판. 있으면 개정판 번호 계산과 중복 제거(스펙 134행)에 쓴다. */
+  readonly latestRevision?: Revision;
+}
+
+/** 가드 ①로 이번 개정판에서 빠진 주장 하나(#22 Ruling 22-4). */
+export interface DroppedClaim {
+  readonly storyId: string;
+  readonly claimKey: string;
+  readonly reason: string;
+}
+
+/** 이전 개정판과 내용이 같아 새 개정판을 만들지 않고 확인만 한 사건(스펙 134행, Ruling 22-11). */
+export interface ConfirmedRevision {
+  readonly storyId: string;
+  readonly revisionId: string;
+  readonly checkedAt: Date;
 }
 
 /** 변화 종류 넷(docs/spec/v1.md 사용자 이야기 19, CONTEXT.md "변화"). */
@@ -31,8 +47,7 @@ export const CHANGE_KINDS = [
 export type ChangeKind = (typeof CHANGE_KINDS)[number];
 
 /**
- * 두 개정판 사이의 변화 하나. #21은 첫 개정판만 만들므로 배치의 `changes`는 늘 비어 있다.
- * 변화 계산은 M3가 채운다.
+ * 두 개정판 사이의 변화 하나. 변화 계산은 M3가 채우므로 배치의 `changes`는 아직 늘 비어 있다.
  */
 export interface Change {
   readonly storyId: string;
@@ -68,6 +83,7 @@ export interface BatchReport {
   readonly deferred: number;
   readonly failed: number;
   readonly failures: readonly { readonly storyId: string; readonly reason: string }[];
+  readonly droppedClaims: readonly DroppedClaim[];
   readonly usage: readonly {
     readonly stage: string;
     readonly tokens: number;
@@ -78,6 +94,7 @@ export interface BatchReport {
 
 export interface BatchResult {
   readonly revisions: readonly Revision[];
+  readonly confirmed: readonly ConfirmedRevision[];
   readonly changes: readonly Change[];
   readonly report: BatchReport;
 }

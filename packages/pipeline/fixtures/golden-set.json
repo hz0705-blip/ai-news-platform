@@ -5,5 +5,12 @@
     "labelSource": "운영자 저작",
     "license": "CC-BY-4.0",
     "expected": "fixtures/demo-1-agreement/golden/revision.json"
+  },
+  {
+    "id": "demo-2-conflict",
+    "storySlug": "demo-2-conflict",
+    "labelSource": "운영자 저작",
+    "license": "CC-BY-4.0",
+    "expected": "fixtures/demo-2-conflict/golden/revision.json"
   }
 ]

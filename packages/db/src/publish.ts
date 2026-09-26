@@ -94,3 +94,19 @@ export async function publishRevision(
     return { inserted: true, revisionId: rows.revision.id };
   });
 }
+
+/**
+ * 재처리 결과가 직전 개정판과 같을 때(개정판을 만들지 않을 때) 그 개정판의 확인 시각만 갱신한다.
+ * 개정판 수와 발행 시각은 바뀌지 않는다. 그런 개정판이 없으면 `updated: false`.
+ */
+export async function confirmRevision(
+  db: RuntimeDb["db"],
+  input: { readonly revisionId: string; readonly checkedAt: Date },
+): Promise<{ updated: boolean }> {
+  const rows = await db
+    .update(storyRevisions)
+    .set({ checked_at: input.checkedAt })
+    .where(eq(storyRevisions.id, input.revisionId))
+    .returning({ id: storyRevisions.id });
+  return { updated: rows.length === 1 };
+}

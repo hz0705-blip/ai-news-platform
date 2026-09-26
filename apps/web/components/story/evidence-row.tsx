@@ -1,6 +1,8 @@
 /** @jsxImportSource react */
 import {
   ARTICLE_PUBLISHED,
+  comparisonPosition,
+  DIFFERS_IN,
   FICTIONAL_SOURCE,
   ORIGINAL_LINK,
   originalLinkContext,
@@ -12,12 +14,26 @@ import { EvidenceHighlight } from "../evidence-highlight.tsx";
 import { Badge } from "../ui/badge.tsx";
 import { Button } from "../ui/button.tsx";
 
-/** 근거 행 하나: 출처·기사·발행 시각·영어 발췌(강조 구간만 표시)·원문 링크·번역 자리. */
-export function EvidenceRow({ evidence }: { evidence: EvidenceView }) {
+/**
+ * 근거 행 하나: 출처·기사·발행 시각·영어 발췌(강조 구간만 표시)·원문 링크·번역 자리.
+ * 보도 상충 주장의 비교 행이면 `position`으로 순서(`보도 i/n`)를 맨 위에, 다른 점을 발췌 뒤에 보인다.
+ */
+export function EvidenceRow({
+  evidence,
+  position,
+}: {
+  evidence: EvidenceView;
+  position?: { readonly index: number; readonly total: number };
+}) {
   const { excerpt, highlight } = evidence;
   const published = formatAbsolute(evidence.publishedAt);
   return (
     <li className="flex flex-col gap-2 rounded-md border border-border bg-card p-4 text-card-foreground">
+      {position === undefined ? null : (
+        <p className="text-meta tabular-nums">
+          {comparisonPosition(position.index, position.total)}
+        </p>
+      )}
       <p className="flex flex-wrap items-center gap-2 font-semibold">
         <span>{evidence.sourceName}</span>
         {evidence.isFictional ? <Badge variant="demo">{FICTIONAL_SOURCE}</Badge> : null}
@@ -33,6 +49,12 @@ export function EvidenceRow({ evidence }: { evidence: EvidenceView }) {
         </EvidenceHighlight>
         {excerpt.slice(highlight.end)}
       </blockquote>
+      {evidence.differsIn === undefined ? null : (
+        <dl>
+          <dt className="font-medium">{DIFFERS_IN}</dt>
+          <dd className="m-0">{evidence.differsIn}</dd>
+        </dl>
+      )}
       <div className="flex flex-wrap items-center gap-4">
         <a href={evidence.sourceUrl} target="_blank" rel="noopener noreferrer">
           {ORIGINAL_LINK}

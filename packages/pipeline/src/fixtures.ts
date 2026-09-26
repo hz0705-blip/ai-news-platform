@@ -45,7 +45,12 @@ export interface ClaimGenerateRecord {
 /** `recorded/contradiction-label.json`의 모양. 최상위 키는 상충 판정 멱등키 `<storyId>:<claimKey>`다. */
 export interface ContradictionLabelRecord {
   readonly [idempotencyKey: string]: {
-    readonly pairs: readonly { readonly a: string; readonly b: string; readonly label: string }[];
+    readonly pairs: readonly {
+      readonly a: string;
+      readonly b: string;
+      readonly label: string;
+      readonly differsIn?: Readonly<Record<string, string>>;
+    }[];
   };
 }
 
@@ -102,11 +107,22 @@ interface RawRevision extends Omit<Revision, "publishedAt" | "claims" | "sources
   readonly sources: readonly RawRevisionSource[];
 }
 
+/** 픽스처 루트(`packages/pipeline/fixtures/`). `golden-set.json`과 `<slug>/` 디렉터리가 이 아래에 있다. */
+const FIXTURES_ROOT = fileURLToPath(new URL("../fixtures/", import.meta.url));
+
 function fixtureDir(slug: string): string {
   if (slug.length === 0 || slug.includes("/") || slug.includes("\\") || slug.includes("..")) {
     throw new Error(`픽스처 slug가 올바르지 않다: ${slug}`);
   }
-  return fileURLToPath(new URL(`../fixtures/${slug}/`, import.meta.url));
+  return `${FIXTURES_ROOT}${slug}/`;
+}
+
+/** `golden-set.json`에 등록된 slug를 등록 순서대로 돌려준다(#22 브리프 "Produces"). */
+export function listGoldenSetSlugs(): readonly string[] {
+  const entries = readJson<readonly { readonly storySlug: string }[]>(
+    `${FIXTURES_ROOT}golden-set.json`,
+  );
+  return entries.map((entry) => entry.storySlug);
 }
 
 /** JSON 파일을 좁은 인터페이스 `T`로 읽는다. `JSON.parse`는 `any`를 돌려주므로 변수 타입만 좁힌다(단언 없음). */
@@ -150,10 +166,10 @@ function toArticleMeta(raw: RawArticleMeta): DemoArticleMeta {
 }
 
 /**
- * 데모 사건 픽스처 하나를 읽는다(#21 브리프 Step 3).
- * `node:fs`의 `readFileSync`와 `import.meta.url` 기준 경로를 쓴다.
+ * 데모 사건 픽스처에서 정답(`golden/revision.json`)을 뺀 입력 부분만 읽는다.
+ * 정답이 아직 없는 slug의 정답 생성(`scripts/write-golden.ts`, Ruling 22-14)에 쓴다.
  */
-export function loadDemoStoryFixture(slug: string): DemoStoryFixture {
+export function loadDemoStoryInputs(slug: string): Omit<DemoStoryFixture, "golden"> {
   const dir = fixtureDir(slug);
   const storyFile = readJson<StoryFile>(`${dir}story.json`);
 
@@ -168,13 +184,19 @@ export function loadDemoStoryFixture(slug: string): DemoStoryFixture {
     `${dir}recorded/contradiction-label.json`,
   );
 
-  const golden = toRevision(readJson<RawRevision>(`${dir}golden/revision.json`));
-
   return {
     story: storyFile.story,
     sources: storyFile.sources,
     articles,
     recorded: { evidenceExtract, claimGenerate, contradictionLabel },
-    golden,
   };
+}
+
+/**
+ * 데모 사건 픽스처 하나를 정답까지 읽는다(#21 브리프 Step 3).
+ * `node:fs`의 `readFileSync`와 `import.meta.url` 기준 경로를 쓴다.
+ */
+export function loadDemoStoryFixture(slug: string): DemoStoryFixture {
+  const golden = toRevision(readJson<RawRevision>(`${fixtureDir(slug)}golden/revision.json`));
+  return { ...loadDemoStoryInputs(slug), golden };
 }
