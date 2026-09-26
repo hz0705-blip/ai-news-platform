@@ -24,6 +24,9 @@ const claimDraft = ClaimGenerateResponseSchema.shape.claims.element;
  */
 export const InputSchema = z.object({
   story: z.object({ id: z.string(), slug: z.string() }),
+  revisionNumber: z.number().int().positive(),
+  /** 이전 개정판에서 보도 상충이었는데 이번 개정판에 없는 주장 수(Ruling 22-8). */
+  openEpisodes: z.number().int().nonnegative(),
   title: z.string(),
   publishedAt: z.date(),
   promptVersions: PromptVersionsSchema,
@@ -44,6 +47,7 @@ export const InputSchema = z.object({
           excerpt: z.string(),
           excerptSpan: CodePointSpanSchema,
           highlightInExcerpt: CodePointSpanSchema,
+          differsIn: z.string().optional(),
         }),
       ),
     }),
@@ -56,29 +60,35 @@ export const OutputSchema = RevisionSchema;
 export type RevisionInput = z.infer<typeof InputSchema>;
 
 export function idempotencyKey(input: RevisionInput): string {
-  return `${input.story.id}:rev:1`;
+  return `${input.story.id}:rev:${input.revisionNumber}`;
+}
+
+/** 주장 식별자 `<slug>:<claimKey>`(Ruling 22-2). */
+export function claimId(slug: string, claimKey: string): string {
+  return `${slug}:${claimKey}`;
 }
 
 /**
- * 첫 개정판을 만든다(`revisionNumber: 1`). 사건 상충 상태는 `deriveStoryStatus`가 주장들에서
- * 파생한다. 식별자: 개정판 `<slug>:rev-1`, 주장 `<slug>:<claimKey>`, 근거 `<주장 id>:<quoteId>`.
- * 근거 검증 시각은 개정판 발행 시각과 같다.
+ * 개정판을 만든다. 사건 상충 상태는 `deriveStoryStatus`가 주장들과 열린 에피소드 수에서 파생한다.
+ * 식별자(Ruling 22-2): 개정판 `<slug>:rev-<번호>`, 주장 `<slug>:<claimKey>`,
+ * 근거 `<개정판 id>/<주장 id>:<quoteId>`. 근거 검증 시각은 개정판 발행 시각과 같다.
  */
 export function runRevision(input: RevisionInput): Revision {
   const { slug } = input.story;
+  const revisionId = `${slug}:rev-${input.revisionNumber}`;
 
   const claims = input.claims.map((draft, order) => {
-    const claimId = `${slug}:${draft.claimKey}`;
+    const id = claimId(slug, draft.claimKey);
     return {
-      id: claimId,
+      id,
       text: draft.text,
       claimType: draft.claimType,
       modality: draft.modality,
       order,
       contradictionStatus: draft.contradictionStatus,
       evidence: draft.evidence.map((item) => ({
-        id: `${claimId}:${item.quoteId}`,
-        claimId,
+        id: `${revisionId}/${id}:${item.quoteId}`,
+        claimId: id,
         articleId: item.articleId,
         articleVersionId: item.articleVersionId,
         sourceId: item.sourceId,
@@ -92,6 +102,7 @@ export function runRevision(input: RevisionInput): Revision {
         highlightInExcerpt: item.highlightInExcerpt,
         sourceUrl: item.sourceUrl,
         verifiedAt: input.publishedAt,
+        ...(item.differsIn === undefined ? {} : { differsIn: item.differsIn }),
       })),
     };
   });
@@ -101,12 +112,12 @@ export function runRevision(input: RevisionInput): Revision {
   }
 
   return {
-    id: `${slug}:rev-1`,
+    id: revisionId,
     storyId: input.story.id,
-    revisionNumber: 1,
+    revisionNumber: input.revisionNumber,
     title: input.title,
     publishedAt: input.publishedAt,
-    contradictionStatus: deriveStoryStatus(claims),
+    contradictionStatus: deriveStoryStatus(claims, input.openEpisodes),
     promptVersions: input.promptVersions,
     modelId: input.modelId,
     claims,

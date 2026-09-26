@@ -27,7 +27,10 @@ export interface StoryPageData {
   readonly revision: {
     readonly id: string;
     readonly revisionNumber: number;
+    readonly title: string;
     readonly publishedAt: Date;
+    /** 마지막 확인 시각. 발행 시각으로 시작하고 재처리가 개정판을 만들지 않으면 갱신된다. */
+    readonly checkedAt: Date;
     readonly contradictionStatus: ContradictionStatus;
   };
   readonly claims: readonly {
@@ -42,6 +45,8 @@ export interface StoryPageData {
       readonly sourceUrl: string;
       readonly excerpt: string;
       readonly highlightInExcerpt: CodePointSpan;
+      /** 같은 주장의 다른 근거와 다른 점(양립 불가 쌍에만 있다). */
+      readonly differsIn?: string;
     }[];
   }[];
   readonly sources: readonly (Source & {
@@ -149,7 +154,9 @@ export async function loadPublishedStory(
     revision: {
       id: domain.id,
       revisionNumber: domain.revisionNumber,
+      title: domain.title,
       publishedAt: domain.publishedAt,
+      checkedAt: revision.checked_at,
       contradictionStatus: domain.contradictionStatus,
     },
     claims: domain.claims.map((claim) => ({
@@ -167,6 +174,7 @@ export async function loadPublishedStory(
           sourceUrl: item.sourceUrl,
           excerpt: item.excerpt,
           highlightInExcerpt: item.highlightInExcerpt,
+          ...(item.differsIn === undefined ? {} : { differsIn: item.differsIn }),
         };
       }),
     })),

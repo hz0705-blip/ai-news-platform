@@ -73,6 +73,7 @@ function toEvidenceRow(item: Evidence, claimRevision: string, order: number): Ev
     highlight_end: item.highlightInExcerpt.end,
     source_url: item.sourceUrl,
     verified_at: item.verifiedAt,
+    differs_in: item.differsIn ?? null,
   };
 }
 
@@ -103,6 +104,8 @@ export function toRows(revision: Revision): RevisionRows {
       revision_number: revision.revisionNumber,
       title: revision.title,
       published_at: revision.publishedAt,
+      // 확인 시각은 발행 시각으로 시작한다. 이후 갱신은 `confirmRevision`이 한다.
+      checked_at: revision.publishedAt,
       contradiction_status: revision.contradictionStatus,
       prompt_evidence_extract: revision.promptVersions.evidenceExtract,
       prompt_claim_generate: revision.promptVersions.claimGenerate,
@@ -140,6 +143,7 @@ function toDomainEvidence(row: EvidenceRow, claimId: string): Evidence {
     highlightInExcerpt: { start: row.highlight_start, end: row.highlight_end },
     sourceUrl: row.source_url,
     verifiedAt: row.verified_at,
+    ...(row.differs_in === null ? {} : { differsIn: row.differs_in }),
   };
 }
 
@@ -210,6 +214,7 @@ export function toSourceRow(source: Source): SourceRow {
     ownership: source.ownership,
     language: source.language,
     is_fictional: source.isFictional,
+    wire_id: source.wireId ?? null,
   };
 }
 
@@ -222,6 +227,7 @@ export function toDomainSource(row: SourceRow): Source {
     ownership: row.ownership,
     language: row.language,
     isFictional: row.is_fictional,
+    ...(row.wire_id === null ? {} : { wireId: row.wire_id }),
   };
 }
 

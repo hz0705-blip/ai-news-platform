@@ -1,0 +1,222 @@
+{
+  "id": "demo-2-conflict:rev-1",
+  "storyId": "story-demo-2-conflict",
+  "revisionNumber": 1,
+  "title": "베릴 항 터미널 파업 첫날, 작업 중단 범위 보도 갈려",
+  "publishedAt": "2026-09-17T00:30:00.000Z",
+  "contradictionStatus": "보도 상충",
+  "promptVersions": {
+    "evidenceExtract": "evidence-extract@1",
+    "claimGenerate": "claim-generate@1",
+    "contradictionLabel": "contradiction-label@1"
+  },
+  "modelId": "recorded",
+  "claims": [
+    {
+      "id": "demo-2-conflict:c-1",
+      "text": "베릴 항 컨테이너 터미널 항만 노동자들이 임금 협상 결렬 뒤 화요일 파업에 들어갔다.",
+      "claimType": "보도된 사실",
+      "modality": "단정",
+      "order": 0,
+      "contradictionStatus": "복수 출처 일치",
+      "evidence": [
+        {
+          "id": "demo-2-conflict:rev-1/demo-2-conflict:c-1:q-m-1",
+          "claimId": "demo-2-conflict:c-1",
+          "articleId": "article-meridian-beryl",
+          "articleVersionId": "av-meridian-beryl",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 0,
+            "end": 102
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Dockworkers at the Beryl Port container terminal began a strike on Tuesday after wage talks collapsed.",
+          "spanHash": "bd34dd157091c8bd19d36a1f652bef02344684d94d2efbbf9f44e455b2da3812",
+          "excerpt": "Dockworkers at the Beryl Port container terminal began a strike on Tuesday after wage talks collapsed.",
+          "excerptSpan": {
+            "start": 0,
+            "end": 102
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 102
+          },
+          "sourceUrl": "https://meridianwire.example/beryl-port-strike",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        },
+        {
+          "id": "demo-2-conflict:rev-1/demo-2-conflict:c-1:q-h-1",
+          "claimId": "demo-2-conflict:c-1",
+          "articleId": "article-harbor-beryl",
+          "articleVersionId": "av-harbor-beryl",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 0,
+            "end": 113
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "A strike by dockworkers at the Beryl Port container terminal began on Tuesday after wage negotiations broke down.",
+          "spanHash": "5f83e576fd6fb4ca2dc476a4abc6f7a1814f5a8ee53db627f3547c4f2d6da30d",
+          "excerpt": "A strike by dockworkers at the Beryl Port container terminal began on Tuesday after wage negotiations broke down.",
+          "excerptSpan": {
+            "start": 0,
+            "end": 113
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 113
+          },
+          "sourceUrl": "https://harborledger.example/beryl-terminal-strike",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "demo-2-conflict:c-2",
+      "text": "베릴 항 컨테이너 터미널이 화요일 모든 컨테이너 작업을 중단했다고 항만공사가 밝혔다.",
+      "claimType": "보도된 사실",
+      "modality": "단정",
+      "order": 1,
+      "contradictionStatus": "보도 상충",
+      "evidence": [
+        {
+          "id": "demo-2-conflict:rev-1/demo-2-conflict:c-2:q-m-2",
+          "claimId": "demo-2-conflict:c-2",
+          "articleId": "article-meridian-beryl",
+          "articleVersionId": "av-meridian-beryl",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 248,
+            "end": 332
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The terminal suspended all container operations on Tuesday, the port authority said.",
+          "spanHash": "48a360318acc25de87fa590fb1e6deaf74575cd75cf12f02051377114b00a82c",
+          "excerpt": "The terminal suspended all container operations on Tuesday, the port authority said.",
+          "excerptSpan": {
+            "start": 248,
+            "end": 332
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 84
+          },
+          "sourceUrl": "https://meridianwire.example/beryl-port-strike",
+          "verifiedAt": "2026-09-17T00:30:00.000Z",
+          "differsIn": "항만공사 발표로 화요일 모든 컨테이너 작업이 중단됐다고 보도했다."
+        },
+        {
+          "id": "demo-2-conflict:rev-1/demo-2-conflict:c-2:q-h-2",
+          "claimId": "demo-2-conflict:c-2",
+          "articleId": "article-harbor-beryl",
+          "articleVersionId": "av-harbor-beryl",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 194,
+            "end": 319
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Two of the terminal's four berths continued handling containers on Tuesday, according to the port authority's operations log.",
+          "spanHash": "d16b6da5858c9d8ff57a691b7ba2f1bb02a304e6864b63fc9a6e669b687fc4e2",
+          "excerpt": "Two of the terminal's four berths continued handling containers on Tuesday, according to the port authority's operations log.",
+          "excerptSpan": {
+            "start": 194,
+            "end": 319
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 125
+          },
+          "sourceUrl": "https://harborledger.example/beryl-terminal-strike",
+          "verifiedAt": "2026-09-17T00:30:00.000Z",
+          "differsIn": "항만공사 운영 기록으로 화요일 선석 4곳 중 2곳은 컨테이너 처리를 계속했다고 보도했다."
+        }
+      ]
+    },
+    {
+      "id": "demo-2-conflict:c-3",
+      "text": "베릴 항 항만 노조와 항만공사는 이번 목요일에 결렬된 임금 협상을 다시 시작할 것으로 예상된다.",
+      "claimType": "전망",
+      "modality": "예상",
+      "order": 2,
+      "contradictionStatus": "복수 출처 일치",
+      "evidence": [
+        {
+          "id": "demo-2-conflict:rev-1/demo-2-conflict:c-3:q-m-3",
+          "claimId": "demo-2-conflict:c-3",
+          "articleId": "article-meridian-beryl",
+          "articleVersionId": "av-meridian-beryl",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 454,
+            "end": 528
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The union and the port authority are expected to resume talks on Thursday.",
+          "spanHash": "351f2e1e146200990930626e57e218833cb75369834719ea41df47ec333f2978",
+          "excerpt": "The union and the port authority are expected to resume talks on Thursday.",
+          "excerptSpan": {
+            "start": 454,
+            "end": 528
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 74
+          },
+          "sourceUrl": "https://meridianwire.example/beryl-port-strike",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        },
+        {
+          "id": "demo-2-conflict:rev-1/demo-2-conflict:c-3:q-h-3",
+          "claimId": "demo-2-conflict:c-3",
+          "articleId": "article-harbor-beryl",
+          "articleVersionId": "av-harbor-beryl",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 429,
+            "end": 500
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Both sides are expected to return to the negotiating table on Thursday.",
+          "spanHash": "a6637a5120368447048e37cf3820ccefa5ff66b4d9bab80299002eec94adeee6",
+          "excerpt": "Both sides are expected to return to the negotiating table on Thursday.",
+          "excerptSpan": {
+            "start": 429,
+            "end": 500
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 71
+          },
+          "sourceUrl": "https://harborledger.example/beryl-terminal-strike",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "sourceId": "source-meridian-wire",
+      "articleId": "article-meridian-beryl",
+      "articleTitle": "Beryl Port dockworkers walk out as wage talks collapse",
+      "articleUrl": "https://meridianwire.example/beryl-port-strike",
+      "publishedAt": "2026-09-16T07:15:00.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    },
+    {
+      "sourceId": "source-harbor-ledger",
+      "articleId": "article-harbor-beryl",
+      "articleTitle": "Strike slows, but does not stop, Beryl container terminal",
+      "articleUrl": "https://harborledger.example/beryl-terminal-strike",
+      "publishedAt": "2026-09-16T08:40:00.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    }
+  ]
+}

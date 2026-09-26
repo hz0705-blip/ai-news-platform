@@ -46,7 +46,7 @@ for (const colorScheme of ["light", "dark"] as const) {
       const response = await page.goto("/");
       await expect(page.getByRole("group", { name: "토픽", exact: true })).toBeVisible();
       await expect(
-        page.getByRole("region", { name: "데모 사건", exact: true }).getByRole("link"),
+        page.getByRole("region", { name: "데모 사건", exact: true }).getByRole("link").first(),
       ).toBeVisible();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText("사건으로 읽는 해외 보도");
       await page.evaluate(() => document.fonts.ready);

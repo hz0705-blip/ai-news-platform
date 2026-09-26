@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   CLAIM_TYPES,
   CONTRADICTION_STATUSES,
@@ -12,11 +12,11 @@ import {
   spanText,
 } from "@newsplatform/domain";
 import { describe, expect, it } from "vitest";
-import { DEMO_REFERENCE_TIME, loadDemoStoryFixture } from "./fixtures.ts";
+import { DEMO_REFERENCE_TIME, listGoldenSetSlugs, loadDemoStoryFixture } from "./fixtures.ts";
 
-const fixture = loadDemoStoryFixture("demo-1-agreement");
+describe.each(["demo-1-agreement", "demo-2-conflict"] as const)("데모 사건 픽스처 %s", (slug) => {
+  const fixture = loadDemoStoryFixture(slug);
 
-describe("데모 사건 ① 픽스처", () => {
   it("데모 표식과 가상 출처 표기를 가진다", () => {
     expect(fixture.story.isDemo).toBe(true);
     for (const source of fixture.sources) {
@@ -89,16 +89,6 @@ describe("데모 사건 ① 픽스처", () => {
     }
   });
 
-  it("slug에 경로 조작 문자가 있으면 던진다", () => {
-    expect(() => loadDemoStoryFixture("../demo-1-agreement" as never)).toThrow(/올바르지 않다/);
-  });
-
-  it("골든셋에는 항목이 하나만 등록돼 있다", () => {
-    const goldenSetPath = fileURLToPath(new URL("../fixtures/golden-set.json", import.meta.url));
-    const goldenSet = JSON.parse(readFileSync(goldenSetPath, "utf8")) as unknown[];
-    expect(goldenSet.length).toBe(1);
-  });
-
   it("모든 근거의 spanHash·excerpt·highlightInExcerpt가 정규화 본문에서 다시 계산한 값과 같다(골든 드리프트 방지)", () => {
     for (const claim of fixture.golden.claims) {
       for (const evidence of claim.evidence) {
@@ -128,6 +118,67 @@ describe("데모 사건 ① 픽스처", () => {
         expect(gate.excerptSpan).toEqual(evidence.excerptSpan);
         expect(gate.highlightInExcerpt).toEqual(evidence.highlightInExcerpt);
       }
+    }
+  });
+});
+
+describe("데모 사건 ① 픽스처 경로 검증", () => {
+  it("slug에 경로 조작 문자가 있으면 던진다", () => {
+    expect(() => loadDemoStoryFixture("../demo-1-agreement" as never)).toThrow(/올바르지 않다/);
+  });
+});
+
+describe("골든셋", () => {
+  it("항목 두 개이며 slug 순서가 고정된다", () => {
+    expect(listGoldenSetSlugs()).toEqual(["demo-1-agreement", "demo-2-conflict"]);
+  });
+  it("모든 항목이 CC-BY-4.0·운영자 저작이고 expected 파일이 존재한다", () => {
+    const set = JSON.parse(
+      readFileSync(resolve(import.meta.dirname, "../fixtures/golden-set.json"), "utf8"),
+    ) as { license: string; labelSource: string; expected: string }[];
+    for (const entry of set) {
+      expect(entry.license).toBe("CC-BY-4.0");
+      expect(entry.labelSource).toBe("운영자 저작");
+      expect(existsSync(resolve(import.meta.dirname, "..", entry.expected))).toBe(true);
+    }
+  });
+});
+
+describe("데모 사건 ② 상충 구조", () => {
+  const fixture = loadDemoStoryFixture("demo-2-conflict");
+  it("사건 상태는 보도 상충이고 상충 주장은 하나(c-2)", () => {
+    expect(fixture.golden?.contradictionStatus).toBe("보도 상충");
+    expect(
+      fixture.golden?.claims.filter((c) => c.contradictionStatus === "보도 상충").map((c) => c.id),
+    ).toEqual(["demo-2-conflict:c-2"]);
+  });
+  it("상충 주장의 근거는 두 원점 모두 다른 점을 갖고, 다른 주장의 근거는 갖지 않는다", () => {
+    const conflict = fixture.golden?.claims.find((c) => c.id === "demo-2-conflict:c-2");
+    expect(conflict?.evidence.map((e) => e.differsIn)).toEqual([
+      expect.stringContaining("중단"),
+      expect.stringContaining("계속"),
+    ]);
+    for (const claim of fixture.golden?.claims ?? []) {
+      if (claim.id === "demo-2-conflict:c-2") continue;
+      expect(claim.evidence.every((e) => e.differsIn === undefined)).toBe(true);
+    }
+  });
+  it("양립 불가 쌍의 두 인용은 같은 귀속·같은 시점·같은 범위를 말한다(비교 전제)", () => {
+    const record = fixture.recorded.contradictionLabel["story-demo-2-conflict:c-2"];
+    expect(record?.pairs).toEqual([
+      expect.objectContaining({ label: "양립 불가", a: "q-m-2", b: "q-h-2" }),
+    ]);
+    const quotes = Object.values(fixture.recorded.evidenceExtract).flatMap((r) => r.quotes);
+    const a = quotes.find((q) => q.quoteId === "q-m-2")?.quote ?? "";
+    const b = quotes.find((q) => q.quoteId === "q-h-2")?.quote ?? "";
+    for (const quote of [a, b]) {
+      expect(quote).toMatch(/port authority/);
+      expect(quote).toMatch(/Tuesday/);
+    }
+  });
+  it("정정은 들어 있지 않다(M3 데모 ③)", () => {
+    for (const article of fixture.articles) {
+      expect(article.rawBody).not.toMatch(/correction|corrected|retract/i);
     }
   });
 });

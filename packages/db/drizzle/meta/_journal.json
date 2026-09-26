@@ -15,6 +15,13 @@
       "when": 1790131568253,
       "tag": "0001_loving_madelyne_pryor",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790148784743,
+      "tag": "0002_bright_goblin_queen",
+      "breakpoints": true
     }
   ]
 }

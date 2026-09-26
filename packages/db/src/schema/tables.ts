@@ -6,12 +6,12 @@ import {
   STORY_LIFECYCLES,
   TOPICS,
 } from "@newsplatform/domain";
-import { boolean, integer, pgTable, text, timestamp, unique } from "drizzle-orm/pg-core";
+import { boolean, index, integer, pgTable, text, timestamp, unique } from "drizzle-orm/pg-core";
 
 /**
  * 테이블 여덟(#21 Ruling 5). 열 이름은 snake_case 영어이고 TS 키도 열 이름과 같게 둔다
  * (행 타입이 곧 매퍼의 행 모양이다). 식별자는 도메인이 정한 결정론 문자열을 그대로 쓰므로
- * `text`다(`story-demo-1-agreement`, `<slug>:rev-1`, `<주장 id>:<quoteId>` 등).
+ * `text`다(`story-demo-1-agreement`, `<slug>:rev-1`, `<개정판 id>/<주장 id>:<quoteId>` 등).
  * `{ enum }`은 타입만 좁히고 DB 제약을 만들지 않는다 — 값 목록은 도메인 상수가 정본이다.
  */
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
@@ -25,6 +25,8 @@ export const sources = pgTable("sources", {
   ownership: text().notNull(),
   language: text().notNull(),
   is_fictional: boolean().notNull(),
+  // 이 출처가 전재한 통신 기사 식별자. 같은 값의 출처들은 보도 원점 하나로 센다(#22 Ruling 22-13).
+  wire_id: text("wire_id"),
 });
 
 /** 사건(CONTEXT.md "사건"). 사건 URL은 `slug`로 찾는다. 사건의 상충 상태는 여기 두지 않는다(ADR-0009). */
@@ -38,19 +40,23 @@ export const stories = pgTable("stories", {
 });
 
 /** 기사(CONTEXT.md "기사"). 본문은 기사 버전이 갖는다. */
-export const articles = pgTable("articles", {
-  id: text().primaryKey(),
-  source_id: text()
-    .notNull()
-    .references(() => sources.id),
-  story_id: text()
-    .notNull()
-    .references(() => stories.id),
-  url: text().notNull(),
-  title: text().notNull(),
-  published_at: timestamptz("published_at").notNull(),
-  topic: text({ enum: TOPICS }).notNull(),
-});
+export const articles = pgTable(
+  "articles",
+  {
+    id: text().primaryKey(),
+    source_id: text()
+      .notNull()
+      .references(() => sources.id),
+    story_id: text()
+      .notNull()
+      .references(() => stories.id),
+    url: text().notNull(),
+    title: text().notNull(),
+    published_at: timestamptz("published_at").notNull(),
+    topic: text({ enum: TOPICS }).notNull(),
+  },
+  (t) => [index("articles_story_id_idx").on(t.story_id)],
+);
 
 /**
  * 기사 버전: 한 시점에 정규화한 기사 본문. `body`는 보존 기한이 있는 유일한 열이다 —
@@ -80,6 +86,9 @@ export const storyRevisions = pgTable(
     revision_number: integer().notNull(),
     title: text().notNull(),
     published_at: timestamptz("published_at").notNull(),
+    // 마지막으로 확인한 시각. 발행 시 `published_at`으로 시작하고, 재처리가 새 개정판을 만들지 않으면
+    // 이 값만 갱신한다(`confirmRevision`).
+    checked_at: timestamptz("checked_at").notNull().defaultNow(),
     // 파생 값이며 편집 필드가 아니다: 발행 시점에 주장들의 상충 상태에서 `deriveStoryStatus`로
     // 계산해 같은 트랜잭션에서 기록한 값이다. 상태의 권위는 주장에 있다(ADR-0009).
     contradiction_status: text({ enum: CONTRADICTION_STATUSES }).notNull(),
@@ -88,7 +97,10 @@ export const storyRevisions = pgTable(
     prompt_contradiction_label: text().notNull(),
     model_id: text().notNull(),
   },
-  (t) => [unique().on(t.story_id, t.revision_number)],
+  (t) => [
+    unique().on(t.story_id, t.revision_number),
+    index("story_revisions_story_id_idx").on(t.story_id),
+  ],
 );
 
 /** 주장(CONTEXT.md "주장")의 식별자. 개정판을 넘어 유지되며, 개정판마다의 내용은 `claim_revisions`에 있다. */
@@ -124,35 +136,41 @@ export const claimRevisions = pgTable(
  * 강조 구간(`span_*`, 원문·해시), 허용 발췌 창 원문과 그 본문 기준 구간(`excerpt*`),
  * 발췌 안 강조 지역 구간(`highlight_*`), 원문 URL(#21 Ruling 11). 오프셋은 코드 포인트다.
  */
-export const evidence = pgTable("evidence", {
-  id: text().primaryKey(),
-  claim_revision_id: text()
-    .notNull()
-    .references(() => claimRevisions.id),
-  display_order: integer().notNull(),
-  article_id: text()
-    .notNull()
-    .references(() => articles.id),
-  article_version_id: text()
-    .notNull()
-    .references(() => articleVersions.id),
-  source_id: text()
-    .notNull()
-    .references(() => sources.id),
-  span_start: integer().notNull(),
-  span_end: integer().notNull(),
-  offset_unit: text({ enum: ["code-point"] }).notNull(),
-  normalization_version: integer().notNull(),
-  span_text: text().notNull(),
-  span_hash: text().notNull(),
-  excerpt: text().notNull(),
-  excerpt_start: integer().notNull(),
-  excerpt_end: integer().notNull(),
-  highlight_start: integer().notNull(),
-  highlight_end: integer().notNull(),
-  source_url: text().notNull(),
-  verified_at: timestamptz("verified_at").notNull(),
-});
+export const evidence = pgTable(
+  "evidence",
+  {
+    id: text().primaryKey(),
+    claim_revision_id: text()
+      .notNull()
+      .references(() => claimRevisions.id),
+    display_order: integer().notNull(),
+    article_id: text()
+      .notNull()
+      .references(() => articles.id),
+    article_version_id: text()
+      .notNull()
+      .references(() => articleVersions.id),
+    source_id: text()
+      .notNull()
+      .references(() => sources.id),
+    span_start: integer().notNull(),
+    span_end: integer().notNull(),
+    offset_unit: text({ enum: ["code-point"] }).notNull(),
+    normalization_version: integer().notNull(),
+    span_text: text().notNull(),
+    span_hash: text().notNull(),
+    excerpt: text().notNull(),
+    excerpt_start: integer().notNull(),
+    excerpt_end: integer().notNull(),
+    highlight_start: integer().notNull(),
+    highlight_end: integer().notNull(),
+    source_url: text().notNull(),
+    verified_at: timestamptz("verified_at").notNull(),
+    // 같은 주장의 다른 근거와 이 근거가 다른 점(양립 불가 쌍에만 있다).
+    differs_in: text("differs_in"),
+  },
+  (t) => [index("evidence_claim_revision_id_idx").on(t.claim_revision_id)],
+);
 
 export type SourceRow = typeof sources.$inferSelect;
 export type StoryRow = typeof stories.$inferSelect;

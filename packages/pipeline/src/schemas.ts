@@ -32,6 +32,7 @@ export const SourceSchema: z.ZodType<Source> = z.object({
   ownership: z.string(),
   language: z.string(),
   isFictional: z.boolean(),
+  wireId: z.string().exactOptional(),
 });
 
 export const StorySchema: z.ZodType<Story> = z.object({
@@ -70,6 +71,7 @@ export const EvidenceSchema: z.ZodType<Evidence> = z.object({
   highlightInExcerpt: CodePointSpanSchema,
   sourceUrl: z.string(),
   verifiedAt: z.date(),
+  differsIn: z.string().exactOptional(),
 });
 
 export const ClaimSchema: z.ZodType<Claim> = z.object({
@@ -132,10 +134,34 @@ export const ClaimGenerateResponseSchema = z.object({
   ),
 });
 
+/**
+ * 상충 판정 응답의 인용문 쌍 하나. `양립 불가` 쌍은 a·b 양쪽 인용의 다른 점(`differsIn`)을 반드시
+ * 가지고, 다른 라벨은 가지지 않는다(#22 Ruling 22-6). a는 주장을 뒷받침, b는 양립 불가한 명제다.
+ */
+const PairSchema = z
+  .object({
+    a: z.string(),
+    b: z.string(),
+    label: z.enum(RELATION_LABELS),
+    differsIn: z.record(z.string(), z.string().min(1)).optional(),
+  })
+  .superRefine((pair, ctx) => {
+    if (pair.label === "양립 불가") {
+      const { differsIn } = pair;
+      if (!differsIn || !Object.hasOwn(differsIn, pair.a) || !Object.hasOwn(differsIn, pair.b)) {
+        ctx.addIssue({ code: "custom", message: "양립 불가 쌍은 a·b 모두의 differsIn이 필요하다" });
+      } else if (
+        Object.keys(differsIn).some((quoteId) => quoteId !== pair.a && quoteId !== pair.b)
+      ) {
+        ctx.addIssue({ code: "custom", message: "양립 불가 쌍의 differsIn 키는 a·b뿐이다" });
+      }
+    } else if (pair.differsIn !== undefined) {
+      ctx.addIssue({ code: "custom", message: `${pair.label} 쌍은 differsIn을 갖지 않는다` });
+    }
+  });
+
 /** 상충 판정 응답: 인용문 쌍마다 관계 라벨 하나. */
-export const ContradictionLabelResponseSchema = z.object({
-  pairs: z.array(z.object({ a: z.string(), b: z.string(), label: z.enum(RELATION_LABELS) })),
-});
+export const ContradictionLabelResponseSchema = z.object({ pairs: z.array(PairSchema) });
 
 // ── 배치 입력·리포트 ────────────────────────────────────────────
 
@@ -150,7 +176,10 @@ export const BudgetSchema: z.ZodType<Budget> = z.object({
   spend: z.number().nonnegative(),
 });
 
-export const StoryStateSchema: z.ZodType<StoryState> = z.object({ story: StorySchema });
+export const StoryStateSchema: z.ZodType<StoryState> = z.object({
+  story: StorySchema,
+  latestRevision: RevisionSchema.exactOptional(),
+});
 
 export const BatchInputSchema: z.ZodType<BatchInput> = z.object({
   articles: z.array(ArticleInputSchema),
@@ -165,6 +194,9 @@ export const BatchReportSchema: z.ZodType<BatchReport> = z.object({
   deferred: z.number().int().nonnegative(),
   failed: z.number().int().nonnegative(),
   failures: z.array(z.object({ storyId: z.string(), reason: z.string().min(1) })),
+  droppedClaims: z.array(
+    z.object({ storyId: z.string(), claimKey: z.string(), reason: z.string().min(1) }),
+  ),
   usage: z.array(
     z.object({
       stage: z.string(),

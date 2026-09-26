@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { publishRevision } from "./publish.ts";
+import { confirmRevision, publishRevision } from "./publish.ts";
+import { loadLatestRevision } from "./queries/revision.ts";
 import { loadPublishedStory } from "./queries/story.ts";
 import { createMigrationDb } from "./test-db.ts"; // DATABASE_MIGRATION_URL로 연결하고 테스트 끝에 truncate
 // revision·story·articles·articleVersions·sources 픽스처는 mappers.test.ts와 같은 값을 공유한다.
@@ -64,7 +65,9 @@ maybe("loadPublishedStory", () => {
       expect(page?.revision).toEqual({
         id: revisionId,
         revisionNumber: 1,
+        title: fixture.revision.title,
         publishedAt: fixture.revision.publishedAt,
+        checkedAt: fixture.revision.publishedAt,
         contradictionStatus: "복수 출처 일치",
       });
       expect(page?.claims.map((c) => c.id)).toEqual(fixture.revision.claims.map((c) => c.id));
@@ -75,6 +78,7 @@ maybe("loadPublishedStory", () => {
         sourceUrl: "https://meridian.invalid/ports",
         excerpt: "Ministers agreed on the framework. The deal covers three ports.",
         highlightInExcerpt: { start: 0, end: 34 },
+        differsIn: "모두 중단",
       });
       // 링크만 기사는 근거가 없어도 출처 구획에 남는다. 순서는 기사 발행 시각, 같으면 기사 식별자 순.
       expect(page?.sources.map((s) => s.id)).toEqual(["src-atlas", "src-harbor", "src-meridian"]);
@@ -101,6 +105,49 @@ maybe("loadPublishedStory", () => {
         await loadPublishedStory(db, { slug: fixture.story.slug, revisionId: "없는-개정판" }),
       ).toBeUndefined();
       expect(await loadPublishedStory(db, { slug: "없는-사건" })).toBeUndefined();
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("사건 페이지 데이터의 제목은 개정판 제목이고 근거는 differsIn을 실어 오며 loadLatestRevision이 도메인 개정판을 복원한다", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      const titled = { ...fixture, revision: { ...fixture.revision, title: "개정판 제목" } };
+      await publishRevision(db, titled);
+      const page = await loadPublishedStory(db, { slug: fixture.story.slug });
+      expect(page?.revision.title).toBe("개정판 제목");
+      expect(page?.claims.flatMap((c) => c.evidence).map((e) => e.differsIn)).toEqual(
+        expect.arrayContaining(["모두 중단", undefined]),
+      );
+      const latest = await loadLatestRevision(db, { slug: fixture.story.slug });
+      expect(latest).toEqual(titled.revision);
+      expect(await loadLatestRevision(db, { slug: "없는-사건" })).toBeUndefined();
+    } finally {
+      await cleanup();
+    }
+  });
+});
+
+maybe("confirmRevision", () => {
+  it("confirmRevision은 확인 시각만 갱신하고 개정판 수는 그대로", async () => {
+    const { db, sql, cleanup } = await createMigrationDb(url as string);
+    try {
+      await publishRevision(db, fixture);
+      const checkedAt = new Date("2026-09-18T00:30:00.000Z");
+      expect(await confirmRevision(db, { revisionId: fixture.revision.id, checkedAt })).toEqual({
+        updated: true,
+      });
+      const page = await loadPublishedStory(db, { slug: fixture.story.slug });
+      expect(page?.revision.checkedAt).toEqual(checkedAt);
+      expect(page?.revision.publishedAt).toEqual(fixture.revision.publishedAt);
+      const rows = await sql<
+        { count: number }[]
+      >`select count(*)::int as count from story_revisions`;
+      expect(rows[0]?.count).toBe(1);
+      expect(await confirmRevision(db, { revisionId: "없는-개정판", checkedAt })).toEqual({
+        updated: false,
+      });
     } finally {
       await cleanup();
     }

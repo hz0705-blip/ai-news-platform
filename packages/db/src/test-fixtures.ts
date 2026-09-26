@@ -13,20 +13,23 @@ import {
  * `publish.test.ts`의 발행 입력이 같은 값을 쓴다.
  */
 const publishedAt = new Date("2026-09-17T00:30:00.000Z");
+const revisionId = "demo-1-agreement:rev-1";
 
 // excerpt(허용 발췌 창) 안에서 highlight(강조 구간)를 잡는다. spanText === excerpt의 highlight 부분이어야 한다.
+// 근거 id는 `<revisionId>/<claimId>:<quoteId>`(#22 Ruling 22-2).
 function evidence(
-  id: string,
+  quoteId: string,
   claimId: string,
   source: "meridian" | "harbor",
   excerpt: string,
   spanText: string,
+  differsIn?: string,
 ): Evidence {
   const start = [...excerpt].findIndex(
     (_, i) => [...excerpt].slice(i, i + [...spanText].length).join("") === spanText,
   );
   return {
-    id,
+    id: `${revisionId}/${claimId}:${quoteId}`,
     claimId,
     articleId: `a-${source}`,
     articleVersionId: `av-${source}`,
@@ -41,11 +44,12 @@ function evidence(
     highlightInExcerpt: { start, end: start + [...spanText].length },
     sourceUrl: `https://${source}.invalid/ports`,
     verifiedAt: publishedAt,
+    ...(differsIn === undefined ? {} : { differsIn }),
   };
 }
 
 export const revision: Revision = {
-  id: "demo-1-agreement:rev-1",
+  id: revisionId,
   storyId: "story-1",
   revisionNumber: 1,
   title: "가상 항만 협정에 세 나라가 서명했다",
@@ -67,14 +71,15 @@ export const revision: Revision = {
       contradictionStatus: "복수 출처 일치",
       evidence: [
         evidence(
-          "demo-1-agreement:c-1:q-m-1",
+          "q-m-1",
           "demo-1-agreement:c-1",
           "meridian",
           "Ministers agreed on the framework. The deal covers three ports.",
           "Ministers agreed on the framework.",
+          "모두 중단",
         ),
         evidence(
-          "demo-1-agreement:c-1:q-h-1",
+          "q-h-1",
           "demo-1-agreement:c-1",
           "harbor",
           "The three governments signed the framework.",
@@ -91,14 +96,14 @@ export const revision: Revision = {
       contradictionStatus: "복수 출처 일치",
       evidence: [
         evidence(
-          "demo-1-agreement:c-2:q-m-2",
+          "q-m-2",
           "demo-1-agreement:c-2",
           "meridian",
           "Talks will resume in October.",
           "resume in October",
         ),
         evidence(
-          "demo-1-agreement:c-2:q-h-2",
+          "q-h-2",
           "demo-1-agreement:c-2",
           "harbor",
           "Officials expect a second round in October.",
@@ -107,14 +112,15 @@ export const revision: Revision = {
       ],
     },
   ],
+  // 출처 구획은 DB에서 읽을 때 기사 발행 시각·기사 식별자 순이다. 되읽은 값과 같도록 그 순서로 둔다.
   sources: [
     {
-      sourceId: "src-meridian",
-      articleId: "a-meridian",
-      articleTitle: "Three governments agree on port framework",
-      articleUrl: "https://meridian.invalid/ports",
+      sourceId: "src-atlas",
+      articleId: "a-atlas",
+      articleTitle: "Port deal reached",
+      articleUrl: "https://atlas.invalid/ports",
       publishedAt,
-      rightsTier: "본문 처리 + 발췌 표시",
+      rightsTier: "링크만",
     },
     {
       sourceId: "src-harbor",
@@ -125,12 +131,12 @@ export const revision: Revision = {
       rightsTier: "본문 처리 + 발췌 표시",
     },
     {
-      sourceId: "src-atlas",
-      articleId: "a-atlas",
-      articleTitle: "Port deal reached",
-      articleUrl: "https://atlas.invalid/ports",
+      sourceId: "src-meridian",
+      articleId: "a-meridian",
+      articleTitle: "Three governments agree on port framework",
+      articleUrl: "https://meridian.invalid/ports",
       publishedAt,
-      rightsTier: "링크만",
+      rightsTier: "본문 처리 + 발췌 표시",
     },
   ],
 };

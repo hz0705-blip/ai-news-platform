@@ -1,0 +1,54 @@
+{
+  "story": {
+    "id": "story-demo-2-conflict",
+    "slug": "demo-2-conflict",
+    "title": "베릴 항 터미널 파업 첫날, 작업 중단 범위 보도 갈려",
+    "topics": ["세계 경제·금융"],
+    "isDemo": true,
+    "lifecycle": "종료"
+  },
+  "sources": [
+    {
+      "id": "source-meridian-wire",
+      "name": "Meridian Wire (가상 출처)",
+      "rightsTier": "본문 처리 + 발췌 표시",
+      "region": "가상 지역: 메리디언 해협권",
+      "ownership": "민간 소유",
+      "language": "영어",
+      "isFictional": true
+    },
+    {
+      "id": "source-harbor-ledger",
+      "name": "Harbor Ledger (가상 출처)",
+      "rightsTier": "본문 처리 + 발췌 표시",
+      "region": "가상 지역: 손홀트 항만권",
+      "ownership": "협동조합 소유",
+      "language": "영어",
+      "isFictional": true
+    }
+  ],
+  "articles": [
+    {
+      "id": "article-meridian-beryl",
+      "sourceId": "source-meridian-wire",
+      "storyId": "story-demo-2-conflict",
+      "url": "https://meridianwire.example/beryl-port-strike",
+      "title": "Beryl Port dockworkers walk out as wage talks collapse",
+      "publishedAt": "2026-09-16T07:15:00.000Z",
+      "topic": "세계 경제·금융",
+      "articleVersionId": "av-meridian-beryl",
+      "file": "articles/meridian-beryl.txt"
+    },
+    {
+      "id": "article-harbor-beryl",
+      "sourceId": "source-harbor-ledger",
+      "storyId": "story-demo-2-conflict",
+      "url": "https://harborledger.example/beryl-terminal-strike",
+      "title": "Strike slows, but does not stop, Beryl container terminal",
+      "publishedAt": "2026-09-16T08:40:00.000Z",
+      "topic": "세계 경제·금융",
+      "articleVersionId": "av-harbor-beryl",
+      "file": "articles/harbor-beryl.txt"
+    }
+  ]
+}

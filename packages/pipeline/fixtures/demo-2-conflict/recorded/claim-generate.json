@@ -1,0 +1,28 @@
+{
+  "story-demo-2-conflict:47448bea946d": {
+    "title": "베릴 항 터미널 파업 첫날, 작업 중단 범위 보도 갈려",
+    "claims": [
+      {
+        "claimKey": "c-1",
+        "text": "베릴 항 컨테이너 터미널 항만 노동자들이 임금 협상 결렬 뒤 화요일 파업에 들어갔다.",
+        "claimType": "보도된 사실",
+        "modality": "단정",
+        "quoteIds": ["q-m-1", "q-h-1"]
+      },
+      {
+        "claimKey": "c-2",
+        "text": "베릴 항 컨테이너 터미널이 화요일 모든 컨테이너 작업을 중단했다고 항만공사가 밝혔다.",
+        "claimType": "보도된 사실",
+        "modality": "단정",
+        "quoteIds": ["q-m-2", "q-h-2"]
+      },
+      {
+        "claimKey": "c-3",
+        "text": "베릴 항 항만 노조와 항만공사는 이번 목요일에 결렬된 임금 협상을 다시 시작할 것으로 예상된다.",
+        "claimType": "전망",
+        "modality": "예상",
+        "quoteIds": ["q-m-3", "q-h-3"]
+      }
+    ]
+  }
+}
