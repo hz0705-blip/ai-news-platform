@@ -57,7 +57,8 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 
 - 이음새 둘(스펙 "테스트 결정"). **파이프라인**: "배치 실행" 하나가 모델·임베딩 클라이언트·시계를 주입받고, 기록된 응답으로 리플레이 테스트. **웹**: 데모 사건이 시드된 DB 위에서 Playwright(axe 포함).
 - 외부에서 관찰되는 행동만 검증한다. 설정 파일(워크플로 YAML·manifest·토큰 CSS)을 단언하는 테스트는 SHA 고정·권한·시크릿 같은 보안 계약에 한정한다.
-- 테스트는 각 패키지에 병치, E2E는 웹 앱 아래. 구현 서브에이전트는 테스트를 먼저 쓴다.
+- 테스트는 각 패키지에 병치, E2E는 웹 앱 아래. 구현 서브에이전트가 테스트를 함께 쓴다.
+- 양은 최소: 도메인·파이프라인은 규칙마다 단위 테스트 하나, 화면은 페이지당 E2E 스모크 하나(주장 → 근거 → 원문 링크 같은 핵심 경로 + axe 1회). 상태·뷰포트·테마 조합마다 E2E를 늘리지 않는다. 픽스처는 데모 사건에 필요한 최소만.
 - `@newsplatform/db/testing`은 테스트 전용 서브패스. Biome `noRestrictedImports`가 비테스트 파일의 import를 막는다.
 
 ## UI 스킬 (ui-skills.com)
@@ -69,11 +70,10 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 
 규칙은 `CLAUDE.md` "구현 사이클". 여기는 경로와 형식.
 
-- **스크립트**: 착수 `scripts/cycle-start <이슈> [--check-only]`, 인계 상태 `scripts/handoff-state`. 머리말이 사용법.
-- **superpowers**: 프로젝트 스코프 플러그인(`.claude/settings.json` `enabledPlugins`), 마켓플레이스 자동 갱신 끔. 갱신은 수동으로 하고 스킬 원문을 다시 읽는다.
-- **계획 파일**: `docs/superpowers/plans/YYYY-MM-DD-<이슈>-<slug>.md`, 미추적. `**Spec:**`에 스펙 절 + 이슈 번호. 설명은 한국어, 구조 표식은 영문 유지(`## Global Constraints`, `### Task N:`, `**Files:**`, `**Interfaces:**` — superpowers `task-brief`가 `Task N` 헤딩으로 추출한다).
-- **원장**: `.superpowers/sdd/<계획 파일명>/progress.md`. 첫 줄이 계획 경로, `Task N: complete`가 완료, 마지막 줄이 fix round면 다음 회차부터 재개. SDD를 생략한 단일 태스크 티켓은 원장이 없고 `git log`가 대신한다.
-- **브리프** 첫 블록(구현자·리뷰어 공통): 위 커밋 트레일러 한 줄. 테스트 명령은 저장소 루트에서 `pnpm test`, `pnpm lint`, `pnpm typecheck`(실 DB는 `pnpm test:db`). 보고는 판정 한 줄 + 근거마다 1~2줄과 `파일:행`, diff·로그 원문 없음. 용어는 `CONTEXT.md`, 산출물 규칙은 이 파일 "도메인 규칙". `ui` 티켓이면 스킬 원문 경로와 "스펙이 스킬보다 우선" 한 줄.
+- **스크립트**: 착수 `scripts/cycle-start <이슈> [--check-only]`, 마무리 `scripts/cycle-finish <PR> [--wait-only]`(CI 대기 → 스쿼시 머지 → 로컬 정리 → main 갱신 → 다음 티켓 출력), 인계 상태 `scripts/handoff-state`. 머리말이 사용법.
+- **superpowers**: 프로젝트 스코프 플러그인(`.claude/settings.json` `enabledPlugins`), 마켓플레이스 자동 갱신 끔. 쓰는 것은 SessionStart 주입뿐이다.
+- **브리프**(구현자·리뷰어 프롬프트 첫 블록): 이슈 번호와 본문 전문, 스펙 절 경로, 파일 후보, 테스트 이름, 위 커밋 트레일러 한 줄. 테스트 명령은 저장소 루트에서 `pnpm test`, `pnpm lint`, `pnpm typecheck`(실 DB는 `pnpm test:db`). 규격은 이 파일 "스택"·"컨벤션"·"테스트"·"도메인 규칙", 용어는 `CONTEXT.md`. `ui` 티켓이면 스킬 원문 경로와 "스펙이 스킬보다 우선" 한 줄. 보고는 판정 한 줄 + 근거마다 1~2줄과 `파일:행`, diff·로그 원문 없음.
+- **PR 생성**은 구현자가 한다: `gh pr create --base main --body-file <파일>`, 본문 형식은 "컨벤션".
 - **Explore·조사 보조** 서브에이전트는 haiku.
 
 ## 컨트롤러 운영
@@ -81,4 +81,4 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 - diff·리뷰·로그는 서브에이전트가 읽고 컨트롤러는 판정만 받는다. PR 본문·코멘트 초안은 스크래치패드 파일로 만들어 `--body-file`로 넘긴다.
 - `git push`가 매달리는 것을 막기 위해 저장소 git config에 `http.lowSpeedLimit 1000`·`http.lowSpeedTime 45`를 두었다(로컬 설정, 새 클론마다 다시 넣는다).
 - Herdr 안에서는 PreToolUse(`Agent`, 백그라운드 `Bash`) 훅 `.claude/hooks/agent-monitor-start.sh`가 오른쪽 pane에 `scripts/agent-monitor`를 띄워 서브에이전트 진행을 보인다. 모든 태스크가 끝나거나 300초 이상 갱신이 없는 상태가 90초 지속되면 pane이 닫힌다. Herdr 밖·서브에이전트 세션·포그라운드 Bash에서는 아무것도 하지 않는다.
-- Codex 계획 교차 리뷰는 `codex exec -s read-only`로 절대경로·리터럴 인자만 쓰고 긴 입력은 파일로 넘긴다. 인계 문서에 Herdr 에이전트는 이름과 pane ID를 함께 적는다.
+- 인계 문서에 Herdr 에이전트는 이름과 pane ID를 함께 적는다.
