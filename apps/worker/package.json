@@ -4,7 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "echo \"@newsplatform/worker dev는 #17에서 정의한다\"",
     "typecheck": "tsc --noEmit",
     "demo:load": "node --env-file-if-exists=../../.env scripts/load-demo-story.ts"
   },

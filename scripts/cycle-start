@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# 구현 사이클 착수 게이트를 한 번에 확인하고 통과하면 티켓을 클레임한다.
+# 구현 사이클 착수: 티켓 게이트를 확인하고 통과하면 클레임 + 브랜치 생성.
 # 사용: scripts/cycle-start <이슈번호> [--check-only] [--slug <slug>]
-# 확인: superpowers 승인 버전·SHA(docs/agents/project.md "승인 버전" 줄), 이슈 OPEN,
-#       ready-for-agent 있음, research/needs-triage/needs-info 없음, 담당자 없음,
-#       열린 차단 이슈 없음(GitHub 의존성 + 본문 "리서치 대기 #N").
+# 게이트: 이슈 OPEN, ready-for-agent 있음, research/needs-triage/needs-info 없음, 담당자 없음,
+#         열린 차단 이슈 없음(GitHub 의존성 + 본문 "리서치 대기 #N"), 작업 트리 깨끗, main 최신.
 # 종료 코드: 0 통과, 1 게이트 실패, 2 사용 오류.
 set -euo pipefail
 
@@ -21,28 +20,11 @@ while [ $# -gt 0 ]; do
 done
 [[ "$issue" =~ ^[0-9]+$ ]] || usage
 
-root="$(git rev-parse --show-toplevel)"
-project_md="$root/docs/agents/project.md"
+cd "$(git rev-parse --show-toplevel)"
 repo="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
 fails=()
 
-# 1. superpowers 승인 버전·SHA 대조
-expected_line="$(grep -m1 '승인 버전' "$project_md" || true)"
-expected_version="$(sed -nE 's/.*superpowers ([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' <<<"$expected_line")"
-expected_sha="$(sed -nE 's/.*SHA `([0-9a-f]{40})`.*/\1/p' <<<"$expected_line")"
-if [ -z "$expected_version" ] || [ -z "$expected_sha" ]; then
-  fails+=("project.md '승인 버전' 줄에서 버전·SHA를 읽지 못함")
-else
-  actual_version="$(claude plugin list 2>/dev/null | awk '/superpowers@/{f=1;next} f&&/Version:/{print $2;exit}')"
-  marketplace="$HOME/.claude/plugins/marketplaces/claude-plugins-official/.claude-plugin/marketplace.json"
-  actual_sha="$(python3 -c 'import json,sys
-m=json.load(open(sys.argv[1]))
-print(next((p["source"].get("sha","") for p in m["plugins"] if p["name"]=="superpowers"),""))' "$marketplace" 2>/dev/null || true)"
-  [ "$actual_version" = "$expected_version" ] || fails+=("superpowers 버전 불일치: 설치 ${actual_version:-없음}, 승인 $expected_version")
-  [ "$actual_sha" = "$expected_sha" ] || fails+=("superpowers SHA 불일치: 마켓플레이스 ${actual_sha:-없음}, 승인 $expected_sha")
-fi
-
-# 2. 이슈 게이트
+# 1. 이슈 게이트
 json="$(gh issue view "$issue" --json state,title,labels,assignees,body)"
 state="$(jq -r .state <<<"$json")"
 title="$(jq -r .title <<<"$json")"
@@ -65,15 +47,20 @@ for ref in $(grep -oE '리서치 대기 #[0-9]+' <<<"$body" | grep -oE '[0-9]+' 
   [ "$rstate" = "CLOSED" ] || fails+=("본문 '리서치 대기 #$ref'가 $rstate")
 done
 
-# 3. 브랜치명 제안
+# 2. 작업 트리·main
+[ -z "$(git status --porcelain)" ] || fails+=("작업 트리에 변경이 있음")
+git fetch --quiet origin main
+[ "$(git rev-parse origin/main)" = "$(git rev-parse main)" ] || fails+=("로컬 main이 origin/main과 다름")
+
+# 3. 브랜치명
 if [ -z "$slug" ]; then
   slug="$(tr '[:upper:]' '[:lower:]' <<<"$title" | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g' | cut -c1-40 | sed -E 's/-+$//')"
   [ -n "$slug" ] || slug="issue"
 fi
 branch="ticket/$issue-$slug"
+git show-ref --verify --quiet "refs/heads/$branch" && fails+=("브랜치 $branch가 이미 존재함")
 
 echo "#$issue $title"
-echo "superpowers ${actual_version:-?} / ${actual_sha:-?}"
 if [ ${#fails[@]} -gt 0 ]; then
   echo "FAIL (${#fails[@]})"
   printf '  - %s\n' "${fails[@]}"
@@ -81,10 +68,12 @@ if [ ${#fails[@]} -gt 0 ]; then
 fi
 
 if [ "$check_only" -eq 1 ]; then
-  echo "PASS (확인만, 클레임 안 함)"
-else
-  gh issue edit "$issue" --add-assignee @me >/dev/null
-  echo "PASS — 클레임 완료(@me)"
+  echo "PASS (확인만, 클레임·브랜치 안 함)"
+  echo "branch: $branch"
+  exit 0
 fi
-echo "branch: $branch"
-echo "다음: EnterWorktree → 워크트리 안에서 scripts/cycle-worktree $issue $slug"
+
+gh issue edit "$issue" --add-assignee @me >/dev/null
+git checkout -q -b "$branch" main
+echo "PASS — 클레임 완료(@me), branch: $branch"
+echo "다음: superpowers:writing-plans → docs/superpowers/plans/$(date +%F)-$issue-$slug.md"

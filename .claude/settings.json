@@ -4,7 +4,9 @@
       "Skill(superpowers:brainstorming)",
       "Skill(superpowers:brainstorming *)",
       "Skill(superpowers:writing-skills)",
-      "Skill(superpowers:writing-skills *)"
+      "Skill(superpowers:writing-skills *)",
+      "Skill(superpowers:using-git-worktrees)",
+      "Skill(superpowers:using-git-worktrees *)"
     ],
     "allow": [
       "Bash(herdr agent list *)",
@@ -20,14 +22,12 @@
       "Bash(herdr pane current *)",
       "Bash(herdr pane wait-output *)",
       "Bash(git fetch *)",
-      "Bash(git worktree list *)",
       "Bash(claude plugin list)",
       "Bash(pnpm test)",
       "Bash(pnpm lint)",
       "Bash(pnpm typecheck)",
       "Bash(pnpm view *)",
       "Bash(scripts/cycle-start *)",
-      "Bash(scripts/cycle-worktree *)",
       "Bash(scripts/handoff-state)",
       "Bash(scripts/agent-monitor *)"
     ]
