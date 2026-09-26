@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { TOPICS } from "@newsplatform/domain/topic";
 import { expect, type Page, test } from "@playwright/test";
 import { build } from "esbuild";
+import { evidenceOf } from "./evidence.ts";
 import { firstStory, LONG_SUMMARY, liveStories } from "./today-data.ts";
 
 // Worker-local memory bundle: actual UI, no public fixture route or persisted fake live rows.
@@ -81,7 +82,8 @@ test("실제 오늘: 미발행·동일 크기 0건 타일·데모 앵커 → 사
     .getByRole("button", { name: /근거 \d+개 보기/ })
     .first()
     .click();
-  await expect(page.locator("#claim-1-evidence")).toBeVisible();
+  // 기본 뷰포트(1280)는 데스크톱이라 근거는 옆 패널에 보인다(Ruling 24-7).
+  await expect(evidenceOf(page, 1, page.viewportSize()?.width ?? 0)).toBeVisible();
   expect(errors).toEqual([]);
 });
 
