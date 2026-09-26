@@ -49,6 +49,15 @@ export function ClaimExpansionProvider({
       if (event.defaultPrevented || event.button !== 0) return;
       const anchor = (event.target as Element | null)?.closest("a[href]");
       if (!(anchor instanceof HTMLAnchorElement)) return;
+      // 보조키·새 창 클릭은 브라우저가 이 문서를 떠나지 않으므로 펼치지 않는다.
+      if (
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey ||
+        anchor.target === "_blank"
+      )
+        return;
       const url = new URL(anchor.href, window.location.href);
       if (url.pathname !== window.location.pathname || url.search !== window.location.search)
         return;

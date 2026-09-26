@@ -14,7 +14,7 @@ const base = {
 } as const;
 
 describe("EvidenceRow", () => {
-  it("발췌 불가 근거는 상태 문구·출처명·원문 링크만 보이고 구간·제목·시각·번역은 없다", () => {
+  it("발췌 불가 근거는 상태 문구·출처명·원문 링크와 비교 순서만 보이고 구간·제목·시각·다른 점·번역은 없다", () => {
     render(
       <ul>
         <EvidenceRow
@@ -32,7 +32,7 @@ describe("EvidenceRow", () => {
     expect(screen.queryByText("근거 구간")).toBeNull();
     expect(screen.queryByText("Port deal reached")).toBeNull();
     expect(screen.queryByText("기사 발행")).toBeNull();
-    expect(screen.queryByText("보도 1/2")).toBeNull();
+    expect(screen.getByText("보도 1/2")).toBeTruthy();
     expect(screen.queryByText("다른 점")).toBeNull();
     expect(screen.queryByText("숨겨야 할 다른 점")).toBeNull();
     expect(screen.queryByRole("button", { name: /번역/ })).toBeNull();

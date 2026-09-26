@@ -206,6 +206,21 @@ describe("ClaimList", () => {
     expect(document.activeElement?.id).toBe("claim-2");
   });
 
+  it("보조키를 누른 채 #claim-N 링크를 누르면 펼치지도 포커스하지도 않는다", () => {
+    render(
+      <>
+        <a href="#claim-2">보도 상충 1개</a>
+        <ClaimList claims={[conflictClaim, agreeClaim]} />
+      </>,
+    );
+    const second = screen.getAllByRole("button", { name: /근거 \d+개 보기/ })[1];
+    if (!second) throw new Error("트리거가 없다");
+    expect(second.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(screen.getByRole("link", { name: "보도 상충 1개" }), { metaKey: true });
+    expect(second.getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement?.id).not.toBe("claim-2");
+  });
+
   it("해시가 주장 형식이 아니거나 범위 밖이면 아무것도 펼치지 않는다", () => {
     window.history.replaceState(null, "", "#claim-9");
     render(<ClaimList claims={claims} />);

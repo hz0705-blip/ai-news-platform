@@ -67,11 +67,12 @@ test.describe("근거 발췌 불가 상태", () => {
     expect(await page.content()).not.toContain("suspended pending");
     // 발췌 가능한 다른 행은 정상
     await expect(page.locator("#claim-1-evidence").getByText("근거 구간")).toHaveCount(1);
-    // 상충 주장에서는 발췌 불가 행도 순서 자리(보도 2/2)에 있되 다른 점·번역은 없다
+    // 상충 주장에서 발췌 불가 행은 상태 문구와 순서(보도 2/2)를 보이고 다른 점은 없다(Ruling 23-6 보정)
     const conflictRows = page.locator("#claim-2-evidence > ul > li");
     await expect(conflictRows).toHaveCount(2);
     await expect(conflictRows.nth(0)).toContainText("보도 1/2");
     await expect(conflictRows.nth(1)).toContainText("근거 발췌를 표시할 수 없음");
+    await expect(conflictRows.nth(1)).toContainText("보도 2/2");
     await expect(conflictRows.nth(1).getByText("다른 점")).toHaveCount(0);
   });
 
