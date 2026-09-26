@@ -2,7 +2,7 @@
 # 구현 사이클 착수 게이트를 한 번에 확인하고 통과하면 티켓을 클레임한다.
 # 사용: scripts/cycle-start <이슈번호> [--check-only] [--slug <slug>]
 # 확인: superpowers 승인 버전·SHA(docs/agents/project.md "승인 버전" 줄), 이슈 OPEN,
-#       ready-for-agent 있음, research/ui/needs-triage/needs-info 없음, 담당자 없음,
+#       ready-for-agent 있음, research/needs-triage/needs-info 없음, 담당자 없음,
 #       열린 차단 이슈 없음(GitHub 의존성 + 본문 "리서치 대기 #N").
 # 종료 코드: 0 통과, 1 게이트 실패, 2 사용 오류.
 set -euo pipefail
@@ -52,7 +52,7 @@ body="$(jq -r .body <<<"$json")"
 
 [ "$state" = "OPEN" ] || fails+=("이슈 상태 $state (OPEN 아님)")
 grep -qx 'ready-for-agent' <<<"$labels" || fails+=("ready-for-agent 라벨 없음")
-for bad in research ui needs-triage needs-info; do
+for bad in research needs-triage needs-info; do
   grep -qx "$bad" <<<"$labels" && fails+=("라벨 '$bad' 있음 — Claude 구현 사이클 대상 아님")
 done
 [ -z "$assignees" ] || fails+=("담당자 있음: $(tr '\n' ' ' <<<"$assignees")")
