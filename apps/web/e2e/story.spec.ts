@@ -1,5 +1,5 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { expectNoAxeViolations } from "./axe.ts";
 
 const STORY_URL = "/story/demo-1-agreement";
 // 픽스처 기사 본문에만 있고 어떤 근거 발췌(허용 발췌 창)에도 들어가지 않는 문장.
@@ -43,6 +43,7 @@ test("핵심 루프: 주장 → 근거 펼침 → 원문 링크 → 변화 구�
   await expect(link).toHaveAttribute("href", /^https:\/\/meridianwire\.example\//);
   await expect(link).toHaveAttribute("rel", /noopener/);
   await expect(evidence.getByRole("button", { name: /번역/ }).first()).toBeDisabled();
+  await expect(evidence.getByText("번역은 준비 중입니다").first()).toBeVisible();
 
   // 출처 구획: 셋 모두, 링크만 등급 표기
   const sources = page.getByRole("region", { name: "출처" });
@@ -140,14 +141,72 @@ for (const colorScheme of ["light", "dark"] as const) {
         await trigger.click();
         await expect(trigger).toHaveAttribute("aria-expanded", "true");
       }
-      const results = await new AxeBuilder({ page })
-        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22a", "wcag22aa"])
-        .analyze();
-      await testInfo.attach(`axe-${colorScheme}-${state}.json`, {
-        body: JSON.stringify(results, null, 2),
-        contentType: "application/json",
-      });
-      expect(results.violations).toEqual([]);
+      await expectNoAxeViolations(page, testInfo, `${colorScheme}-${state}`);
     }
   });
 }
+
+test("딥링크 #claim-2로 들어오면 그 주장만 펼쳐지고 헤딩에 포커스·스크롤된다", async ({ page }) => {
+  await page.goto(`${STORY_URL}#claim-2`);
+  const heading = page.locator("#claim-2");
+  await expect(heading).toBeFocused();
+  await expect(heading).toBeInViewport();
+  const triggers = page.getByRole("button", { name: /근거 \d+개 보기/ });
+  await expect(triggers.nth(1)).toHaveAttribute("aria-expanded", "true");
+  for (const i of [0, 2, 3]) {
+    await expect(triggers.nth(i)).toHaveAttribute("aria-expanded", "false");
+  }
+  await expect(page.locator("#claim-2-evidence")).toBeVisible();
+  await expect(page.locator("#claim-1-evidence")).toBeHidden();
+});
+
+test("헤더의 상태별 개수 링크는 주장 헤딩으로 가고 그 주장을 펼친다", async ({ page }) => {
+  await page.goto(STORY_URL);
+  await page.getByRole("list", { name: "주장 상태별 개수" }).getByRole("link").first().click();
+  await expect(page.locator("#claim-1")).toBeFocused();
+  await expect(page.getByRole("button", { name: /근거 \d+개 보기/ }).first()).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+});
+
+test("두 패널이 동시에 열리고 aria-controls가 각자의 영역을 가리키며 영역은 랜드마크가 아니다", async ({
+  page,
+}) => {
+  await page.goto(STORY_URL);
+  const triggers = page.getByRole("button", { name: /근거 \d+개 보기/ });
+  await triggers.nth(0).click();
+  await triggers.nth(1).click();
+  await expect(triggers.nth(0)).toHaveAttribute("aria-controls", "claim-1-evidence");
+  await expect(triggers.nth(1)).toHaveAttribute("aria-controls", "claim-2-evidence");
+  await expect(page.locator("#claim-1-evidence")).toBeVisible();
+  await expect(page.locator("#claim-2-evidence")).toBeVisible();
+  // 페이지 구획 "주장"(region)은 그대로 있다 — 펼침 영역은 예전처럼 "주장 N" 이름의 region이 아니어야 한다.
+  await expect(page.getByRole("region", { name: /^주장 \d/ })).toHaveCount(0);
+  for (const id of ["#claim-1-evidence", "#claim-2-evidence"]) {
+    await expect(page.locator(id)).not.toHaveAttribute("role", /.+/);
+    await expect(page.locator(id)).not.toHaveAttribute("aria-labelledby", /.+/);
+    expect(await page.locator(id).evaluate((el) => el.tagName)).toBe("DIV");
+  }
+  await triggers.nth(0).click();
+  await expect(page.locator("#claim-1-evidence")).toBeHidden();
+  await expect(page.locator("#claim-2-evidence")).toBeVisible();
+});
+
+test("두 번째 주장에서도 트리거 → 패널 링크 순서로 포커스가 흐르고 원문 링크는 버튼 밖이다", async ({
+  page,
+  browserName,
+}) => {
+  await page.goto(STORY_URL);
+  const trigger = page.getByRole("button", { name: /근거 \d+개 보기/ }).nth(1);
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await expect(trigger).toBeFocused();
+  await page.keyboard.press(
+    browserName === "webkit" && process.platform === "darwin" ? "Alt+Tab" : "Tab",
+  );
+  const link = page.locator("#claim-2-evidence").getByRole("link", { name: /원문/ }).first();
+  await expect(link).toBeFocused();
+  expect(await trigger.locator("a, button").count()).toBe(0);
+});
