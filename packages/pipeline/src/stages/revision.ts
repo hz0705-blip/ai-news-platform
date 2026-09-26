@@ -63,6 +63,11 @@ export function idempotencyKey(input: RevisionInput): string {
   return `${input.story.id}:rev:${input.revisionNumber}`;
 }
 
+/** 주장 식별자 `<slug>:<claimKey>`(Ruling 22-2). */
+export function claimId(slug: string, claimKey: string): string {
+  return `${slug}:${claimKey}`;
+}
+
 /**
  * 개정판을 만든다. 사건 상충 상태는 `deriveStoryStatus`가 주장들과 열린 에피소드 수에서 파생한다.
  * 식별자(Ruling 22-2): 개정판 `<slug>:rev-<번호>`, 주장 `<slug>:<claimKey>`,
@@ -73,17 +78,17 @@ export function runRevision(input: RevisionInput): Revision {
   const revisionId = `${slug}:rev-${input.revisionNumber}`;
 
   const claims = input.claims.map((draft, order) => {
-    const claimId = `${slug}:${draft.claimKey}`;
+    const id = claimId(slug, draft.claimKey);
     return {
-      id: claimId,
+      id,
       text: draft.text,
       claimType: draft.claimType,
       modality: draft.modality,
       order,
       contradictionStatus: draft.contradictionStatus,
       evidence: draft.evidence.map((item) => ({
-        id: `${revisionId}/${claimId}:${item.quoteId}`,
-        claimId,
+        id: `${revisionId}/${id}:${item.quoteId}`,
+        claimId: id,
         articleId: item.articleId,
         articleVersionId: item.articleVersionId,
         sourceId: item.sourceId,

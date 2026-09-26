@@ -198,7 +198,7 @@ async function processStory(
       if (origin === undefined) throw new Error(`기사 버전 없음: ${item.articleVersionId}`);
       return { ...item, origin };
     });
-    const claimId = `${story.slug}:${claim.claimKey}`;
+    const claimId = revisionStage.claimId(story.slug, claim.claimKey);
     const { result, differsIn } = await contradiction.runContradictionLabel(
       {
         storyId,
@@ -250,7 +250,9 @@ async function processStory(
     );
   }
   // Ruling 22-8: 이전 개정판에서 보도 상충이던 주장이 이번 개정판에 없으면 그 에피소드는 아직 열려 있다.
-  const publishedClaimIds = new Set(claims.map((c) => `${story.slug}:${c.claimKey}`));
+  const publishedClaimIds = new Set(
+    claims.map((c) => revisionStage.claimId(story.slug, c.claimKey)),
+  );
   const openEpisodes =
     latest?.claims.filter(
       (c) => c.contradictionStatus === "보도 상충" && !publishedClaimIds.has(c.id),

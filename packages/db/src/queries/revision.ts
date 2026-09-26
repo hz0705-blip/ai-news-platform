@@ -5,7 +5,6 @@ import type { RuntimeDb } from "../runtime.ts";
 import {
   articles,
   claimRevisions,
-  claims,
   evidence,
   sources,
   stories,
@@ -43,19 +42,6 @@ export async function loadLatestRevision(
     .select()
     .from(claimRevisions)
     .where(eq(claimRevisions.story_revision_id, revision.id));
-
-  const claimRows =
-    claimRevisionRows.length === 0
-      ? []
-      : await db
-          .select()
-          .from(claims)
-          .where(
-            inArray(
-              claims.id,
-              claimRevisionRows.map((cr) => cr.claim_id),
-            ),
-          );
 
   const evidenceRows =
     claimRevisionRows.length === 0
@@ -95,7 +81,8 @@ export async function loadLatestRevision(
 
   return toDomainRevision({
     revision,
-    claims: claimRows,
+    // toDomainRevision은 claims 행을 읽지 않는다(queries/story.ts와 같은 방식).
+    claims: [],
     claimRevisions: claimRevisionRows,
     evidence: evidenceRows,
     sources: revisionSources,
