@@ -1,148 +1,84 @@
 # 프로젝트
 
-ai-news-platform. 두 에이전트가 공유하는 사실. 짧게 유지하고, 정본은 아래 경로에 둔다.
+ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·명령·경로·함정). 규칙은 `CLAUDE.md`(Claude)와 `AGENTS.md`(Codex)에 있다. 짧게 유지한다.
 
 ## 정본
 
 - 결정과 범위, 마일스톤: `docs/spec/v1.md`. 여기에 없는 것은 구현하지 않고 티켓 코멘트로 묻는다.
 - 용어: `CONTEXT.md`. 산출물(이슈·PR·테스트 이름)에서 피하라고 한 동의어를 쓰지 않는다.
-- 되돌리기 어려운 결정: `docs/adr/0001~0013`. 구현 방식(superpowers 사이클, 역할 분담)은 0007, 호스팅·복구는 0008, 서브에이전트 모델은 0011, 리뷰 게이트·계획 크기·Ruling 동반 반영은 0012, UI 티켓의 Claude 사이클 통합(0010 대체)은 0013.
-- 개발 중 알게 된 사실과 결정은 반드시 기록한다. 단, 새 파일 대신 기존 파일에 넣는다: 환경·계정·명령 같은 사실은 이 파일, 결정과 측정값은 스펙·ADR, 용어는 `CONTEXT.md`, 작업 증거는 PR 본문·이슈 코멘트.
+- 되돌리기 어려운 결정: `docs/adr/`. 제품 결정 0001~0006·0008·0009, 에이전트 사이클 0007.
 
 ## 이슈·라벨
 
-- GitHub Issues를 `gh`로 쓴다: `gh issue create/view --comments/list --label/comment/edit --add-label --add-assignee/close --comment`. 이슈 본문이 곧 브리프다.
-- 라벨 다섯: `needs-triage`(평가 필요), `needs-info`(보고자 정보 대기), `ready-for-agent`(명세 완료, 에이전트 착수 가능), `ready-for-human`(사람이 함), `wontfix`. 스킬이 말하는 역할 이름과 라벨 문자열이 같다. `research`는 Codex 리서치, `ui`는 화면 티켓 표시(Claude 사이클 + UI 스킬 브리프, ADR-0013).
-- 차단은 GitHub 네이티브 이슈 의존성이 정본: `gh api --method POST repos/<owner>/<repo>/issues/<child>/dependencies/blocked_by -F issue_id=<차단 이슈의 데이터베이스 id>`(id는 `gh api repos/<owner>/<repo>/issues/<n> --jq .id`). 열린 차단자가 있거나 담당자가 있는 이슈는 착수하지 않는다.
+- GitHub Issues를 `gh`로 쓴다. 이슈 본문이 곧 브리프다.
+- 라벨 다섯: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. 부가 라벨 `research`(Codex 리서치), `ui`(화면 티켓, 아래 "UI 스킬").
+- 차단은 GitHub 네이티브 이슈 의존성이 정본: `gh api --method POST repos/<owner>/<repo>/issues/<child>/dependencies/blocked_by -F issue_id=<차단 이슈의 데이터베이스 id>`(id는 `gh api repos/<owner>/<repo>/issues/<n> --jq .id`).
 - 외부 PR은 분류 대상이 아니다.
 
 ## 도메인 규칙
 
-- 산출물(이슈 제목, PR, 테스트 이름, 코드 식별자)의 도메인 개념은 `CONTEXT.md` 용어를 쓰고, 용어집이 피하라는 동의어는 쓰지 않는다. 필요한 개념이 용어집에 없으면 만들어 쓰지 말고 티켓 코멘트로 묻는다.
+- 산출물(이슈 제목, PR, 테스트 이름, 코드 식별자)의 도메인 개념은 `CONTEXT.md` 용어를 쓴다. 필요한 개념이 용어집에 없으면 만들어 쓰지 말고 티켓 코멘트로 묻는다.
 - 산출물이 ADR과 충돌하면 조용히 덮어쓰지 않고 "ADR-000N과 충돌한다. 이유는 …"으로 드러낸다.
-- 기사 본문 30일 만료는 `article_versions` 행 삭제가 아니라 `body`를 null로 바꾸는 것이다. 근거(`evidence`)가 기사 버전을 FK로 참조하므로 행은 남는다(2026-09-23 #21 Ruling 12).
+- 기사 본문 30일 만료는 `article_versions` 행 삭제가 아니라 `body`를 null로 바꾸는 것이다. 근거(`evidence`)가 기사 버전을 FK로 참조하므로 행은 남는다.
 
 ## 스택
 
-- TypeScript 단일 런타임. Next.js + React, PostgreSQL + pgvector, Drizzle, pg-boss. Python 없음, 학습 없음. 모델은 OpenAI만.
-- pnpm 워크스페이스 모노레포, Node 24 LTS, Turborepo 없음. 패키지 다섯:
-  - `apps/web` 웹 앱, `apps/worker` 워커 앱
-  - `packages/domain` 순수 TS, 외부 의존성 0
-  - `packages/db` Drizzle 스키마·마이그레이션
-  - `packages/pipeline` OpenAI 호출·게이트·평가 하네스
-- 의존 방향: 웹과 워커는 도메인·DB·파이프라인을 import한다. 웹 ↔ 워커는 서로 import하지 않는다.
+- TypeScript 단일 런타임: Next.js + React, PostgreSQL + pgvector, Drizzle, pg-boss. Python·학습 없음. 모델은 OpenAI만. 근거는 ADR-0005, 구조 세부는 스펙 "시스템 구조".
+- pnpm 워크스페이스, Node 24 LTS, Turborepo 없음. 패키지 다섯: `apps/web`, `apps/worker`, `packages/domain`(순수 TS, 의존성 0), `packages/db`(Drizzle 스키마·마이그레이션), `packages/pipeline`(OpenAI 호출·게이트·평가). 웹·워커는 도메인·DB·파이프라인을 import하고 서로는 import하지 않는다.
 - 패키지 스코프는 임시로 `@newsplatform/*`. 서비스 이름 확정(M4 전) 시 일괄 변경.
 - 경계마다 zod 스키마를 두고, 도메인 타입과 같은 모양이어야 하는 곳은 `z.ZodType<도메인타입>`으로 주석한다.
-- 배포 대상·스케줄러·관측: 스펙 "배포와 운영"과 ADR-0008. 실제 계정 사실은 아래 "운영 환경".
 
 ## 운영 환경
 
-계정·자격은 사용자가 만들고 Claude가 확인해 적는다(2026-09-19, #15). 값은 적지 않는다.
+계정·자격은 사용자가 만들고 Claude가 확인해 적는다. 값은 적지 않는다.
 
-- **Supabase**: 조직 Pro, 프로젝트 `ai-news-platform`(ref `dhmwspzugsxrahzkggxx`), 서울 `ap-northeast-2`, PostgreSQL 17.6, Micro. 일일 백업 7일. pgvector 0.8.2 활성(2026-09-19 #16 첫 마이그레이션 `0000_enable_pgvector`, HNSW 게이트 통과). 직접 연결 호스트 `db.dhmwspzugsxrahzkggxx.supabase.co`는 IPv6 전용(AAAA만, A 없음)이라 IPv4 전용 환경(개발 Mac, GitHub 호스티드 러너)에서 쓸 수 없다. 대신 풀러 호스트 `aws-0-ap-northeast-2.pooler.supabase.com`(IPv4, 사용자 `postgres.dhmwspzugsxrahzkggxx`)의 세션 모드 5432를 마이그레이션·백업에, 트랜잭션 모드 6543을 런타임에 쓴다.
-- **GitHub Actions**: 환경 이름 `Production`(대문자 P, 보호 규칙 없음). 환경 시크릿 `DATABASE_MIGRATION_URL`(세션 풀러 5432)·`BACKUP_ENCRYPTION_KEY`(32바이트를 64자 hex로, `openssl rand -hex 32`. 2026-09-19 #18). GitHub 환경 시크릿은 다시 읽을 수 없으므로 정본은 비밀번호 관리자 항목 "ai-news-platform BACKUP_ENCRYPTION_KEY"이고, 키를 교체하면 이전 키로 만든 아티팩트는 이전 키로만 열리므로 보관 기간(90일)이 끝날 때까지 이전 키를 함께 보관한다. 로컬 `.env`의 사본은 복구 훈련 전용. 워크플로는 `environment: Production`을 선언해야 읽는다. 저장소 시크릿은 쓰지 않는다. 워크플로 `backup`(`.github/workflows/backup.yml`): ubuntu-24.04 런너는 PostgreSQL 16 클라이언트가 선설치돼 `/usr/bin/pg_dump`(pg_wrapper)가 16을 고르므로 `/usr/lib/postgresql/17/bin`을 `GITHUB_PATH`에 넣고 덤프 전 메이저를 확인한다(2026-09-19 첫 실행 실패 원인). 매일 UTC 18:30(KST 03:30) + 수동 + `workflow_call`. `pg_dump --format=custom --no-owner --no-privileges --schema=public --schema=drizzle` → NPBK1(AES-256-GCM, `packages/db/scripts/backup-crypto.ts`) → 아티팩트 `db-backup-<YYYYMMDD>T<HHMMSS>Z-<run_id>`(`newsplatform.dump.enc`·`.sha256`·`manifest.json`, 보관 90일 = 공개 저장소 최대). 검증 잡이 `sha256sum -c` → `backup-decrypt.ts` → `pg_restore --list`. 공개 저장소는 Actions 실행·아티팩트 저장이 무료이며 아티팩트는 v4+에서 불변. 로컬 복구 첫 단계: `pnpm --filter @newsplatform/db backup:decrypt -- --in <절대경로>.enc --out <절대경로>`. 덤프는 스키마 한정(`--schema`)이라 확장 정의를 담지 않으므로 격리 DB 복원 전에 마이그레이션(`pnpm db:migrate`) 또는 `create extension if not exists vector`를 먼저 적용한다. 덤프 시점 `--no-owner --no-privileges`는 ACL을 아카이브에서 제거하므로 역할 권한은 복원 뒤 마이그레이션·설정으로 다시 부여한다(M2a 복구 훈련에서 확정). 암호화는 파일을 메모리에 한 번에 읽으며 상한 1 GiB(`MAX_PLAIN_BYTES`)를 넘으면 실패한다. 스트리밍 암호화는 후속 티켓. 워크플로 `ci`(`.github/workflows/ci.yml`, 2026-09-20 #19): `pull_request`·수동 실행. 잡 `checks`(고정 설치·`pnpm lint`·`pnpm typecheck`·`pnpm test`·`pnpm --filter @newsplatform/web build`)와 `migration-smoke`(서비스 컨테이너 `pgvector/pgvector:0.8.6-pg17` digest 고정, 자격은 `ci`/`ci-<run_id>`로 워크플로 안에서 생성, `pnpm db:migrate` → `pnpm db:gate`), `e2e`(2026-09-22 #20 추가: 고정 설치 → `playwright install --with-deps chromium firefox webkit` → `pnpm --filter @newsplatform/web build` → `pnpm --filter @newsplatform/web test:e2e`. 실패해도 아티팩트 `web-e2e`(`apps/web/playwright-report/`·`apps/web/test-results/`, 보관 7일)를 올린다. 타임아웃 15분)가 병렬로 돈다. 시크릿·환경을 읽지 않으므로 포크 PR에서도 돈다. 캐시는 `actions/setup-node`의 `cache: pnpm`. 이전 릴리스 픽스처 DB 마이그레이션 검사는 M2a.
-- **Vercel**: 팀 `hz`(슬러그 `hz23`) Hobby, 프로젝트 `ai-news-platform`, Git `hz0705-blip/ai-news-platform` `main`, Root Directory `apps/web`, Next.js, Node 24, 함수 리전 `icn1`. 환경변수 `DATABASE_URL`(Production만, Sensitive). 자동 도메인 `ai-news-platform-six.vercel.app`. 배포는 `main` 푸시마다 Git 연동이 자동 수행(빌드 `next build`, 설치 `pnpm install --frozen-lockfile`). 첫 성공 배포는 #17(2026-09-19). PR 브랜치는 자격 없는 프리뷰로 빌드된다. 프리뷰 URL은 Deployment Protection(Vercel Authentication)이 켜져 있어 익명 요청이 302로 SSO에 보내진다. 자동 검사(Playwright 등)가 프리뷰를 열어야 하면 보호 우회 토큰이 필요하다(2026-09-19 #17 관찰).
-- **프리뷰 자격 없음**: 프리뷰는 프로덕션 DB 자격을 쓰지 않는다. 필요해지면 별도 결정.
-- **로컬**: `.gitignore`가 `.env*`를 무시하고 `.env.example`만 허용. 루트 `.env.example`이 변수 이름을 정의한다. 마이그레이션·게이트: `pnpm db:migrate`, `pnpm db:gate`(둘 다 `.env`의 `DATABASE_MIGRATION_URL`만 읽음).
-- DB 비밀번호는 비밀번호 관리자에 없다. 재설정하면 위 두 시크릿을 함께 갱신한다.
+- **Supabase**: 조직 Pro, 프로젝트 `ai-news-platform`(ref `dhmwspzugsxrahzkggxx`), 서울 `ap-northeast-2`, PostgreSQL 17, Micro, 일일 백업 7일, pgvector 0.8.x. 직접 연결 호스트는 IPv6 전용이라 IPv4 환경(개발 Mac, GitHub 러너)에서 쓸 수 없다. 풀러 호스트 `aws-0-ap-northeast-2.pooler.supabase.com`(사용자 `postgres.dhmwspzugsxrahzkggxx`)의 세션 모드 5432를 마이그레이션·백업에, 트랜잭션 모드 6543을 런타임에 쓴다. DB 비밀번호는 비밀번호 관리자에 없다. 재설정하면 아래 시크릿과 로컬 `.env`를 함께 갱신한다.
+- **GitHub Actions**: 환경 `Production`(보호 규칙 없음). 환경 시크릿 `DATABASE_MIGRATION_URL`(세션 풀러 5432)·`BACKUP_ENCRYPTION_KEY`(`openssl rand -hex 32`). 시크릿은 다시 읽을 수 없으므로 키의 정본은 비밀번호 관리자 항목 "ai-news-platform BACKUP_ENCRYPTION_KEY"이고, 키를 교체하면 이전 키로 만든 아티팩트(보관 90일)가 만료될 때까지 이전 키를 함께 보관한다. 저장소 시크릿은 쓰지 않는다. 워크플로는 `backup`(야간 덤프·암호화·검증)과 `ci`(PR 체크)이며 각 YAML 머리 주석이 절차·함정의 정본이다. 로컬 복구 첫 단계: `pnpm --filter @newsplatform/db backup:decrypt -- --in <절대경로>.enc --out <절대경로>`, 복원 전 `pnpm db:migrate` 또는 `create extension if not exists vector`.
+- **Vercel**: 팀 `hz`(슬러그 `hz23`) Hobby, 프로젝트 `ai-news-platform`, Root Directory `apps/web`, Node 24, 리전 `icn1`. 환경변수 `DATABASE_URL`(Production만). 자동 도메인 `ai-news-platform-six.vercel.app`. `main` 푸시마다 자동 배포. PR 프리뷰는 자격 없이 빌드되고 Deployment Protection이 켜져 있어 익명 요청은 302로 SSO에 간다(자동 검사가 프리뷰를 열려면 우회 토큰 필요).
+- **로컬**: `.env.example`이 변수 이름을 정의한다. `pnpm db:migrate`·`pnpm db:gate`·`pnpm test:db`·`demo:load`는 `.env`의 `DATABASE_MIGRATION_URL`만 읽는다.
 
 ## 명령어
 
-루트 pnpm 스크립트 이름. M0 티켓이 실제로 만든다. M0 이전에는 manifest·테스트 실행 기반이 없으므로 "테스트 없음"은 미구축이며 PASS가 아니다. PR CI(`.github/workflows/ci.yml`)는 아래 설치·테스트·린트·타입 검사 명령과 `db:migrate`·`db:gate`를 그대로 실행하므로, 명령을 바꾸면 워크플로와 `packages/db/scripts/ci-workflow.test.ts`도 함께 고친다.
-
-- 설치: `pnpm install`. npm·yarn은 쓰지 않는다. lockfile이 생긴 뒤에는 `pnpm install --frozen-lockfile`.
-- 의존성 빌드 스크립트: pnpm 12는 승인 없이 막는다(`ERR_PNPM_IGNORED_BUILDS`). `drizzle-kit`의 `esbuild`는 `pnpm approve-builds`로 승인했고 결과가 `pnpm-workspace.yaml`의 `allowBuilds`에 있다. 새 패키지가 같은 오류를 내면 같은 방법으로 승인하고 커밋한다.
-- 개발 서버: `pnpm dev`
-- 데모 적재: `pnpm --filter @newsplatform/worker demo:load` — 데모 사건 픽스처를 파이프라인으로 돌려 DB에 적재한다. 멱등. `db:migrate`와 같은 부류의 운영자 시드 명령이라 `.env`의 `DATABASE_MIGRATION_URL`(마이그레이션 자격)을 쓴다(2026-09-23 #21).
-- 테스트: `pnpm test` (Vitest), 패키지 하나만은 `pnpm test --project <domain|db|pipeline|worker|web>`(여러 개는 `--project`를 반복). **`pnpm test -- --project x`처럼 `--`를 넣으면 pnpm 12가 필터를 잔여 인자로 넘겨 전체가 돈다**(2026-09-23 실측). `pnpm --filter @newsplatform/web test:e2e` (Playwright, 웹 앱 아래)
-- 린트·포맷: `pnpm lint`, `pnpm format` (Biome)
-- 실 DB 테스트: `pnpm test:db` — `.env`를 읽어 `db`·`worker` 프로젝트만 돌린다. dev DB를 truncate하므로 끝나면 `demo:load`.
-- 타입 검사: `pnpm typecheck`
+- 설치: `pnpm install --frozen-lockfile`. npm·yarn은 쓰지 않는다. pnpm 12는 의존성 빌드 스크립트를 승인 없이 막는다(`ERR_PNPM_IGNORED_BUILDS`) — `pnpm approve-builds`로 승인하고 `pnpm-workspace.yaml`의 `allowBuilds`를 커밋한다.
+- 개발 서버 `pnpm dev`. 린트·포맷 `pnpm lint`, `pnpm format`(Biome). 타입 `pnpm typecheck`.
+- 테스트 `pnpm test`(Vitest). 패키지 하나는 `pnpm test --project <domain|db|pipeline|worker|web>`(**`--`를 넣으면 pnpm 12가 필터를 버리고 전체가 돈다**). E2E `pnpm --filter @newsplatform/web test:e2e`(Playwright).
+- 실 DB 테스트 `pnpm test:db` — `db`·`worker` 프로젝트만, dev DB를 truncate하므로 끝나면 `pnpm --filter @newsplatform/worker demo:load`(데모 사건 재적재, 멱등). 테스트 전용 컨테이너 분리는 이슈 #42.
+- 마이그레이션 `pnpm db:migrate`, pgvector 게이트 `pnpm db:gate`.
+- CI(`.github/workflows/ci.yml`)는 위 명령을 그대로 실행하므로 명령을 바꾸면 워크플로와 `packages/db/scripts/ci-workflow.test.ts`도 함께 고친다.
 
 ## 컨벤션
 
-- Biome으로 린트와 포맷. `any` 금지. TypeScript strict 전부.
-- 커밋: Conventional Commits. 타입은 영어, 제목은 한국어, 스코프는 패키지명. 패키지에 속하지 않는 저장소 전역 변경의 스코프는 `repo`. 예: `feat(domain): 상충 상태 전이 규칙`, `chore(repo): 루트 Biome 설정`.
-- 브랜치 `ticket/<이슈번호>-<slug>`. 티켓당 PR 하나, 스쿼시 머지.
-- PR 본문: `Closes #N` + 무엇을 했나 / 어떻게 테스트했나 / 무엇을 남겼나. 크기 기준은 PR이 아니라 티켓에 둔다: 티켓 하나는 계획 태스크 4개 이하로 끝나야 하며, 넘으면 `/to-tickets`에서 나눈다.
-- "무엇을 남겼나"에 원장에서 옮기는 것: Ruling(무엇을·왜), deferred, parked, blocked, 실측으로 정한 값과 결정 시점, 같은 PR에서 바꾼 지속 문서와 요지. 커밋 범위·리뷰 판정·테스트 출력·Minor 목록은 옮기지 않는다.
+- Biome. `any` 금지. TypeScript strict 전부.
+- 커밋: Conventional Commits. 타입은 영어, 제목은 한국어, 스코프는 패키지명(전역은 `repo`). 트레일러는 서브에이전트 모델과 무관하게 `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>` 하나.
+- 브랜치 `ticket/<이슈번호>-<slug>`, 티켓당 PR 하나, 스쿼시 머지, 머지 후 원격 브랜치 자동 삭제(저장소 설정).
+- PR 본문: `Closes #N` + 무엇을 했나 / 어떻게 테스트했나 / 무엇을 남겼나. "무엇을 남겼나"에는 Ruling(무엇을·왜), deferred·blocked, 실측으로 정한 값, 같은 PR에서 바꾼 지속 문서와 요지만 적는다. 커밋 범위·리뷰 판정·테스트 출력·Minor 목록은 적지 않는다.
 
 ## 테스트
 
-- 이음새 둘. **파이프라인**: 파이프라인 패키지가 "배치 실행" 하나를 노출하고 모델·임베딩 클라이언트·시계를 주입받는다. 기록된 응답으로 실행하면 결정론적이므로 리플레이 테스트(같은 입력 → 같은 개정판)가 핵심. **웹**: 데모 사건이 시드된 DB 위에서 Playwright로 다섯 화면을 검증한다(핵심 루프, 로그인 흐름, 한도·중단 상태, axe, 키보드, 모바일·데스크톱 뷰포트).
-- 보조: 도메인 규칙은 순수 함수라 픽스처만으로 단위 테스트. 경계 매퍼 단위 테스트. 수집 어댑터는 기록된 API 응답으로.
-- 외부에서 관찰되는 행동만 검증한다. 내부 호출 순서나 DB 행 구조를 단언하지 않는다. 모델 호출은 실제 네트워크를 타지 않되 기록은 실제 응답에서 만든다. 설정 파일(워크플로 YAML·manifest·토큰 CSS)을 단언하는 테스트는 SHA 고정·권한·시크릿 같은 보안 계약에 한정한다. 실행 자체는 CI가 검증한다.
-- 테스트는 각 패키지에 병치. E2E는 웹 앱 아래. 구현 서브에이전트는 테스트를 먼저 쓴다.
-- `packages/db`·`apps/worker`의 실 DB 테스트는 `pnpm test:db`로 돌린다(루트 `pnpm test`는 `.env`를 읽지 않아 skip). 지금은 `.env`의 dev DB에 붙어 여덟 테이블을 truncate하므로 끝나면 `pnpm --filter @newsplatform/worker demo:load`로 데모 사건을 다시 적재한다. 테스트 전용 로컬 컨테이너 분리는 이슈 #42.
-- `@newsplatform/db/testing`은 테스트 전용 서브패스(truncate 등 헬퍼). Biome `noRestrictedImports`가 비테스트 파일에서의 import를 금지한다.
+- 이음새 둘(스펙 "테스트 결정"). **파이프라인**: "배치 실행" 하나가 모델·임베딩 클라이언트·시계를 주입받고, 기록된 응답으로 리플레이 테스트. **웹**: 데모 사건이 시드된 DB 위에서 Playwright(axe 포함).
+- 외부에서 관찰되는 행동만 검증한다. 설정 파일(워크플로 YAML·manifest·토큰 CSS)을 단언하는 테스트는 SHA 고정·권한·시크릿 같은 보안 계약에 한정한다.
+- 테스트는 각 패키지에 병치, E2E는 웹 앱 아래. 구현 서브에이전트는 테스트를 먼저 쓴다.
+- `@newsplatform/db/testing`은 테스트 전용 서브패스. Biome `noRestrictedImports`가 비테스트 파일의 import를 막는다.
 
 ## UI 스킬 (ui-skills.com)
 
-- `ui` 라벨 티켓은 Claude 사이클로 구현하되(ADR-0013) 구현자 브리프에 `.codex/skills/<slug>/SKILL.md` 원문 경로와 적용 범위를 넣는다. 저장된 스킬: `shadcn`, `wcag-audit-patterns`. 새 스킬은 `npx ui-skills get <slug>` 원문을 같은 경로에 커밋한다(레지스트리에 버전 고정이 없음). 갱신은 티켓 안에서만.
-- CLI: `npx ui-skills start`(라우팅), `npx ui-skills list [--category <name>]`, `npx ui-skills get <slug>`. MCP: `https://www.ui-skills.com/mcp`.
-- 스택과 맞는 후보: 구현 `shadcn`, `ui-styling`, `frontend-design`, `better-colors`, `better-accessibility`, `migrate-radix-to-base`, `next-cache-components`, `animate`. 읽기 전용 리뷰 `design-review`, `improve-ui`, `interface-review`, `wcag-audit-patterns`. 한국어 타이포 전용 스킬은 없어 스펙 타이포 항목이 정본.
-- 스킬 지시가 스펙(`docs/spec/v1.md` "화면과 경험")·`CONTEXT.md`·ADR과 충돌하면 스펙이 이기고, 충돌 지점을 PR 본문 "무엇을 남겼나"에 적는다.
+- `ui` 티켓의 구현자 브리프에 `docs/ui-skills/<slug>/SKILL.md` 원문 경로와 적용 범위를 넣는다. 저장된 스킬: `shadcn`, `wcag-audit-patterns`. 새 스킬은 `npx ui-skills get <slug>` 원문을 같은 경로에 커밋한다(레지스트리에 버전 고정 없음). 갱신은 티켓 안에서만.
+- 스킬 지시가 스펙 "화면과 경험"·`CONTEXT.md`·ADR과 충돌하면 스펙이 이기고, 충돌 지점을 PR 본문 "무엇을 남겼나"에 적는다.
 
-## 구현 사이클
+## 사이클 값
 
-`ready-for-agent`가 붙은 구현 티켓을 Claude가 superpowers로 돈다. 규칙은 `CLAUDE.md`, 여기는 절차와 값. 절차 명령은 저장소 `scripts/`에 있고 각 스크립트 머리말이 사용법이다.
+규칙은 `CLAUDE.md` "구현 사이클". 여기는 경로와 형식.
 
-- **승인 버전**: superpowers 6.3.0, 소스 SHA `b36e0829c6d0140e93cfef2ca599b1b07d4a7797`. 프로젝트 스코프 플러그인(`.claude/settings.json`의 `enabledPlugins`), `claude-plugins-official` 마켓플레이스 자동 갱신 끔.
-- **대조 절차**(사이클 시작마다): `scripts/cycle-start`가 `claude plugin list`의 superpowers 버전과 `~/.claude/plugins/marketplaces/claude-plugins-official/.claude-plugin/marketplace.json`의 `source.sha`를 위 줄과 대조한다(스크립트가 위 '승인 버전' 줄을 파싱하므로 줄 형식을 바꾸지 않는다). 갱신은 수동으로 하고 스킬 원문을 다시 검토한 뒤 이 값을 고친다.
-- **단계**:
-  1. `scripts/cycle-start <이슈>` — 버전 대조 + 티켓 게이트(OPEN, `ready-for-agent`, `research`·`needs-triage`·`needs-info` 없음, 담당자 없음, 열린 차단 이슈·"리서치 대기 #N" 없음) + 클레임 + 브랜치명 제안. FAIL이면 시작하지 않는다. `--check-only`는 클레임 없이 확인만.
-  2. using-git-worktrees Step 0 → `EnterWorktree` → 워크트리 안에서 `scripts/cycle-worktree <이슈> <slug>`(브랜치 이름 변경, `.claude/settings.json`·`.gitignore` 확인, 메인 체크아웃 `.env` 복사).
-  3. writing-plans. 계획 머리에 `**등급:** 경량|표준|민감`, 태스크마다 `**모델:**` 태그(아래 "서브에이전트 모델"). 태스크 4개 이하, 300줄 이하, 구현 코드 본문 없음(`CLAUDE.md` "계획 크기"). 교차 리뷰는 아래 "리뷰 게이트"가 요구할 때만 `codex exec -s read-only`로 파일에 받아 반영한다.
-  4. subagent-driven-development(`scripts/sdd-workspace`, `scripts/task-brief`는 superpowers 것, 워크트리 안에서). 브리프 첫 블록은 아래 "브리프 표준 문구". 태스크 리뷰는 "리뷰 게이트"가 요구하는 태스크에만.
-  5. finishing-a-development-branch "Push and Create PR". 스펙·ADR·이 파일을 바꾸는 Ruling이 있으면 그 문서 변경 커밋을 같은 브랜치에 넣는다.
-  6. `/code-review <merge-base> #<이슈>` → 결과를 PR 코멘트로 게시.
-  7. 사용자 승인 → 스쿼시 머지 → `scripts/cycle-finish <이슈>`(삭제 대상 출력) → 사용자 확인 → `--yes`(워크트리·로컬·원격 브랜치·SDD 워크스페이스 삭제).
-- **격리**: `EnterWorktree`는 `.claude/worktrees/<name>/`에 `worktree-<name>` 브랜치를 저장소 기본 브랜치에서 만든다. `.claude/settings.json`·`.gitignore`가 main에 있어야 워크트리에 들어온다. `.env`는 미추적이라 워크트리에 없으므로 `cycle-worktree`가 메인 체크아웃에서 복사한다(`db:migrate`·`db:gate`에 필요). 같은 워크트리에 구현자 동시 실행 없음.
-- **계획 파일**: `docs/superpowers/plans/YYYY-MM-DD-<이슈번호>-<slug>.md`. `**Spec:**`에 `docs/spec/v1.md` 해당 절 + 이슈 번호. 설명은 한국어, 코드는 TypeScript. 구조 표식은 영문 유지: `## Global Constraints`, `### Task N:`, `**Files:**`, `**Interfaces:**`(task-brief가 `Task N` 헤딩으로 추출). 미추적(`.gitignore`)이며 워크트리 안에서 쓰고 워크트리와 함께 사라진다. 남길 내용은 PR 본문에 둔다.
-- **원장**: `.superpowers/sdd/<계획 파일명>/progress.md`. 첫 줄이 계획 파일 경로. `Task N: complete`는 완료, 마지막 줄이 fix round면 그 다음 회차부터 재개. PR 이관 확인과 `/code-review` 종료 뒤 삭제(`cycle-finish`가 지운다).
-- **기준 커밋**: `/code-review`에 넘기는 기준은 `git merge-base origin/main HEAD`.
-
-## 리뷰 게이트 (ADR-0012)
-
-| 등급 | 기준 | Codex 교차 리뷰 | 태스크 리뷰 | 최종 리뷰 | `/code-review` |
-|---|---|---|---|---|---|
-| 경량 | 예상 변경 200줄 이하, 비민감, heavy 태스크 없음 | 없음 | 없음 | 없음 | 있음 |
-| 표준 | 그 밖의 비민감 티켓 | 태스크 4개일 때만 | heavy 태스크만 | 1회(fable) | 있음 |
-| 민감 | 마이그레이션·시크릿·인증·백업·복구를 건드림 | 있음 | 전부 | 1회(fable) + 재검토 | 있음 |
-
-- 등급은 계획 머리에 적는다. 구현 중 변경이 200줄을 넘거나 heavy 태스크가 생기면 등급을 올린다. 내리는 것은 원장에 Ruling으로 남긴다.
-- 최종 리뷰가 없는 등급에서는 `/code-review`가 유일한 브랜치 전체 리뷰다. Critical/Important가 나오면 수정 1회 + 재검토 1회 뒤 blocked 규칙(`CLAUDE.md`)을 그대로 적용한다.
-
-## 서브에이전트 모델 (ADR-0011)
-
-superpowers SDD는 티어를 fast/standard/most-capable로만 말하고 브리프마다 모델을 명시하라고 한다. 이 프로젝트의 매핑(Agent 도구 `model` 값):
-
-| 역할 | light | standard | heavy |
-|---|---|---|---|
-| 구현자 | opus | opus | fable |
-| 태스크 리뷰어 | opus | opus | fable |
-| 최종 리뷰(브랜치 전체) | fable | fable | fable |
-| 수정 4~5회차 | opus → fable | | |
-| Explore·조사 보조 | haiku | | |
-
-- 등급은 writing-plans 단계에서 계획 파일 `### Task N:` 아래 첫 줄에 `**모델:** light|standard|heavy`로 적는다. SDD는 이 값을 읽고 바꾸지 않는다. 바꾸면 원장에 Ruling으로 남긴다.
-- light: 문서·YAML·설정·단순 테스트, 예상 변경 50줄 이하, 브리프에 정답이 다 있음. standard: 기능 + 테스트, 모듈 1~2개, 스펙 해석 여지 작음. heavy: 스키마·마이그레이션, 암호화·인증, 동시성, 3개 이상 모듈 교차, Ruling이 필요한 태스크.
-- 컨트롤러 세션: Fable 5.1. `/triage`·문서 세션은 Opus 5로 시작해도 된다.
-
-## 브리프 표준 문구
-
-구현자·리뷰어 브리프의 첫 블록에 그대로 넣는다.
-
-- 커밋 트레일러는 서브에이전트 모델과 무관하게 이 줄 하나: `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
-- 테스트 명령은 워크트리 루트에서 `pnpm test`, `pnpm lint`, `pnpm typecheck`. 실 DB 테스트는 `pnpm test:db`(`.env`의 `DATABASE_MIGRATION_URL`, dev DB truncate → 끝나면 `demo:load`).
-- 보고 형식: 판정 한 줄, 근거 항목마다 1~2줄과 `파일:행`. diff·로그 원문은 붙이지 않는다. 컨트롤러는 판정만 읽는다.
-- 용어는 `CONTEXT.md`, 산출물 규칙은 이 파일 "도메인 규칙". `ui` 티켓이면 쓸 스킬 원문 경로(`.codex/skills/<slug>/SKILL.md`)와 스펙 "화면과 경험"이 스킬보다 우선한다는 한 줄.
+- **스크립트**: 착수 `scripts/cycle-start <이슈> [--check-only]`, 인계 상태 `scripts/handoff-state`. 머리말이 사용법.
+- **superpowers**: 프로젝트 스코프 플러그인(`.claude/settings.json` `enabledPlugins`), 마켓플레이스 자동 갱신 끔. 갱신은 수동으로 하고 스킬 원문을 다시 읽는다.
+- **계획 파일**: `docs/superpowers/plans/YYYY-MM-DD-<이슈>-<slug>.md`, 미추적. `**Spec:**`에 스펙 절 + 이슈 번호. 설명은 한국어, 구조 표식은 영문 유지(`## Global Constraints`, `### Task N:`, `**Files:**`, `**Interfaces:**` — superpowers `task-brief`가 `Task N` 헤딩으로 추출한다).
+- **원장**: `.superpowers/sdd/<계획 파일명>/progress.md`. 첫 줄이 계획 경로, `Task N: complete`가 완료, 마지막 줄이 fix round면 다음 회차부터 재개. SDD를 생략한 단일 태스크 티켓은 원장이 없고 `git log`가 대신한다.
+- **브리프** 첫 블록(구현자·리뷰어 공통): 위 커밋 트레일러 한 줄. 테스트 명령은 저장소 루트에서 `pnpm test`, `pnpm lint`, `pnpm typecheck`(실 DB는 `pnpm test:db`). 보고는 판정 한 줄 + 근거마다 1~2줄과 `파일:행`, diff·로그 원문 없음. 용어는 `CONTEXT.md`, 산출물 규칙은 이 파일 "도메인 규칙". `ui` 티켓이면 스킬 원문 경로와 "스펙이 스킬보다 우선" 한 줄.
+- **Explore·조사 보조** 서브에이전트는 haiku.
 
 ## 컨트롤러 운영
 
-- 확인 명령은 스크립트 하나로: 시작 `scripts/cycle-start`, 상태 `scripts/handoff-state`, 정리 `scripts/cycle-finish`.
 - diff·리뷰·로그는 서브에이전트가 읽고 컨트롤러는 판정만 받는다. PR 본문·코멘트 초안은 스크래치패드 파일로 만들어 `--body-file`로 넘긴다.
-- 인계는 사용자가 세션을 끝낸다고 말할 때만(`CLAUDE.md` "세션 인계"). 컨텍스트 예산 상한은 두지 않되 diff·리뷰·로그는 계속 서브에이전트가 읽는다. 인계 문서에 Herdr 에이전트는 이름과 pane ID를 함께 적는다(Codex 재시작 뒤 이름 등록이 풀린다).
-- **워크트리 세션의 가드**(Claude Code 워크트리 격리): git이 아닌 Bash 명령도 변수(`$PWD`, `S=…`)·서브셸·heredoc·`&&`로 엮인 긴 파이프가 섞이면 "워크트리 안인지 검증 불가"로 거부하고, Edit/Write는 메인 체크아웃 경로를 거부한다. 외부 CLI(`codex exec`, `herdr`)는 절대경로·리터럴 인자로만 쓰고, 긴 입력은 파일로 빼서 `< 파일`로 넘기며, 파일 append·수정은 Edit 도구로 한다. PR 밖의 지속 문서 편집·커밋은 `ExitWorktree`(keep) → 메인에서 편집·커밋·push → `EnterWorktree`(path) 순서로 하고, 그 사이에 구현 서브에이전트를 띄우지 않는다.
-- `git push`가 응답 없이 매달리는 것을 막기 위해 저장소 git config에 `http.lowSpeedLimit 1000`·`http.lowSpeedTime 45`를 두었다(로컬 설정이라 새 클론마다 다시 넣는다).
-- Herdr 안에서는 PreToolUse(`Agent`, 또는 `run_in_background`인 `Bash`) 훅 `.claude/hooks/agent-monitor-start.sh`가 오른쪽 pane(메인 50 : 모니터 50, id는 `.scratch/.agent-monitor-pane`)에 `scripts/agent-monitor <스크래치패드>/tasks --idle-exit 90`을 띄워 서브에이전트·백그라운드 작업(프롬프트 첫 줄, 마지막 도구 호출, 마지막 응답, done 여부)을 실시간으로 보인다. 모든 태스크가 done이거나 300초 이상 갱신이 없는 상태가 90초 지속되면 모니터가 종료되고 pane도 닫힌다(다음 호출 때 다시 열림). Herdr 밖, 서브에이전트 세션, 포그라운드 Bash에서는 아무것도 하지 않는다.
+- `git push`가 매달리는 것을 막기 위해 저장소 git config에 `http.lowSpeedLimit 1000`·`http.lowSpeedTime 45`를 두었다(로컬 설정, 새 클론마다 다시 넣는다).
+- Herdr 안에서는 PreToolUse(`Agent`, 백그라운드 `Bash`) 훅 `.claude/hooks/agent-monitor-start.sh`가 오른쪽 pane에 `scripts/agent-monitor`를 띄워 서브에이전트 진행을 보인다. 모든 태스크가 끝나거나 300초 이상 갱신이 없는 상태가 90초 지속되면 pane이 닫힌다. Herdr 밖·서브에이전트 세션·포그라운드 Bash에서는 아무것도 하지 않는다.
+- Codex 계획 교차 리뷰는 `codex exec -s read-only`로 절대경로·리터럴 인자만 쓰고 긴 입력은 파일로 넘긴다. 인계 문서에 Herdr 에이전트는 이름과 pane ID를 함께 적는다.

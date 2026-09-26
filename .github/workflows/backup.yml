@@ -1,6 +1,15 @@
 # 야간 pg_dump 암호화 백업과 검증(이슈 #18, 스펙 "배포와 운영" 백업·복구, ADR-0008).
 # 시크릿은 GitHub 환경 Production의 환경 시크릿만 읽는다: DATABASE_MIGRATION_URL(세션 풀러 5432), BACKUP_ENCRYPTION_KEY(64자 hex).
 # 스케줄은 기본 브랜치에서만 돈다. 로그에 URL·사용자명·프로젝트 ref를 남기지 않는다.
+# 절차·함정(정본. 계정 사실은 docs/agents/project.md "운영 환경"):
+# - 매일 UTC 18:30(KST 03:30) + 수동 + workflow_call. ubuntu-24.04 러너는 PostgreSQL 16 클라이언트가 선설치돼
+#   /usr/bin/pg_dump(pg_wrapper)가 16을 고르므로 /usr/lib/postgresql/17/bin을 GITHUB_PATH에 넣고 덤프 전 메이저를 확인한다.
+# - pg_dump --format=custom --no-owner --no-privileges --schema=public --schema=drizzle → NPBK1(AES-256-GCM,
+#   packages/db/scripts/backup-crypto.ts, 파일을 메모리에 한 번에 읽어 상한 1 GiB, 스트리밍은 이슈 #31)
+#   → 아티팩트 db-backup-<YYYYMMDD>T<HHMMSS>Z-<run_id>(newsplatform.dump.enc·.sha256·manifest.json, 보관 90일 = 공개 저장소 최대, v4+ 불변).
+# - 검증 잡: sha256sum -c → backup-decrypt.ts → pg_restore --list.
+# - 덤프는 --schema 한정이라 확장 정의를 담지 않는다. 복원 전 마이그레이션 또는 create extension vector. --no-owner --no-privileges로
+#   ACL이 빠지므로 역할 권한은 복원 뒤 다시 부여한다(복구 훈련은 M2a, 덤프 옵션 재검토는 이슈 #32).
 name: backup
 
 on:
