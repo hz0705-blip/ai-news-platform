@@ -76,4 +76,4 @@ fi
 gh issue edit "$issue" --add-assignee @me >/dev/null
 git checkout -q -b "$branch" main
 echo "PASS — 클레임 완료(@me), branch: $branch"
-echo "다음: superpowers:writing-plans → docs/superpowers/plans/$(date +%F)-$issue-$slug.md"
+echo "다음: 이슈 본문을 브리프로 구현 서브에이전트 착수 (CLAUDE.md 구현 사이클 2)"
