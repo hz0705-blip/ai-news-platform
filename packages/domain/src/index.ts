@@ -16,7 +16,7 @@ export {
   type RelationLabel,
 } from "./claim-status.ts";
 export { CONTRADICTION_STATUSES, type ContradictionStatus } from "./contradiction-status.ts";
-export { DISPLAY_POLICY_VERSION } from "./display-policy.ts";
+export { canDisplayExcerpt, DISPLAY_POLICY_VERSION } from "./display-policy.ts";
 export type { Evidence } from "./evidence.ts";
 export {
   checkEvidenceSpan,
