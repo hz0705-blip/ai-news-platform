@@ -3,7 +3,7 @@ import { expectNoAxeViolations } from "./axe.ts";
 
 const STORY_URL = "/story/demo-1-agreement";
 // 픽스처 기사 본문에만 있고 어떤 근거 발췌(허용 발췌 창)에도 들어가지 않는 문장.
-// Task 4의 픽스처를 쓸 때 이 문장을 articles/meridian-wire.txt 끝에 두고 어느 근거도 그 문장을 인용하지 않게 한다.
+// Task 4의 픽스처를 쓸 때 이 문장을 articles/meridian-wire.txt 끝에 두고 어느 근거도 그 문장을 발췌하지 않게 한다.
 const UNSEEN_SENTENCE =
   "This closing paragraph exists only in the fixture body and never appears on screen.";
 
@@ -109,24 +109,29 @@ test("키보드만으로 주장 → 근거 → 원문 링크를 완주한다", a
 });
 
 test("기사 본문 전체가 HTML·RSC 페이로드 어디에도 없다", async ({ page }) => {
-  const bodies: string[] = [];
-  page.on("response", async (response) => {
+  // 응답 본문 읽기를 약속으로 모아 전부 기다린다 — 읽기 실패를 ""로 삼키면 검사가 비어도 통과한다.
+  const reads: Promise<string>[] = [];
+  page.on("response", (response) => {
     const type = response.headers()["content-type"] ?? "";
     if (type.includes("text/html") || type.includes("text/x-component")) {
-      bodies.push(await response.text().catch(() => ""));
+      reads.push(response.text());
     }
   });
   await page.goto(STORY_URL);
   // 모든 근거를 펼쳐 발췌가 전부 드러난 뒤에도 미노출 문장이 없어야 한다
   const triggers = page.getByRole("button", { name: /근거 \d+개 보기/ });
-  for (let i = 0, n = await triggers.count(); i < n; i += 1) await triggers.nth(i).click();
+  await expect(triggers).toHaveCount(4);
+  for (const trigger of await triggers.all()) await trigger.click();
   await page.waitForLoadState("networkidle");
+  const bodies = await Promise.all(reads);
+  expect(bodies.length).toBeGreaterThan(0);
 
   const html = await page.content();
-  expect(html).not.toContain(UNSEEN_SENTENCE);
-  expect(bodies.join("\n")).not.toContain(UNSEEN_SENTENCE);
   // 반대로, 발췌는 실제로 보인다 — 검사가 비어 있지 않음을 확인
   expect(html).toContain("agreed on the framework");
+  expect(bodies.some((body) => body.includes("복수 출처 일치"))).toBe(true);
+  expect(html).not.toContain(UNSEEN_SENTENCE);
+  for (const body of bodies) expect(body).not.toContain(UNSEEN_SENTENCE);
 });
 
 for (const colorScheme of ["light", "dark"] as const) {
