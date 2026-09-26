@@ -15,9 +15,9 @@ export interface ReflowMeasurement {
   readonly keyElementCount: number;
 }
 
-/** 검사 대상 핵심 요소: 주장 문장, 펼침 버튼, 펼친 근거 행의 출처명·상태 문구·원문 링크, 헤더 제목. */
+/** 검사 대상 핵심 요소: 주장 문장, 펼침 버튼, 펼친 근거 행(인라인·데스크톱 패널)의 출처명·상태 문구·원문 링크, 헤더 제목. */
 const KEY_SELECTOR =
-  "main h1, main ol > li > p, main button[aria-expanded], main [id$='-evidence']:not([hidden]) li > p, main [id$='-evidence']:not([hidden]) a";
+  "main h1, main ol > li > p, main button[aria-expanded], main [id$='-evidence']:not([hidden]) li > p, main [id$='-evidence']:not([hidden]) a, main #evidence-panel li > p, main #evidence-panel a";
 
 export function measureReflow(page: Page): Promise<ReflowMeasurement> {
   return page.evaluate((keySelector) => {
