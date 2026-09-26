@@ -81,7 +81,7 @@ test("실제 오늘: 미발행·동일 크기 0건 타일·데모 앵커 → 사
     .getByRole("button", { name: /근거 \d+개 보기/ })
     .first()
     .click();
-  await expect(page.getByRole("region", { name: /주장 1/ })).toBeVisible();
+  await expect(page.locator("#claim-1-evidence")).toBeVisible();
   expect(errors).toEqual([]);
 });
 

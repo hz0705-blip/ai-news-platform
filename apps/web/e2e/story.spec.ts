@@ -28,14 +28,14 @@ test("핵심 루프: 주장 → 근거 펼침 → 원문 링크 → 변화 구�
   for (let i = 0; i < count; i += 1) {
     await expect(triggers.nth(i)).toHaveAttribute("aria-expanded", "false");
   }
-  await expect(page.getByRole("region", { name: /주장 \d+/ })).toHaveCount(0);
+  await expect(page.locator("[id$='-evidence']:not([hidden])")).toHaveCount(0);
 
   const trigger = triggers.first();
   await trigger.click();
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
   await expect(trigger).toBeFocused();
 
-  const evidence = page.getByRole("region", { name: /주장 1/ });
+  const evidence = page.locator("#claim-1-evidence");
   await expect(evidence.locator("[lang='en']").first()).toBeVisible();
   await expect(evidence.getByText("기사 발행").first()).toBeVisible();
   await expect(evidence.getByRole("time").first()).toHaveText(ABSOLUTE_TIME);
@@ -61,7 +61,7 @@ test("사건 머리에 상태 설명 문구와 상태별 개수 링크가 있다
   const counts = page.getByRole("list", { name: "주장 상태별 개수" });
   await expect(counts.getByRole("link", { name: /복수 출처 일치 4개/ })).toHaveAttribute(
     "href",
-    "#claim-1-label",
+    "#claim-1",
   );
 });
 
@@ -99,10 +99,7 @@ test("키보드만으로 주장 → 근거 → 원문 링크를 완주한다", a
   await page.keyboard.press(
     browserName === "webkit" && process.platform === "darwin" ? "Alt+Tab" : "Tab",
   );
-  const firstLink = page
-    .getByRole("region", { name: /주장 1/ })
-    .getByRole("link", { name: /원문/ })
-    .first();
+  const firstLink = page.locator("#claim-1-evidence").getByRole("link", { name: /원문/ }).first();
   await expect(firstLink).toBeFocused();
 
   await page.keyboard.press("Space");

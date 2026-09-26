@@ -18,13 +18,13 @@ test.describe("데모 사건 ② — 동시 보도 상충", () => {
     await expect(counts).toContainText("복수 출처 일치 2개");
     await expect(counts.getByRole("link", { name: /보도 상충 1개/ })).toHaveAttribute(
       "href",
-      "#claim-2-label",
+      "#claim-2",
     );
   });
 
   test("상충 주장의 근거는 발행 시각 순 동등 행이고 순서·다른 점을 보인다", async ({ page }) => {
     await page.goto(STORY_URL);
-    const claim = page.getByRole("listitem").filter({ has: page.locator("#claim-2-label") });
+    const claim = page.getByRole("listitem").filter({ has: page.locator("#claim-2") });
     await expect(claim.getByText("보도 상충", { exact: true })).toBeVisible();
     await claim.getByRole("button", { name: /근거 2개 보기/ }).click();
     const region = page.locator("#claim-2-evidence");
@@ -49,7 +49,7 @@ test.describe("데모 사건 ② — 동시 보도 상충", () => {
 
   test("상충이 아닌 주장의 근거 행에는 순서·다른 점이 없다", async ({ page }) => {
     await page.goto(STORY_URL);
-    const claim = page.getByRole("listitem").filter({ has: page.locator("#claim-1-label") });
+    const claim = page.getByRole("listitem").filter({ has: page.locator("#claim-1") });
     await claim.getByRole("button", { name: /근거 2개 보기/ }).click();
     const region = page.locator("#claim-1-evidence");
     await expect(region.getByRole("listitem")).toHaveCount(2);
