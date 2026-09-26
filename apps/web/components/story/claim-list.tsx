@@ -40,7 +40,7 @@ export function ClaimList({
               <ul className="flex flex-col gap-4">
                 {claim.evidence.map((item, i) => (
                   <EvidenceRow
-                    key={`${item.sourceUrl}#${item.highlight.start}`}
+                    key={`${item.sourceUrl}#${item.publishedAt.getTime()}`}
                     evidence={item}
                     {...(claim.isComparison
                       ? { position: { index: i + 1, total: claim.evidence.length } }

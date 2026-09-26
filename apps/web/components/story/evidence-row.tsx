@@ -25,7 +25,6 @@ export function EvidenceRow({
   evidence: EvidenceView;
   position?: { readonly index: number; readonly total: number };
 }) {
-  const { excerpt, highlight } = evidence;
   const published = formatAbsolute(evidence.publishedAt);
   return (
     <li className="flex flex-col gap-2 rounded-md border border-border bg-card p-4 text-card-foreground">
@@ -42,13 +41,15 @@ export function EvidenceRow({
       <p className="text-meta text-muted-foreground">
         <span>{ARTICLE_PUBLISHED}</span> <time dateTime={published.dateTime}>{published.text}</time>
       </p>
-      <blockquote lang="en" className="m-0">
-        {excerpt.slice(0, highlight.start)}
-        <EvidenceHighlight lang="en">
-          {excerpt.slice(highlight.start, highlight.end)}
-        </EvidenceHighlight>
-        {excerpt.slice(highlight.end)}
-      </blockquote>
+      {evidence.display === "발췌" ? (
+        <blockquote lang="en" className="m-0">
+          {evidence.excerpt.slice(0, evidence.highlight.start)}
+          <EvidenceHighlight lang="en">
+            {evidence.excerpt.slice(evidence.highlight.start, evidence.highlight.end)}
+          </EvidenceHighlight>
+          {evidence.excerpt.slice(evidence.highlight.end)}
+        </blockquote>
+      ) : null}
       {evidence.differsIn === undefined ? null : (
         <dl>
           <dt className="font-medium">{DIFFERS_IN}</dt>

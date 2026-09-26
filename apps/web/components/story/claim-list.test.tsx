@@ -16,6 +16,7 @@ const claims = [
       {
         sourceName: "Meridian Wire",
         isFictional: true,
+        display: "발췌" as const,
         articleTitle: "A",
         publishedAt: new Date("2026-09-16T22:00:00.000Z"),
         excerpt: "Ministers agreed on the framework.",
@@ -25,6 +26,7 @@ const claims = [
       {
         sourceName: "Harbor Ledger",
         isFictional: true,
+        display: "발췌" as const,
         articleTitle: "B",
         publishedAt: new Date("2026-09-16T23:00:00.000Z"),
         excerpt: "The three governments signed the framework.",
@@ -45,6 +47,7 @@ const conflictClaim = {
     {
       sourceName: "Atlas Dispatch (가상 출처)",
       isFictional: true,
+      display: "발췌" as const,
       articleTitle: "Port halts all loading",
       publishedAt: new Date("2026-09-16T07:15:00.000Z"),
       excerpt: "All loading at the port was halted.",
@@ -55,6 +58,7 @@ const conflictClaim = {
     {
       sourceName: "Harbor Ledger (가상 출처)",
       isFictional: true,
+      display: "발췌" as const,
       articleTitle: "Some loading continues",
       publishedAt: new Date("2026-09-16T08:40:00.000Z"),
       excerpt: "Some loading continued at the port.",
