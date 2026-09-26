@@ -44,7 +44,7 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 - 테스트 `pnpm test`(Vitest). 패키지 하나는 `pnpm test --project <domain|db|pipeline|worker|web>`(**`--`를 넣으면 pnpm 12가 필터를 버리고 전체가 돈다**). E2E `pnpm --filter @newsplatform/web test:e2e`(Playwright).
 - 실 DB 테스트 `pnpm test:db` — `db`·`worker` 프로젝트만, dev DB를 truncate하므로 끝나면 `pnpm --filter @newsplatform/worker demo:load`(데모 사건 재적재, 멱등). 테스트 전용 컨테이너 분리는 이슈 #42.
 - 마이그레이션 `pnpm db:migrate`, pgvector 게이트 `pnpm db:gate`.
-- CI(`.github/workflows/ci.yml`)는 위 명령을 그대로 실행하므로 명령을 바꾸면 워크플로와 `packages/db/scripts/ci-workflow.test.ts`도 함께 고친다.
+- CI(`.github/workflows/ci.yml`)는 위 명령을 그대로 실행하므로 명령을 바꾸면 워크플로도 함께 고친다. `packages/db/scripts/ci-workflow.test.ts`에는 보안 계약(SHA 고정·권한·시크릿) 단언만 있다.
 
 ## 컨벤션
 

@@ -1,4 +1,4 @@
-/* B sRGB → OKLCH: culori 4.0.2. 정본·#20 Ruling은 tokens.test.ts로 검산. */
+/* B sRGB → OKLCH: culori 4.0.2로 변환. 정본은 docs/spec/v1.md B 표와 #20 Ruling. */
 :root {
   --font-size-meta: 0.875rem;
   --font-size-body: 1.0625rem;
