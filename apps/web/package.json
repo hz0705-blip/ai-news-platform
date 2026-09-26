@@ -29,10 +29,8 @@
     "@tailwindcss/postcss": "4.3.3",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",
-    "@types/culori": "4.0.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
-    "culori": "4.0.2",
     "esbuild": "0.28.2",
     "shadcn": "4.21.0",
     "tailwindcss": "4.3.3"
