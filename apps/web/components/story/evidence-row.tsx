@@ -76,7 +76,9 @@ export function EvidenceRow({
       <p className="text-meta text-muted-foreground">
         <span>{ARTICLE_PUBLISHED}</span> <time dateTime={published.dateTime}>{published.text}</time>
       </p>
-      <blockquote lang="en" className="m-0">
+      {/* pe-2: 강조 구간은 줄마다 끝 여백을 복제한다(box-decoration-break: clone). Chromium은 줄을 나눌 때
+          그 여백을 줄 폭에 넣지 않아 배경이 인용 상자 밖으로 최대 8px 넘친다 — 같은 폭만큼 끝 여백을 둔다. */}
+      <blockquote lang="en" className="m-0 pe-2">
         {excerpt.slice(0, highlight.start)}
         <EvidenceHighlight lang="en">
           {excerpt.slice(highlight.start, highlight.end)}
