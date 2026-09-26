@@ -25,7 +25,13 @@ if ! gh pr checks "$pr" --watch --fail-fast; then
 fi
 [ "$wait_only" -eq 1 ] && { echo "PASS (CI만 확인, 머지 안 함)"; exit 0; }
 
-state="$(gh pr view "$pr" --json mergeable --jq .mergeable)"
+# 다른 PR 머지 직후에는 GitHub이 mergeable을 재계산하므로 UNKNOWN이 풀릴 때까지 기다린다.
+state=UNKNOWN
+for _ in $(seq 1 12); do
+  state="$(gh pr view "$pr" --json mergeable --jq .mergeable)"
+  [ "$state" = "UNKNOWN" ] || break
+  sleep 5
+done
 [ "$state" = "MERGEABLE" ] || { echo "FAIL: mergeable=$state"; exit 1; }
 gh pr merge "$pr" --squash --delete-branch
 echo "머지 완료"
