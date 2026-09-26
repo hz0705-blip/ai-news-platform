@@ -3,6 +3,10 @@
 # 일회용 PostgreSQL 17 + pgvector 서비스 컨테이너(프로덕션 Supabase와 같은 메이저 17, pgvector는 0.8.x)에
 # 빈 DB 마이그레이션을 적용한 뒤 pgvector 게이트를 읽기 스모크로 돈다.
 # "이전 릴리스 픽스처 DB"에 마이그레이션을 적용하는 검사는 픽스처 DB가 생기는 M2a로 미룬다(스펙 배포 흐름의 양쪽 적용 중 빈 DB만 여기서 돈다).
+# 잡 셋이 병렬로 돈다: checks(고정 설치·lint·typecheck·test·web build), migration-smoke(pgvector/pgvector:0.8.x-pg17 digest 고정,
+# 자격은 ci/ci-<run_id>로 워크플로 안에서 생성, db:migrate → db:gate), e2e(playwright install --with-deps → web build → test:e2e,
+# 실패해도 아티팩트 web-e2e(playwright-report·test-results, 보관 7일)를 올림, 타임아웃 15분).
+# 시크릿·환경을 읽지 않으므로 포크 PR에서도 돈다. 캐시는 actions/setup-node의 cache: pnpm. 후속은 이슈 #36.
 name: ci
 
 on:

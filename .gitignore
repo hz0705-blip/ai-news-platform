@@ -1,7 +1,5 @@
 .DS_Store
 .scratch/
-.worktrees/
-.claude/worktrees/
 .superpowers/
 .claude/settings.local.json
 
@@ -17,5 +15,5 @@ test-results/
 .env.*
 !.env.example
 
-# SDD 계획 파일은 워크트리 안에서만 산다
+# SDD 계획 파일은 미추적이며 티켓 머지 뒤 삭제한다
 docs/superpowers/plans/
