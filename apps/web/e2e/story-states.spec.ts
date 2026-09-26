@@ -2,6 +2,7 @@ import { expect, type Page, test } from "@playwright/test";
 import { build } from "esbuild";
 import { buildStoryView } from "../lib/story-view.ts";
 import { expectNoAxeViolations } from "./axe.ts";
+import { DESKTOP_MIN, evidenceOf } from "./evidence.ts";
 import { expectReflow, measureReflow } from "./reflow.ts";
 import { HIDDEN_SPAN, LONG_MIXED, stateFixture } from "./story-data.ts";
 
@@ -43,6 +44,9 @@ async function mountStory(page: Page, hash = "") {
 }
 
 test.describe("근거 발췌 불가 상태", () => {
+  // 인라인 아코디언 계약을 단언한다 — 모바일 폭으로 고정한다(Ruling 24-7).
+  test.use({ viewport: { width: 390, height: 844 } });
+
   test("상태 문구·출처명·원문 링크만 보이고 구간 텍스트는 DOM 어디에도 없다", async ({ page }) => {
     await mountStory(page);
     const triggers = page.getByRole("button", { name: /근거 \d+개 보기/ });
@@ -98,10 +102,23 @@ for (const width of [320, 640, 1440]) {
       await mountStory(page);
       await expectReflow(page, testInfo, width, `states-${width}-${colorScheme}-collapsed`);
       await expectNoAxeViolations(page, testInfo, `states-${width}-${colorScheme}-collapsed`);
-      for (const trigger of await page.getByRole("button", { name: /근거 \d+개 보기/ }).all())
-        await trigger.click();
-      await expect(page.getByText("근거 발췌를 표시할 수 없음")).toHaveCount(2);
-      await expect(page.getByText(LONG_MIXED)).toBeVisible();
+      const triggers = page.getByRole("button", { name: /근거 \d+개 보기/ });
+      for (const trigger of await triggers.all()) await trigger.click();
+      if (width >= DESKTOP_MIN) {
+        // 데스크톱: 패널은 마지막으로 활성화한 주장 2만 보이고, 그 트리거만 펼침 상태다.
+        await expect(evidenceOf(page, 2, width).getByRole("heading", { level: 2 })).toHaveText(
+          "주장 2의 근거",
+        );
+        await expect(triggers.nth(0)).toHaveAttribute("aria-expanded", "false");
+        await expect(triggers.nth(1)).toHaveAttribute("aria-expanded", "true");
+        await expect(page.getByText("근거 발췌를 표시할 수 없음")).toHaveCount(1);
+        await expect(
+          evidenceOf(page, 2, width).getByText("근거 발췌를 표시할 수 없음"),
+        ).toBeVisible();
+      } else {
+        await expect(page.getByText("근거 발췌를 표시할 수 없음")).toHaveCount(2);
+      }
+      await expect(page.locator("#claims").getByText(LONG_MIXED)).toBeVisible();
       await expectReflow(page, testInfo, width, `states-${width}-${colorScheme}-expanded`);
       const { claimTextLines } = await measureReflow(page);
       // 긴 혼합 문자열이 잘리지 않고 접힌다

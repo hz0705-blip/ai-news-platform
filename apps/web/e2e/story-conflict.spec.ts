@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { expectNoAxeViolations } from "./axe.ts";
+import { DESKTOP_MIN, evidenceOf } from "./evidence.ts";
 import { expectReflow, measureReflow } from "./reflow.ts";
 
 const STORY_URL = "/story/demo-2-conflict";
@@ -36,7 +37,7 @@ test.describe("데모 사건 ② — 동시 보도 상충", () => {
     const claim = page.getByRole("listitem").filter({ has: page.locator("#claim-2") });
     await expect(claim.getByText("보도 상충", { exact: true })).toBeVisible();
     await claim.getByRole("button", { name: /근거 2개 보기/ }).click();
-    const region = page.locator("#claim-2-evidence");
+    const region = evidenceOf(page, 2, page.viewportSize()?.width ?? 0);
     const rows = region.getByRole("listitem");
     await expect(rows).toHaveCount(2);
     await expect(rows.nth(0)).toContainText("보도 1/2");
@@ -60,13 +61,15 @@ test.describe("데모 사건 ② — 동시 보도 상충", () => {
     await page.goto(STORY_URL);
     const claim = page.getByRole("listitem").filter({ has: page.locator("#claim-1") });
     await claim.getByRole("button", { name: /근거 2개 보기/ }).click();
-    const region = page.locator("#claim-1-evidence");
+    const region = evidenceOf(page, 1, page.viewportSize()?.width ?? 0);
     await expect(region.getByRole("listitem")).toHaveCount(2);
     await expect(region.getByText(/^보도 \d\/\d$/)).toHaveCount(0);
     await expect(region.getByText("다른 점")).toHaveCount(0);
   });
 
   test("기사 본문 전체가 HTML·RSC 페이로드 어디에도 없다(모든 패널 펼침)", async ({ page }) => {
+    // 모든 근거를 한꺼번에 드러내는 것은 인라인 아코디언에서만 가능하다 — 모바일 폭으로 고정한다(Ruling 24-7).
+    await page.setViewportSize({ width: 390, height: 844 });
     expect(readFileSync(ARTICLE_PATH, "utf8")).toContain(UNSEEN_SENTENCE_2);
     // 응답 본문 읽기를 약속으로 모아 전부 기다린다 — 읽기 실패를 ""로 삼키면 검사가 비어도 통과한다.
     const reads: Promise<string>[] = [];
@@ -115,7 +118,12 @@ test.describe("데모 사건 ② — 동시 보도 상충", () => {
         await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
         await page.goto(`${STORY_URL}#claim-2`);
         await expect(page.locator("#claim-2")).toBeFocused();
-        await expect(page.locator("#claim-2-evidence")).toBeVisible();
+        await expect(evidenceOf(page, 2, width)).toBeVisible();
+        if (width >= DESKTOP_MIN) {
+          await expect(evidenceOf(page, 2, width).getByRole("heading", { level: 2 })).toHaveText(
+            "주장 2의 근거",
+          );
+        }
         const name = `conflict-${width}-${colorScheme}`;
         await expectReflow(page, testInfo, width, name);
         if (width === 320) {
@@ -147,7 +155,18 @@ test.describe("데모 사건 ② — 동시 보도 상충", () => {
           await trigger.click();
           await expect(trigger).toHaveAttribute("aria-expanded", "true");
         }
-        await expect(page.locator("#claim-2-evidence")).toBeVisible();
+        if (viewport.width >= DESKTOP_MIN) {
+          // 데스크톱: 패널은 마지막으로 활성화한 주장 3만 보이고, 마지막 트리거만 펼침 상태다.
+          await expect(
+            evidenceOf(page, 3, viewport.width).getByRole("heading", { level: 2 }),
+          ).toHaveText("주장 3의 근거");
+          for (const i of [0, 1]) {
+            await expect(triggers.nth(i)).toHaveAttribute("aria-expanded", "false");
+          }
+          await expect(triggers.nth(2)).toHaveAttribute("aria-expanded", "true");
+        } else {
+          await expect(evidenceOf(page, 2, viewport.width)).toBeVisible();
+        }
 
         await expectNoAxeViolations(page, testInfo, `${cell}-expanded`);
       });
