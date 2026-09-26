@@ -40,6 +40,10 @@ export const ORIGINAL_LINK = "원문 보기";
 export const originalLinkContext = (sourceName: string): string =>
   `, ${sourceName} 기사, 새 창에서 열림`;
 export const TRANSLATE = "번역";
+export const TRANSLATE_PENDING = "번역은 준비 중입니다";
+export const EVIDENCE_SPAN = "근거 구간";
+/** 출처의 현재 권리 등급으로 구간을 보일 수 없는 근거(스펙 리터럴). 상충 상태가 아니다. */
+export const EXCERPT_UNAVAILABLE = "근거 발췌를 표시할 수 없음";
 
 export const SOURCE_REGION = "지역";
 export const SOURCE_OWNERSHIP = "소유 형태";
