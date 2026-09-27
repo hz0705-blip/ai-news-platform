@@ -1,4 +1,14 @@
 export {
+  type AssignmentArticle,
+  type AssignToStoryInput,
+  assignArticleToStory,
+  type CreateStoryInput,
+  createStoryForArticle,
+  findCandidateStories,
+  loadAssignmentArticles,
+  touchStory,
+} from "./assign.ts";
+export {
   type SaveCollectedInput,
   type SaveCollectedResult,
   saveCollectedArticles,

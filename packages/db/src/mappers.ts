@@ -203,6 +203,10 @@ export function toStoryRow(story: Story): StoryRow {
     topics: [...story.topics],
     is_demo: story.isDemo,
     lifecycle: story.lifecycle,
+    // 배정 열(#53)은 배정 단계가 채운다. 발행으로 만드는 데모 사건은 셋 다 없다.
+    centroid: null,
+    last_new_report_at: null,
+    last_processed_at: null,
   };
 }
 
@@ -246,6 +250,7 @@ export function toArticleRow(article: Article, storyId: string): ArticleRow {
     description: null,
     published_at: article.publishedAt,
     topics: [...article.topics],
+    embedding: null,
   };
 }
 
