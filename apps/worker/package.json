@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "demo:load": "node --env-file-if-exists=../../.env scripts/load-demo-story.ts"
+    "demo:load": "node --env-file-if-exists=../../.env scripts/load-demo-story.ts",
+    "collect:gnews": "node --env-file-if-exists=../../.env scripts/collect-gnews.ts"
   },
   "dependencies": {
     "@newsplatform/db": "workspace:*",

@@ -175,7 +175,7 @@ const articles: readonly Article[] = revision.sources.map((s) => ({
   url: s.articleUrl,
   title: s.articleTitle,
   publishedAt: s.publishedAt,
-  topic: "국제 정치·외교·안보",
+  topics: ["국제 정치·외교·안보"],
 }));
 
 /** 기사 본문 전체. 사건 페이지 질의 결과에 이 문장이 나오면 본문이 새어 나간 것이다. */

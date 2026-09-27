@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { NORMALIZATION_VERSION, normalizeBody } from "./text.ts";
+import { NORMALIZATION_VERSION, normalizeBody, normalizeTitle } from "./text.ts";
+
+describe("normalizeTitle", () => {
+  it("NFC·공백 연속 축약·앞뒤 공백 제거·소문자로 정규화한다", () => {
+    expect(normalizeTitle("  Ministers  Agree\n on   Framework ")).toBe(
+      "ministers agree on framework",
+    );
+  });
+});
 
 describe("normalizeBody", () => {
   it("HTML 마크업을 제거하고 텍스트만 남긴다", () => {

@@ -1,4 +1,9 @@
 export {
+  type SaveCollectedInput,
+  type SaveCollectedResult,
+  saveCollectedArticles,
+} from "./collect.ts";
+export {
   type EnvSource,
   InvalidEnvError,
   MissingEnvError,

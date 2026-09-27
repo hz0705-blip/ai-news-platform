@@ -35,7 +35,7 @@
       "url": "https://meridianwire.example/beryl-port-strike",
       "title": "Beryl Port dockworkers walk out as wage talks collapse",
       "publishedAt": "2026-09-16T07:15:00.000Z",
-      "topic": "세계 경제·금융",
+      "topics": ["세계 경제·금융"],
       "articleVersionId": "av-meridian-beryl",
       "file": "articles/meridian-beryl.txt"
     },
@@ -46,7 +46,7 @@
       "url": "https://harborledger.example/beryl-terminal-strike",
       "title": "Strike slows, but does not stop, Beryl container terminal",
       "publishedAt": "2026-09-16T08:40:00.000Z",
-      "topic": "세계 경제·금융",
+      "topics": ["세계 경제·금융"],
       "articleVersionId": "av-harbor-beryl",
       "file": "articles/harbor-beryl.txt"
     }
