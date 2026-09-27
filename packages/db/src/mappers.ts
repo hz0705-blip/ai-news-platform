@@ -9,6 +9,7 @@ import type {
   Source,
   Story,
 } from "@newsplatform/domain";
+import { normalizeArticleUrl } from "@newsplatform/domain";
 import type {
   ArticleRow,
   ArticleVersionRow,
@@ -215,6 +216,7 @@ export function toSourceRow(source: Source): SourceRow {
     language: source.language,
     is_fictional: source.isFictional,
     wire_id: source.wireId ?? null,
+    external_id: source.externalId ?? null,
   };
 }
 
@@ -228,6 +230,7 @@ export function toDomainSource(row: SourceRow): Source {
     language: row.language,
     isFictional: row.is_fictional,
     ...(row.wire_id === null ? {} : { wireId: row.wire_id }),
+    ...(row.external_id === null ? {} : { externalId: row.external_id }),
   };
 }
 
@@ -237,9 +240,12 @@ export function toArticleRow(article: Article, storyId: string): ArticleRow {
     source_id: article.sourceId,
     story_id: storyId,
     url: article.url,
+    normalized_url: normalizeArticleUrl(article.url),
+    external_id: null,
     title: article.title,
+    description: null,
     published_at: article.publishedAt,
-    topic: article.topic,
+    topics: [...article.topics],
   };
 }
 

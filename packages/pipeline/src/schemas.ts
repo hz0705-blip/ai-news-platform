@@ -33,6 +33,7 @@ export const SourceSchema: z.ZodType<Source> = z.object({
   language: z.string(),
   isFictional: z.boolean(),
   wireId: z.string().exactOptional(),
+  externalId: z.string().exactOptional(),
 });
 
 export const StorySchema: z.ZodType<Story> = z.object({
@@ -52,7 +53,7 @@ const articleShape = {
   url: z.string(),
   title: z.string(),
   publishedAt: z.date(),
-  topic: z.enum(TOPICS),
+  topics: z.array(z.enum(TOPICS)),
 };
 
 export const EvidenceSchema: z.ZodType<Evidence> = z.object({

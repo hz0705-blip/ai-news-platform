@@ -33,3 +33,11 @@ export function normalizeBody(raw: string): string {
 
   return text.trim();
 }
+
+/**
+ * 정확 중복 제거의 "정규화 제목"(docs/spec/v1.md "개발 중 결정 항목"): NFC, 공백 연속을 하나로,
+ * 앞뒤 공백 제거, 소문자. 같은 출처 + 같은 정규화 제목 + 같은 본문 해시가 병합 조건이다.
+ */
+export function normalizeTitle(raw: string): string {
+  return raw.normalize("NFC").replace(/\s+/g, " ").trim().toLowerCase();
+}

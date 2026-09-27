@@ -160,7 +160,7 @@ function toArticleMeta(raw: RawArticleMeta): DemoArticleMeta {
     url: raw.url,
     title: raw.title,
     publishedAt: new Date(raw.publishedAt),
-    topic: raw.topic,
+    topics: raw.topics,
     articleVersionId: raw.articleVersionId,
   };
 }

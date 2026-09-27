@@ -17,6 +17,22 @@ export {
 } from "./recorded.ts";
 export { BatchInputSchema, BatchReportSchema, RevisionSchema } from "./schemas.ts";
 export {
+  buildGnewsRequest,
+  type CollectGnewsDeps,
+  type CollectGnewsResult,
+  collectGnews,
+  collectionWindow,
+  GNEWS_MAX_PAGES_PER_TOPIC,
+  GNEWS_PAGE_SIZE,
+  GNEWS_TOPIC_QUERIES,
+  GnewsRequestError,
+  GnewsResponseSchema,
+  type GnewsTopicKey,
+  type GnewsTopicQuery,
+  toCollected,
+} from "./sources/gnews.ts";
+export { createRecordedGnewsFetch, type RecordedGnewsResponse } from "./sources/gnews-recorded.ts";
+export {
   type ArticleInput,
   type BatchDeps,
   type BatchInput,
