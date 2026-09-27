@@ -52,7 +52,7 @@ export async function loadDemoStory(params: {
       },
       {
         modelClient: createRecordedModelClient(params.slug),
-        embeddingClient: { embed: async () => [] },
+        embeddingClient: { embed: async () => ({ vectors: [], usage: { tokens: 0, spend: 0 } }) },
         clock: () => now,
       },
     );

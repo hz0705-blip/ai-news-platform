@@ -10,7 +10,7 @@ const fixture = loadDemoStoryFixture("demo-1-agreement");
 function deps() {
   return {
     modelClient: createRecordedModelClient("demo-1-agreement"),
-    embeddingClient: { embed: async () => [] },
+    embeddingClient: { embed: async () => ({ vectors: [], usage: { tokens: 0, spend: 0 } }) },
     clock: () => DEMO_REFERENCE_TIME,
   };
 }
@@ -304,7 +304,7 @@ describe("두 사건 배치", () => {
       ["demo-1-agreement", "demo-2-conflict"],
       override === undefined ? {} : { override },
     ),
-    embeddingClient: { embed: async () => [] },
+    embeddingClient: { embed: async () => ({ vectors: [], usage: { tokens: 0, spend: 0 } }) },
     clock: () => DEMO_REFERENCE_TIME,
   });
   it("데모 ①·② 리플레이가 둘 다 골든과 같다", async () => {

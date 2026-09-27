@@ -6,7 +6,16 @@ import {
   STORY_LIFECYCLES,
   TOPICS,
 } from "@newsplatform/domain";
-import { boolean, index, integer, pgTable, text, timestamp, unique } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  vector,
+} from "drizzle-orm/pg-core";
 
 /**
  * 테이블 여덟(#21 Ruling 5). 열 이름은 snake_case 영어이고 TS 키도 열 이름과 같게 둔다
@@ -15,6 +24,9 @@ import { boolean, index, integer, pgTable, text, timestamp, unique } from "drizz
  * `{ enum }`은 타입만 좁히고 DB 제약을 만들지 않는다 — 값 목록은 도메인 상수가 정본이다.
  */
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
+
+/** 임베딩 차원(스펙 "임베딩 모델·차원": `text-embedding-3-small` 1536). */
+export const EMBEDDING_DIMENSIONS = 1536;
 
 /** 출처(CONTEXT.md "출처"). 권리 등급은 출처 단위다. */
 export const sources = pgTable("sources", {
@@ -31,7 +43,13 @@ export const sources = pgTable("sources", {
   external_id: text("external_id").unique(),
 });
 
-/** 사건(CONTEXT.md "사건"). 사건 URL은 `slug`로 찾는다. 사건의 상충 상태는 여기 두지 않는다(ADR-0009). */
+/**
+ * 사건(CONTEXT.md "사건"). 사건 URL은 `slug`로 찾는다. 사건의 상충 상태는 여기 두지 않는다(ADR-0009).
+ * 배정(#53)이 쓰는 열: `centroid`는 소속 기사 임베딩의 평균(배정 때마다 다시 계산), `last_new_report_at`은
+ * 마지막 신규 보도(새로 배정된 기사)의 발행 시각으로 활성 창 72시간의 기준, `last_processed_at`은 배치가
+ * 이 사건을 마지막으로 건드린 시각(재수집·갱신 버전은 이것만 갱신한다 — 스펙 "사건 수명").
+ * 데모 사건과 배정 전 사건은 셋 다 null이다.
+ */
 export const stories = pgTable("stories", {
   id: text().primaryKey(),
   slug: text().notNull().unique(),
@@ -39,6 +57,9 @@ export const stories = pgTable("stories", {
   topics: text({ enum: TOPICS }).array().notNull(),
   is_demo: boolean().notNull(),
   lifecycle: text({ enum: STORY_LIFECYCLES }).notNull(),
+  centroid: vector({ dimensions: EMBEDDING_DIMENSIONS }),
+  last_new_report_at: timestamptz("last_new_report_at"),
+  last_processed_at: timestamptz("last_processed_at"),
 });
 
 /**
@@ -46,6 +67,8 @@ export const stories = pgTable("stories", {
  * 동일성 키는 `normalized_url`(#52, 스펙 "정확 중복 제거"). `story_id`는 사건 배정(#53) 전까지 null이다.
  * `topics`는 이 기사를 가져온 수집 쿼리 토픽의 합집합, `external_id`는 GNews 기사 id(보조 기록),
  * `description`은 임베딩 입력(스펙 "임베딩 모델·차원")이 될 응답의 설명이다.
+ * `embedding`은 제목+설명의 임베딩(#53)이며 HNSW 코사인 인덱스로 후보를 찾는다. null을 허용하므로
+ * 사건 종료 시 임베딩 삭제(스펙 "사건 수명")는 이 열을 null로 두면 된다(삭제 자체는 이 티켓 밖).
  */
 export const articles = pgTable(
   "articles",
@@ -62,8 +85,12 @@ export const articles = pgTable(
     description: text(),
     published_at: timestamptz("published_at").notNull(),
     topics: text({ enum: TOPICS }).array().notNull(),
+    embedding: vector({ dimensions: EMBEDDING_DIMENSIONS }),
   },
-  (t) => [index("articles_story_id_idx").on(t.story_id)],
+  (t) => [
+    index("articles_story_id_idx").on(t.story_id),
+    index("articles_embedding_hnsw_idx").using("hnsw", t.embedding.op("vector_cosine_ops")),
+  ],
 );
 
 /**
