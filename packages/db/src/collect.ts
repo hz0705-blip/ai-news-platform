@@ -62,17 +62,24 @@ export async function saveCollectedArticles(
           .where(eq(articles.id, item.id));
       }
       for (const version of item.newVersions) {
-        await tx.insert(articleVersions).values(
-          toArticleVersionRow(version, {
-            id: item.id,
-            sourceId: item.sourceId,
-            storyId: "",
-            url: item.url,
-            title: item.title,
-            publishedAt: item.publishedAt,
-            topics: item.topics,
-          }),
-        );
+        // 마지막 버전과만 비교하므로 이전에 있던 본문이 다시 오면(A→B→A) 같은 (article_id, body_hash)가
+        // 이미 있다. 그때는 아무것도 쓰지 않고 실제로 들어간 행만 센다 — 배치 전체를 잃지 않는다.
+        const inserted = await tx
+          .insert(articleVersions)
+          .values(
+            toArticleVersionRow(version, {
+              id: item.id,
+              sourceId: item.sourceId,
+              storyId: "",
+              url: item.url,
+              title: item.title,
+              publishedAt: item.publishedAt,
+              topics: item.topics,
+            }),
+          )
+          .onConflictDoNothing()
+          .returning({ id: articleVersions.id });
+        if (inserted.length === 0) continue;
         savedVersions.push(version);
       }
     }

@@ -102,6 +102,27 @@ maybe("saveCollectedArticles", () => {
     }
   });
 
+  it("이전 본문이 다시 오는 재수집(A→B→A)은 던지지 않고 중복 버전을 만들지 않는다", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      const bodyA = collected({});
+      const bodyB = collected({ rawBody: "Ministers agreed on a revised framework." });
+      const at = (offset: number) => new Date(capturedAt.getTime() + offset);
+      await saveCollectedArticles(db, { sources: [source], articles: [bodyA], capturedAt: at(0) });
+      await saveCollectedArticles(db, { sources: [source], articles: [bodyB], capturedAt: at(1) });
+      const third = await saveCollectedArticles(db, {
+        sources: [source],
+        articles: [bodyA],
+        capturedAt: at(2),
+      });
+      expect(third).toMatchObject({ newArticles: 0, mergedArticles: 1, savedVersions: [] });
+      const versions = await db.select({ hash: articleVersions.body_hash }).from(articleVersions);
+      expect(versions).toHaveLength(2);
+    } finally {
+      await cleanup();
+    }
+  });
+
   it("같은 출처·같은 정규화 제목·같은 본문 해시는 URL이 달라도 합치고, 다른 출처의 같은 본문은 합치지 않는다", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {
