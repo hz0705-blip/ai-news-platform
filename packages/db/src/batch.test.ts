@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  addBatchRunSpend,
   clearStoriesDeferred,
   finishBatchRun,
   loadBatchRunsSince,
@@ -24,17 +25,23 @@ const slot = (key: string, at: Date) => ({ slotKey: key, slotAt: at, now, leaseM
 const SLOT_17 = "2026-09-27T17:00+09:00";
 const SLOT_05 = "2026-09-27T05:00+09:00";
 const at05 = new Date("2026-09-26T20:00:00.000Z");
+/** KST 날짜 범위(UTC 15:00 시작). 워커 `kstDayRange`와 같은 계산이지만 db 테스트는 워커를 import하지 않는다. */
+function kstDayOf(instant: Date): { from: Date; to: Date } {
+  const kst = instant.getTime() + 9 * 60 * 60 * 1000;
+  const start = Math.floor(kst / 86_400_000) * 86_400_000 - 9 * 60 * 60 * 1000;
+  return { from: new Date(start), to: new Date(start + 86_400_000) };
+}
 
 maybe("슬롯 원장과 리스", () => {
   it("same slot run twice processes once", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {
       expect(await startBatchRun(db, slot(SLOT_17, now))).toEqual({ kind: "started", attempt: 1 });
+      await addBatchRunSpend(db, { slotKey: SLOT_17, spendUsd: 0.3 });
       await finishBatchRun(db, {
         slotKey: SLOT_17,
         status: "completed",
         finishedAt: now,
-        spendUsd: 0.3,
         report: { processed: 1 },
       });
       expect(await startBatchRun(db, slot(SLOT_17, now))).toEqual({
@@ -62,7 +69,6 @@ maybe("슬롯 원장과 리스", () => {
         slotKey: SLOT_05,
         status: "failed",
         finishedAt: now,
-        spendUsd: 0.1,
         error: "boom",
       });
       // 실패한 슬롯은 시도 횟수를 올려 다시 돈다.
@@ -78,29 +84,29 @@ maybe("슬롯 원장과 리스", () => {
     }
   });
 
-  it("spend is summed per slot range and runs are listed since a time", async () => {
+  it("retry accumulates spend, and spend is visible in the ledger before finish", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {
+      const day = kstDayOf(now);
       await startBatchRun(db, slot(SLOT_05, at05));
-      await finishBatchRun(db, {
-        slotKey: SLOT_05,
-        status: "completed",
-        finishedAt: now,
-        spendUsd: 0.5,
-      });
-      await startBatchRun(db, slot(SLOT_17, now));
-      await finishBatchRun(db, {
-        slotKey: SLOT_17,
-        status: "failed",
-        finishedAt: now,
-        spendUsd: 0.25,
-      });
-      const kstDay = {
-        from: new Date("2026-09-26T15:00:00.000Z"),
-        to: new Date("2026-09-27T15:00:00.000Z"),
-      };
-      expect(await loadSpendBetween(db, kstDay)).toBeCloseTo(0.75, 10);
-      expect((await loadBatchRunsSince(db, now)).map((r) => r.slot_key)).toEqual([SLOT_17]);
+      await addBatchRunSpend(db, { slotKey: SLOT_05, spendUsd: 1.1 });
+      // 아직 끝나지 않았어도 지출은 원장에 있다(실행 중 죽어도 남는다).
+      expect(await loadSpendBetween(db, day)).toBeCloseTo(1.1, 10);
+      await finishBatchRun(db, { slotKey: SLOT_05, status: "failed", finishedAt: now, error: "x" });
+
+      // 재시도의 지출은 이전 시도 위에 쌓인다(덮어쓰지 않는다).
+      await startBatchRun(db, slot(SLOT_05, at05));
+      await addBatchRunSpend(db, { slotKey: SLOT_05, spendUsd: 0.1 });
+      await finishBatchRun(db, { slotKey: SLOT_05, status: "completed", finishedAt: now });
+      expect(await loadSpendBetween(db, day)).toBeCloseTo(1.2, 10);
+
+      // 지출 합은 시도 시작 시각(`started_at`)의 KST 날짜로 센다 — 어제 시작한 실행은 오늘에 들지 않는다.
+      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      await startBatchRun(db, { ...slot("2026-09-26T17:00+09:00", yesterday), now: yesterday });
+      await addBatchRunSpend(db, { slotKey: "2026-09-26T17:00+09:00", spendUsd: 0.5 });
+      expect(await loadSpendBetween(db, day)).toBeCloseTo(1.2, 10);
+      expect((await loadBatchRunsSince(db, now)).map((r) => r.slot_key)).toEqual([]);
+      expect((await loadBatchRunsSince(db, at05)).map((r) => r.slot_key).sort()).toEqual([SLOT_05]);
     } finally {
       await cleanup();
     }

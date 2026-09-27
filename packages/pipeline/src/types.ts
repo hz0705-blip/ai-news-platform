@@ -131,6 +131,8 @@ export interface BatchDeps {
   readonly sleep?: (ms: number) => Promise<void>;
   /** 호출 전 예약액(USD). 기본 `requestReservationUsd`. */
   readonly reservation?: (request: ModelRequest) => number;
+  /** 사건 하나가 끝날 때마다(성공·실패·미룸) 그 사이 늘어난 사용량을 받는다. 호출 시점에 진행 중 모델 호출은 없을 수도 있다. */
+  readonly onUsage?: (delta: ModelUsage) => Promise<void>;
 }
 
 export interface BatchReport {

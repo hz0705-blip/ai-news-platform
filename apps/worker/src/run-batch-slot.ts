@@ -1,4 +1,5 @@
 import {
+  addBatchRunSpend,
   clearStoriesDeferred,
   confirmRevision,
   finishBatchRun,
@@ -21,7 +22,7 @@ import { assignStories } from "./assign.ts";
 import { type CollectResult, collectFromGnews } from "./collect.ts";
 import { kstDayRange, slotAtOf } from "./slot.ts";
 
-/** 파이프라인 일일 예산(USD, KST 날짜 기준; 스펙 "개발 중 결정 항목" 토큰 계량). 두 슬롯이 나눠 쓴다. */
+/** 파이프라인 일일 예산(USD; 스펙 "개발 중 결정 항목" 토큰 계량). 시도가 실제로 도는 KST 날짜의 모든 실행이 나눠 쓴다. */
 export const DAILY_PIPELINE_BUDGET_USD = 1.2;
 /** 토큰 상한은 USD 상한의 보조다(gpt-5-mini 출력 단가 기준 $1.20 ≈ 60만 출력 토큰). */
 export const DAILY_PIPELINE_BUDGET_TOKENS = 2_000_000;
@@ -174,6 +175,7 @@ export async function runBatchSlot(
       { db: deps.db, embeddingClient: deps.embeddingClient },
     );
     embeddingUsd = assigned.usage.spend;
+    await addBatchRunSpend(deps.db, { slotKey: input.slotKey, spendUsd: embeddingUsd });
     const assignment: BatchSlotReport["assignment"] = {
       processed: assigned.outcomes.length,
       assigned: assigned.outcomes.filter((o) => o.kind === "assigned").length,
@@ -183,9 +185,10 @@ export async function runBatchSlot(
     };
     stageLog("assign", { result: "ok", ...assignment });
 
-    // 3. 예산 잔액(같은 KST 날짜의 앞선 슬롯 + 이번 임베딩) → 입력이 바뀐 사건만 배치.
-    const previousTodayUsd = await loadSpendBetween(deps.db, kstDayRange(slotAt));
-    const remainingUsd = Math.max(0, DAILY_PIPELINE_BUDGET_USD - previousTodayUsd - embeddingUsd);
+    // 3. 예산 잔액: 이 시도가 도는 KST 날짜에 시작한 모든 실행의 지출(이 슬롯의 이전 시도·이번 임베딩 포함)을 뺀다.
+    const spentTodayUsd = await loadSpendBetween(deps.db, kstDayRange(startedAt));
+    const previousTodayUsd = Math.max(0, spentTodayUsd - embeddingUsd);
+    const remainingUsd = Math.max(0, DAILY_PIPELINE_BUDGET_USD - spentTodayUsd);
     const { stories, sources } = await loadBatchStories(deps.db);
     const batchStartedAt = deps.clock();
     const result = await runBatch(
@@ -207,6 +210,9 @@ export async function runBatchSlot(
         embeddingClient: deps.embeddingClient,
         clock: deps.clock,
         ...(deps.sleep === undefined ? {} : { sleep: deps.sleep }),
+        // 사건이 끝날 때마다 원장에 지출을 더한다(OpenAI 호출 밖, 트랜잭션 없음).
+        onUsage: (delta) =>
+          addBatchRunSpend(deps.db, { slotKey: input.slotKey, spendUsd: delta.spend }),
       },
     );
     modelUsd = result.report.usage.reduce((sum, u) => sum + u.spend, 0);
@@ -253,9 +259,11 @@ export async function runBatchSlot(
         checkedAt: confirmed.checkedAt,
       });
     }
+    // 실패한 사건도 표시를 지운다 — 영구히 실패하는 사건이 매 배치 맨 앞에서 예산을 먹지 않게(다음 배치에서는 보통 순서).
     await clearStoriesDeferred(deps.db, [
       ...publishedStoryIds,
       ...result.confirmed.map((c) => c.storyId),
+      ...result.report.failures.map((f) => f.storyId),
     ]);
     await markStoriesDeferred(deps.db, {
       storyIds: result.report.deferredStories,
@@ -302,7 +310,6 @@ export async function runBatchSlot(
       slotKey: input.slotKey,
       status: "completed",
       finishedAt,
-      spendUsd: totalUsd,
       report,
     });
     log({ at: finishedAt.toISOString(), stage: "finish", result: "completed", ...report });
@@ -315,7 +322,6 @@ export async function runBatchSlot(
       slotKey: input.slotKey,
       status: "failed",
       finishedAt,
-      spendUsd: embeddingUsd + modelUsd,
       error: message,
     }).catch((ledgerError: unknown) =>
       stageLog("finish", { result: "ledger-failed", error: String(ledgerError) }),

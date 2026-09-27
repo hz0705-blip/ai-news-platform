@@ -9,6 +9,7 @@ export {
   touchStory,
 } from "./assign.ts";
 export {
+  addBatchRunSpend,
   type BatchArticle,
   type BatchStory,
   clearStoriesDeferred,

@@ -537,6 +537,20 @@ describe("예산·기한·재시도(#55)", () => {
     expect(result.report.budgetReached).toBe(false);
   });
 
+  it("reports usage deltas after each story so spend can be ledgered incrementally", async () => {
+    const deltas: { tokens: number; spend: number }[] = [];
+    const result = await runBatch(both(10), {
+      ...budgetDeps(spendingClient()),
+      onUsage: async (delta) => {
+        deltas.push(delta);
+      },
+    });
+    expect(deltas.length).toBe(2);
+    const total = result.report.usage.reduce((sum, u) => sum + u.spend, 0);
+    expect(deltas.reduce((sum, d) => sum + d.spend, 0)).toBeCloseTo(total, 10);
+    expect(deltas[0]?.spend).toBeCloseTo(ONE_CALLS * PER_CALL, 10);
+  });
+
   it("batch report passes the schema with deferred stories and deadline flag", async () => {
     const result = await runBatch(both(BUDGET_FOR_ONE), budgetDeps(spendingClient()));
     expect(BatchReportSchema.safeParse(result.report).success).toBe(true);

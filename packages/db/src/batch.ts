@@ -104,14 +104,28 @@ export async function startBatchRun(
   });
 }
 
-/** 배치 종료를 원장에 기록하고 리스를 놓는다. 실패한 배치도 그때까지의 지출을 남긴다. */
+/**
+ * 지출을 원장에 더한다(증분). 배치는 사건이 끝날 때마다 OpenAI 호출 밖에서 부르므로 실행 중 죽어도
+ * 잃는 지출은 진행 중 호출의 예약뿐이고, 같은 슬롯의 재시도는 이전 시도의 지출 위에 쌓인다.
+ */
+export async function addBatchRunSpend(
+  db: RuntimeDb["db"],
+  input: { readonly slotKey: string; readonly spendUsd: number },
+): Promise<void> {
+  if (input.spendUsd <= 0) return;
+  await db
+    .update(batchRuns)
+    .set({ spend_usd: sql`${batchRuns.spend_usd} + ${input.spendUsd}` })
+    .where(eq(batchRuns.slot_key, input.slotKey));
+}
+
+/** 배치 종료를 원장에 기록하고 리스를 놓는다. 지출은 `addBatchRunSpend`가 이미 쌓았으므로 건드리지 않는다. */
 export async function finishBatchRun(
   db: RuntimeDb["db"],
   input: {
     readonly slotKey: string;
     readonly status: "completed" | "failed";
     readonly finishedAt: Date;
-    readonly spendUsd: number;
     readonly report?: unknown;
     readonly error?: string;
   },
@@ -122,7 +136,6 @@ export async function finishBatchRun(
       status: input.status,
       lease_expires_at: null,
       finished_at: input.finishedAt,
-      spend_usd: input.spendUsd,
       report: input.report ?? null,
       error: input.error ?? null,
     })
@@ -150,7 +163,11 @@ export async function loadBatchRunsSince(
   return db.select().from(batchRuns).where(gte(batchRuns.slot_at, since));
 }
 
-/** `[from, to)` 슬롯의 지출 합(USD). 같은 KST 날짜의 일일 예산 잔액 계산에 쓴다. */
+/**
+ * 시도 시작 시각(`started_at`)이 `[from, to)`인 실행의 지출 합(USD). 일일 예산은 실제로 돈 KST 날짜 기준이라
+ * 회복된 지난 슬롯도 오늘 상한을 나눠 쓴다(#55 Ruling). 재시도는 `started_at`을 새 시도로 옮기므로 그 행의
+ * 누적 지출은 마지막 시도의 날짜에 센다.
+ */
 export async function loadSpendBetween(
   db: RuntimeDb["db"],
   range: { readonly from: Date; readonly to: Date },
@@ -158,7 +175,7 @@ export async function loadSpendBetween(
   const [row] = await db
     .select({ spend: sql<number>`coalesce(sum(${batchRuns.spend_usd}), 0)`.mapWith(Number) })
     .from(batchRuns)
-    .where(and(gte(batchRuns.slot_at, range.from), lt(batchRuns.slot_at, range.to)));
+    .where(and(gte(batchRuns.started_at, range.from), lt(batchRuns.started_at, range.to)));
   return row?.spend ?? 0;
 }
 
@@ -284,7 +301,7 @@ export async function markStoriesDeferred(
     .where(inArray(stories.id, [...input.storyIds]));
 }
 
-/** 처리한(발행·확인·실패) 사건의 분석 대기 표시를 지운다. */
+/** 처리한(발행·확인·실패) 사건의 분석 대기 표시를 지운다. 실패한 사건도 지워 매 배치 맨 앞에서 예산을 먹지 않게 한다. */
 export async function clearStoriesDeferred(
   db: RuntimeDb["db"],
   storyIds: readonly string[],

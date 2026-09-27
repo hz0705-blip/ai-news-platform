@@ -1,4 +1,10 @@
-import { batchRuns, loadPublishedStory } from "@newsplatform/db";
+import {
+  addBatchRunSpend,
+  batchRuns,
+  finishBatchRun,
+  loadPublishedStory,
+  startBatchRun,
+} from "@newsplatform/db";
 import {
   articles,
   articleVersions,
@@ -115,6 +121,38 @@ maybe("슬롯 배치(수집 건너뜀, 기록된 응답)", () => {
         [SLOT_17, "completed", 1],
       ]);
       expect(rows[0]?.report).toMatchObject({ published: 1 });
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("a recovered previous-day slot run today shares today's cap", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      await seedLiveStory(db);
+      // 오늘(KST 09-27) 05:00 슬롯이 이미 $1.0을 썼다.
+      await startBatchRun(db, {
+        slotKey: SLOT_05,
+        slotAt: new Date("2026-09-26T20:00:00.000Z"),
+        now: new Date("2026-09-26T20:00:00.000Z"),
+        leaseMs: 1,
+      });
+      await addBatchRunSpend(db, { slotKey: SLOT_05, spendUsd: 1.0 });
+      await finishBatchRun(db, {
+        slotKey: SLOT_05,
+        status: "completed",
+        finishedAt: new Date("2026-09-26T20:30:00.000Z"),
+      });
+      // 어제 17:00 슬롯을 오늘 회복해 돌리면 예산은 슬롯 날짜가 아니라 오늘 기준이다.
+      const result = await runBatchSlot({ slotKey: "2026-09-26T17:00+09:00" }, deps(db, []));
+      expect(result.kind).toBe("completed");
+      if (result.kind !== "completed") return;
+      expect(result.report.spend.previousTodayUsd).toBeCloseTo(1.0, 10);
+      expect(result.report.published).toBe(1);
+      const rows = await db.select().from(batchRuns);
+      expect(rows.find((r) => r.slot_key === "2026-09-26T17:00+09:00")?.started_at).toEqual(
+        LIVE_REFERENCE_TIME,
+      );
     } finally {
       await cleanup();
     }

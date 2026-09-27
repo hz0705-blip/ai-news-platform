@@ -159,6 +159,17 @@ export async function runBatch(rawInput: BatchInput, deps: BatchDeps): Promise<B
     }),
   );
 
+  // 사건이 끝날 때마다 그 사이의 사용량 증분을 호출자에게 넘긴다(원장에 지출을 증분 기록, #55).
+  let reported: Usage = { tokens: 0, spend: 0 };
+  const reportUsage = async () => {
+    const total = totalUsage(usage);
+    const delta = { tokens: total.tokens - reported.tokens, spend: total.spend - reported.spend };
+    reported = total;
+    if (deps.onUsage !== undefined && (delta.tokens > 0 || delta.spend > 0)) {
+      await deps.onUsage(delta);
+    }
+  };
+
   // 한 사건이 예산·기한에 닿으면 아직 시작하지 않은 사건은 모두 미룬다.
   let stopped: "budget" | "deadline" | undefined;
   const results = await mapConcurrently(
@@ -182,9 +193,12 @@ export async function runBatch(rawInput: BatchInput, deps: BatchDeps): Promise<B
           return { kind: "deferred", reason };
         }
         return { kind: "failed", reason: error instanceof Error ? error.message : String(error) };
+      } finally {
+        await reportUsage();
       }
     },
   );
+  await reportUsage();
 
   const revisions: Revision[] = [];
   const confirmed: ConfirmedRevision[] = [];
