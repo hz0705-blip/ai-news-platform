@@ -1,0 +1,65 @@
+{
+  "request": {
+    "path": "/api/v4/top-headlines",
+    "params": {
+      "category": "business",
+      "lang": "en",
+      "max": "25",
+      "sortby": "publishedAt",
+      "from": "2026-09-26T15:07:39Z",
+      "to": "2026-09-27T04:07:39Z",
+      "page": "1"
+    }
+  },
+  "status": 200,
+  "body": {
+    "totalArticles": 159,
+    "articles": [
+      {
+        "id": "2424035bede5b705d76df739ed7c39c4",
+        "title": "Brisbane's Story Bridge to close for three weeks for repairs",
+        "description": "Brisbane's iconic Story Bridge is set to close for three weeks over the new year for maintenance. The repairs include resurfacing the southern approach and parts of the northern approach, as well as structural deck maintenance and waterproofing.",
+        "content": "Brisbane's iconic Story Bridge is set to close for three weeks over the new year for maintenance.\nThe repairs include resurfacing the southern approach and parts of the northern approach, as well as structural deck maintenance and waterproofing.\nThe bridge, which carried up to 100,000 vehicles a day, according to Brisbane City Council, is scheduled to close from Sunday, December 27, 2026, to Monday, January 18, 2027.\nBrisbane City Council's Ryan Murphy said the repairs were part of $110 million in funding under the Operation Smooth program.\n\"Big part of that is the road surface, Brisbane residents who have driven over the approaches from the northern and southern side of the story bridge recently would have noticed it's getting a little bit bumpy,\" Cr Murphy said.\n\"We will be going in over the summer to resurface.\n\"It will be a hot, sweaty and arduous job, but it's necessary in order to preserve this asset.\"\nCouncil hoped the closure would coincide with a time when Brisbane residents were away for the summer holidays.\nAlternative routes included the Captain Cook Bridge, the Go Between Bridge, the Clem7, the Gateway Bridge and the William Jolly Bridge.\nThe maintenance comes amid discussions about whether the Story Bridge could return to being a toll bridge if a funding deal to restore it could not be reached, according to Brisbane City Council.\nAn independent committee found the 85-year-old bridge would be unable to carry traffic within 20 years without a full restoration, at a cost it said would be \"beyond council\".\nThe committee suggested several ways to fund the restoration, including a toll similar to the one on the Sydney Harbour Bridge, contributions from council and state and federal governments, an annual rates levy or corporate sponsorship.\nPreviously, Brisbane City Council said in a statement that a toll or levy would only be considered as a \"last resort\".",
+        "url": "https://www.abc.net.au/news/2026-09-27/brisbane-story-bridge-to-close-for-three-weeks-for-repairs/107200602",
+        "image": "https://live-production.wcms.abc-cdn.net.au/338b20350a88e3d384f8de8bbca4f562?impolicy=wcms_watermark_news&cropH=2268&cropW=4032&xPos=0&yPos=0&width=862&height=485&imformat=generic",
+        "publishedAt": "2026-09-27T02:35:57Z",
+        "lang": "en",
+        "source": {
+          "id": "5cda8b5d5087e0271b0c94a70da9fe74",
+          "name": "ABC News & Headlines – Australian Broadcasting Corporation",
+          "url": "https://www.abc.net.au"
+        }
+      },
+      {
+        "id": "6ee46daf003853d3916d0a19368ef5a3",
+        "title": "Prediction: Here's What a $5,000 Investment in AMD Could Be Worth by 2030",
+        "description": "Could the stock jump by at least 50% by then, or is it already peaking?",
+        "content": "Advanced Micro Devices (AMD +0.22%) has been one of the market's hottest stocks over the past three years, rising by 539% in that time and surging past the $1 trillion market cap threshold in recent days. Had you invested $5,000 in it three years ago, your position would be worth nearly $32,000 today.\nThat said, investing is about looking forward. If you're thinking about investing in AMD (or increasing your stake in it), how much might a $5,000 investment made today be worth by 2030? In my view, a value of $7,500 for that position seems well within reach.\nNASDAQ : AMD\nAdvanced Micro Devices\nPremium Feature\nMoneyball Superscore\n94/100\nToday's Change\n( 0.22 %) $ 1.37\nCurrent Price\n$ 630.63\nKey Data Points\nMarket Cap\n$1.0TMarket cap calculated using publicly traded shares outstanding only. Does not include unlisted, private, or dual-class non-traded shares. Implied market cap may vary.\nDay's Range\n$ 625.52 - $ 639.00\n52wk Range\n$ 159.33 - $ 639.00\nVolume\n17.6M\nAvg Vol\n24.9M\nGross Margin\n50.37%\nA 50% jump seems reasonable for AMD's stock\nAt the time of writing, AMD's market cap is about $1 trillion, so it would need to reach at least $1.5 trillion by 2030 for a $5,000 investment to grow into a $7,500 position.\nFor illustration, if we assume AMD finishes 2026 exactly where it is now, it would need to increase by 50% over the three years from 2027 to 2030. That would require average annualized returns of around 14.5%. For perspective, the S&P 500 (^GSPC +0.51%) has averaged annualized returns of more than 21% over the past three years.\nAgain, we can't predict stock price movements, but AMD is well-positioned to average at least mid-teens-percentage returns over the next few years.\nAMD's growth trajectory looks strong\nAMD has solidified itself as one of the top semiconductor companies in the world, and its momentum isn't likely to fade anytime soon. With the ongoing AI infrastructure build-out not expected to end for years, the conditions supporting AMD's financial growth should continue.\n\"We are still in the early stages of a multiyear AI adoption cycle as deployments grow across a broad set of markets and workloads, driving demand for more compute and creating a clear path to significant revenue growth and earnings power in the years ahead,\" said CEO Lisa Su on AMD's second-quarter earnings call.\nHow much remains to be seen, but I'll use estimates to see how it could reach the needed $1.5 trillion valuation. If we assume AMD is trading at 15 times sales by 2030 (which is expensive, by the way), its revenue would need to be $100 billion to justify a $1.5 trillion valuation.\nAMD could easily earn $50 billion this year (it has made $21.8 billion through the first two quarters), so it would need to double that in three years, or average around 26% annual growth. Not a walk in the park, but also not far-fetched if the AI adoption cycle is truly in its early stages. AMD's revenues have increased by at least 31% year over year every quarter since the start of 2025.\nAdmittedly, rising sales and earnings don't always guarantee stock price gains. However, I think the market will reward consistent growth. Even if a $5,000 investment doesn't grow to $7,500 by 2030, I don't think you'd regret buying AMD now if you're a long-term investor.",
+        "url": "https://www.fool.com/investing/2026/09/26/prediction-heres-what-a-5000-investment-in-amd-cou/",
+        "image": "https://g.foolcdn.com/image/?url=https%3A%2F%2Fg.foolcdn.com%2Feditorial%2Fimages%2F887825%2Famd.png&w=1200&op=resize",
+        "publishedAt": "2026-09-27T02:13:15Z",
+        "lang": "en",
+        "source": {
+          "id": "06bcd1e4bbd243dd27c15b9fa41816d9",
+          "name": "The Motley Fool",
+          "url": "https://www.fool.com"
+        }
+      },
+      {
+        "id": "1fac4ab9a6a4877c314bc422f444c4e9",
+        "title": "Samsung eyes record W100tr profit as DRAM margin seen at 80%",
+        "description": "Samsung Electronics is poised to post quarterly operating profit above 100 trillion won ($74 billion) for the first time, with its DRAM margin seen topping 80 p",
+        "content": "Samsung Electronics is poised to post quarterly operating profit above 100 trillion won ($74 billion) for the first time, with its DRAM margin seen topping 80 percent, even as memory price gains cool amid an AI-driven shift in production that is tightening supply across the broader memory market.\nAccording to industry sources Sunday, estimates from DB Securities, Mirae Asset Securities and BNK Securities put Samsung’s third-quarter operating profit at an average 107.7 trillion won, up 20.3 percent from 89.4 trillion won in the second quarter.\nThree brokerages expect the operating margin for Samsung’s Device Solutions division, which oversees its semiconductor business, to reach 72 to 75 percent, while its DRAM operating margin, encompassing both high-bandwidth memory and conventional products, could exceed 80 percent.\nMarket research firm TrendForce expects DRAM prices to rise 13 to 18 percent on-quarter in the third quarter, sharply slowing from an increase of about 60 percent in the previous quarter.\nAnalysts attribute the unusually strong margins to a shift in how memory-makers are allocating capacity. As Samsung and its rivals devote more advanced DRAM production to HBM and high-capacity server products, less capacity is available for conventional DRAM. Demand for server DDR5 is also rising alongside investment in AI data centers.\n“In past memory upcycles, rising prices were followed by capacity expansion, which eventually brought prices back down,” said an industry source who asked not to be named. “This time, however, capacity is rapidly shifting toward HBM, so additional investment does not immediately lead to more conventional DRAM supply.”\nKim Dong-won, head of research at KB Securities, expects HBM to account for 40 percent of Samsung’s total DRAM capacity next year, up from 33 percent this year. The share of conventional DRAM is expected to fall to 59 percent from 65 percent.\nSupply constraints are also extending delivery times. Kim said lead times for high-capacity server DDR5 have stretched to as long as 52 weeks this month, compared with around six weeks under normal market conditions.\n“A structural shift is underway as the HBM-led reallocation of production capacity prolongs shortages of conventional DRAM and pushes prices higher,” Kim said.\nyeeun@heraldcorp.com",
+        "url": "https://www.koreaherald.com/article/10885170",
+        "image": "https://wimg.heraldcorp.com/news/cms/2026/09/27/news-p.v1.20260927.e3b99bea9ce84082b81822c724e75d66_P1.jpg",
+        "publishedAt": "2026-09-27T02:04:58Z",
+        "lang": "en",
+        "source": {
+          "id": "2965122358303baf07026e77db3146af",
+          "name": "koreaherald.com",
+          "url": "https://www.koreaherald.com"
+        }
+      }
+    ]
+  }
+}

@@ -55,9 +55,10 @@ maybe("loadPublishedToday", () => {
         source_id: "src-meridian",
         story_id: fixture.story.id,
         url: "https://meridian.invalid/second",
+        normalized_url: "https://meridian.invalid/second",
         title: "같은 출처의 후속 기사",
         published_at: updatedAt,
-        topic: "국제 정치·외교·안보",
+        topics: ["국제 정치·외교·안보"],
       });
       const demo = await loadPublishedToday(db, { isDemo: true });
       expect(demo).toEqual({

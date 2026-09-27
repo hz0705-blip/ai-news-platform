@@ -7,6 +7,7 @@ import type { RightsTier } from "./rights.ts";
  * 리서치 대기 #9라 열거형으로 좁히지 않고 문자열로 둔다.
  * `isFictional`은 데모 사건의 가상 출처 표기용이다(#21 Ruling 9).
  * `wireId`는 이 출처가 전재한 통신 기사 식별자다. 같은 `wireId`의 출처들은 보도 원점 하나로 센다(#22 Ruling 22-13).
+ * `externalId`는 제공자(GNews `source.id`) 쪽 식별자다. 데모의 가상 출처에는 없다.
  */
 export interface Source {
   readonly id: string;
@@ -17,4 +18,5 @@ export interface Source {
   readonly language: string;
   readonly isFictional: boolean;
   readonly wireId?: string;
+  readonly externalId?: string;
 }

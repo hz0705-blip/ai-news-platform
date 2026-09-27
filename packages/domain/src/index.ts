@@ -15,9 +15,18 @@ export {
   RELATION_LABELS,
   type RelationLabel,
 } from "./claim-status.ts";
+export type { CollectedArticle } from "./collected-article.ts";
 export { CONTRADICTION_STATUSES, type ContradictionStatus } from "./contradiction-status.ts";
 export { canDisplayExcerpt, DISPLAY_POLICY_VERSION } from "./display-policy.ts";
 export type { Evidence } from "./evidence.ts";
+export {
+  articleIdFor,
+  articleVersionIdFor,
+  type DedupedArticle,
+  dedupeExact,
+  type ExactDedupInput,
+  type KnownArticle,
+} from "./exact-dedup.ts";
 export {
   checkEvidenceSpan,
   GATE_FAILURES,
@@ -50,5 +59,6 @@ export {
   type StatusCounts,
   type StoryStatusInput,
 } from "./story-status.ts";
-export { NORMALIZATION_VERSION, normalizeBody } from "./text.ts";
+export { NORMALIZATION_VERSION, normalizeBody, normalizeTitle } from "./text.ts";
 export { TOPICS, type Topic } from "./topic.ts";
+export { normalizeArticleUrl } from "./url.ts";

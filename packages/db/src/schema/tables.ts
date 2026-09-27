@@ -27,6 +27,8 @@ export const sources = pgTable("sources", {
   is_fictional: boolean().notNull(),
   // 이 출처가 전재한 통신 기사 식별자. 같은 값의 출처들은 보도 원점 하나로 센다(#22 Ruling 22-13).
   wire_id: text("wire_id"),
+  // 제공자 쪽 식별자(GNews `source.id`). 데모의 가상 출처에는 없다(#52).
+  external_id: text("external_id").unique(),
 });
 
 /** 사건(CONTEXT.md "사건"). 사건 URL은 `slug`로 찾는다. 사건의 상충 상태는 여기 두지 않는다(ADR-0009). */
@@ -39,7 +41,12 @@ export const stories = pgTable("stories", {
   lifecycle: text({ enum: STORY_LIFECYCLES }).notNull(),
 });
 
-/** 기사(CONTEXT.md "기사"). 본문은 기사 버전이 갖는다. */
+/**
+ * 기사(CONTEXT.md "기사"). 본문은 기사 버전이 갖는다.
+ * 동일성 키는 `normalized_url`(#52, 스펙 "정확 중복 제거"). `story_id`는 사건 배정(#53) 전까지 null이다.
+ * `topics`는 이 기사를 가져온 수집 쿼리 토픽의 합집합, `external_id`는 GNews 기사 id(보조 기록),
+ * `description`은 임베딩 입력(스펙 "임베딩 모델·차원")이 될 응답의 설명이다.
+ */
 export const articles = pgTable(
   "articles",
   {
@@ -47,13 +54,14 @@ export const articles = pgTable(
     source_id: text()
       .notNull()
       .references(() => sources.id),
-    story_id: text()
-      .notNull()
-      .references(() => stories.id),
+    story_id: text().references(() => stories.id),
     url: text().notNull(),
+    normalized_url: text("normalized_url").notNull().unique(),
+    external_id: text("external_id"),
     title: text().notNull(),
+    description: text(),
     published_at: timestamptz("published_at").notNull(),
-    topic: text({ enum: TOPICS }).notNull(),
+    topics: text({ enum: TOPICS }).array().notNull(),
   },
   (t) => [index("articles_story_id_idx").on(t.story_id)],
 );
@@ -63,17 +71,22 @@ export const articles = pgTable(
  * `body_expires_at` = 기사 발행 시각 + 30일, 발행 시각을 모르면 수집 시각 + 30일
  * (docs/spec/v1.md "데이터 보존", #21 Ruling 12). 근거가 영구 보존하는 값은 `evidence`에 따로 있다.
  */
-export const articleVersions = pgTable("article_versions", {
-  id: text().primaryKey(),
-  article_id: text()
-    .notNull()
-    .references(() => articles.id),
-  body: text().notNull(),
-  normalization_version: integer().notNull(),
-  body_hash: text().notNull(),
-  captured_at: timestamptz("captured_at").notNull(),
-  body_expires_at: timestamptz("body_expires_at").notNull(),
-});
+export const articleVersions = pgTable(
+  "article_versions",
+  {
+    id: text().primaryKey(),
+    article_id: text()
+      .notNull()
+      .references(() => articles.id),
+    body: text().notNull(),
+    normalization_version: integer().notNull(),
+    body_hash: text().notNull(),
+    captured_at: timestamptz("captured_at").notNull(),
+    body_expires_at: timestamptz("body_expires_at").notNull(),
+  },
+  // 같은 기사의 같은 본문은 한 버전이다(#52, 스펙 "정확 중복 제거").
+  (t) => [unique().on(t.article_id, t.body_hash)],
+);
 
 /** 개정판(CONTEXT.md "개정판"). 사건 하나에서 `revision_number`는 한 번만 쓰인다(발행 멱등). */
 export const storyRevisions = pgTable(
