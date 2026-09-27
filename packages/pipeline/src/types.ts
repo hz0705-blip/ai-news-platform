@@ -59,9 +59,15 @@ export interface ModelClient {
   complete(stage: string, key: string): Promise<unknown>;
 }
 
-/** 임베딩 의존성. #21에서는 통과 단계용이라 호출되지 않는다(M2a에서 사건 배정이 쓴다). */
+/** 임베딩 호출 한 번의 결과: 입력 순서대로의 벡터와 사용량(토큰·USD). */
+export interface EmbeddingResult {
+  readonly vectors: readonly (readonly number[])[];
+  readonly usage: { readonly tokens: number; readonly spend: number };
+}
+
+/** 임베딩 의존성. 사건 배정(#53, `runAssignment`)이 쓴다. `runBatch`는 아직 호출하지 않는다. */
 export interface EmbeddingClient {
-  embed(texts: readonly string[]): Promise<readonly (readonly number[])[]>;
+  embed(texts: readonly string[]): Promise<EmbeddingResult>;
 }
 
 export interface BatchInput {

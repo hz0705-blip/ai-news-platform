@@ -25,7 +25,7 @@ const result = await runBatch(
   },
   {
     modelClient: createRecordedModelClient(slug),
-    embeddingClient: { embed: async () => [] },
+    embeddingClient: { embed: async () => ({ vectors: [], usage: { tokens: 0, spend: 0 } }) },
     clock: () => DEMO_REFERENCE_TIME,
   },
 );

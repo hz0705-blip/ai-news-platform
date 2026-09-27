@@ -11,6 +11,16 @@ export {
   loadDemoStoryInputs,
 } from "./fixtures.ts";
 export {
+  createOpenAiEmbeddingClient,
+  EMBEDDING_MODEL,
+  EMBEDDING_USD_PER_TOKEN,
+  type OpenAiEmbeddingOptions,
+} from "./openai/embedding.ts";
+export {
+  createRecordedEmbeddingFetch,
+  type RecordedEmbeddingResponse,
+} from "./openai/embedding-recorded.ts";
+export {
   createRecordedModelClient,
   type RecordedModelClientOptions,
   RecordedResponseMissingError,
@@ -33,6 +43,15 @@ export {
 } from "./sources/gnews.ts";
 export { createRecordedGnewsFetch, type RecordedGnewsResponse } from "./sources/gnews-recorded.ts";
 export {
+  type AssignmentArticle,
+  type AssignmentDeps,
+  type AssignmentInput,
+  type AssignmentOutcome,
+  type AssignmentResult,
+  type AssignmentStore,
+  runAssignment,
+} from "./stages/assign.ts";
+export {
   type ArticleInput,
   type BatchDeps,
   type BatchInput,
@@ -45,6 +64,7 @@ export {
   type ConfirmedRevision,
   type DroppedClaim,
   type EmbeddingClient,
+  type EmbeddingResult,
   type ModelClient,
   StageFailure,
   type StoryState,

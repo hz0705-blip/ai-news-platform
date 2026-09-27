@@ -54,6 +54,20 @@ export {
 } from "./span.ts";
 export { STORY_LIFECYCLES, type Story, type StoryLifecycle } from "./story.ts";
 export {
+  ACTIVE_WINDOW_MS,
+  ASSIGNMENT_THRESHOLDS,
+  type AssignmentCandidate,
+  type AssignmentDecision,
+  type AssignmentInput,
+  type AssignmentThresholds,
+  cosineSimilarity,
+  decideAssignment,
+  embeddingInputFor,
+  isActiveStory,
+  orderForAssignment,
+  storyIdForFirstArticle,
+} from "./story-assignment.ts";
+export {
   countClaimStatuses,
   deriveStoryStatus,
   type StatusCounts,
