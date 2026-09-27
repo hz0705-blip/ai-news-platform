@@ -1,0 +1,58 @@
+{
+  "story-demo-1-agreement:gate:c-1": {
+    "judgments": [
+      {
+        "quoteId": "q-m-1",
+        "label": "뒷받침",
+        "reason": "행위자·시점·양상·귀속이 주장과 같다."
+      },
+      {
+        "quoteId": "q-h-1",
+        "label": "뒷받침",
+        "reason": "행위자·시점·양상·귀속이 주장과 같다."
+      }
+    ]
+  },
+  "story-demo-1-agreement:gate:c-2": {
+    "judgments": [
+      {
+        "quoteId": "q-m-2",
+        "label": "뒷받침",
+        "reason": "행위자·시점·양상·귀속이 주장과 같다."
+      },
+      {
+        "quoteId": "q-h-2",
+        "label": "뒷받침",
+        "reason": "행위자·시점·양상·귀속이 주장과 같다."
+      }
+    ]
+  },
+  "story-demo-1-agreement:gate:c-3": {
+    "judgments": [
+      {
+        "quoteId": "q-m-3",
+        "label": "뒷받침",
+        "reason": "행위자·시점·양상·귀속이 주장과 같다."
+      },
+      {
+        "quoteId": "q-h-3",
+        "label": "뒷받침",
+        "reason": "행위자·시점·양상·귀속이 주장과 같다."
+      }
+    ]
+  },
+  "story-demo-1-agreement:gate:c-4": {
+    "judgments": [
+      {
+        "quoteId": "q-m-4",
+        "label": "뒷받침",
+        "reason": "행위자·시점·양상·귀속이 주장과 같다."
+      },
+      {
+        "quoteId": "q-h-4",
+        "label": "뒷받침",
+        "reason": "행위자·시점·양상·귀속이 주장과 같다."
+      }
+    ]
+  }
+}

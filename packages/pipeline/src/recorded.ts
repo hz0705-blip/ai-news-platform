@@ -1,9 +1,15 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ModelClient } from "./types.ts";
 
 /** 기록된 응답을 가진 단계 셋. 파일 이름이 곧 단계 이름이다(`recorded/<stage>.json`). */
-const RECORDED_STAGES = ["evidence-extract", "claim-generate", "contradiction-label"] as const;
+export const RECORDED_STAGES = [
+  "evidence-extract",
+  "claim-generate",
+  "gate",
+  "contradiction-label",
+] as const;
 
 /** 기록된 응답에 요청한 단계·멱등키가 없다. 배치는 그 사건을 실패로 리포트한다. */
 export class RecordedResponseMissingError extends Error {
@@ -19,13 +25,17 @@ type RecordedTable = Readonly<Record<string, unknown>>;
 export interface RecordedModelClientOptions {
   /** 테스트 전용: 단계·멱등키별로 기록된 응답을 덮어쓴다. */
   readonly override?: Readonly<Record<string, RecordedTable>>;
+  /** 개정판에 기록할 모델 식별자. 실제 모델 응답을 기록한 픽스처는 그 모델 식별자를 준다. 기본 `recorded`. */
+  readonly modelId?: string;
+}
+
+function recordedPath(slug: string, stage: string): string {
+  return fileURLToPath(new URL(`../fixtures/${slug}/recorded/${stage}.json`, import.meta.url));
 }
 
 /** `fixtures/<slug>/recorded/<stage>.json`을 읽는다. 파일이 없으면 빈 표다. */
 function readRecorded(slug: string, stage: string): RecordedTable {
-  const path = fileURLToPath(
-    new URL(`../fixtures/${slug}/recorded/${stage}.json`, import.meta.url),
-  );
+  const path = recordedPath(slug, stage);
   if (!existsSync(path)) return {};
   const table: RecordedTable = JSON.parse(readFileSync(path, "utf8"));
   return table;
@@ -60,13 +70,37 @@ export function createRecordedModelClient(
     tables.set(stage, merged);
   }
 
+  const usage = { tokens: 0, spend: 0 };
   return {
-    async complete(stage, key) {
+    modelId: options.modelId ?? "recorded",
+    async complete({ stage, key }) {
       const overridden = lookup(options.override?.[stage], key);
-      if (overridden.found) return overridden.value;
+      if (overridden.found) return { output: overridden.value, usage };
       const recorded = lookup(tables.get(stage), key);
-      if (recorded.found) return recorded.value;
+      if (recorded.found) return { output: recorded.value, usage };
       throw new RecordedResponseMissingError(stage, key);
+    },
+  };
+}
+
+/**
+ * 기록 모드(#54): 안쪽 클라이언트(실제 모델)의 응답을 기록 형식 그대로
+ * `fixtures/<slug>/recorded/<stage>.json`에 쓴다. 빈 표에서 시작해 호출마다 파일을 다시 쓰므로
+ * 이전 기록은 덮어쓴다. 기록에는 출력만 들어가고 요청 헤더·키는 들어가지 않는다.
+ */
+export function createRecordingModelClient(inner: ModelClient, slug: string): ModelClient {
+  const tables = new Map<string, Record<string, unknown>>();
+  return {
+    modelId: inner.modelId,
+    async complete(request) {
+      const response = await inner.complete(request);
+      const table = tables.get(request.stage) ?? {};
+      table[request.key] = response.output;
+      tables.set(request.stage, table);
+      const path = recordedPath(slug, request.stage);
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, `${JSON.stringify(table, null, 2)}\n`);
+      return response;
     },
   };
 }

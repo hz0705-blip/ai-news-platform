@@ -135,6 +135,24 @@ export const ClaimGenerateResponseSchema = z.object({
   ),
 });
 
+/** 게이트 2단계 내부 라벨 다섯(스펙 "근거"). "뒷받침"만 발행한다. 공개 상충 상태가 아니다. */
+export const GATE_SUPPORT_LABELS = [
+  "뒷받침",
+  "부분 뒷받침",
+  "뒷받침 안 됨",
+  "상충",
+  "판정 불가",
+] as const;
+
+export type GateSupportLabel = (typeof GATE_SUPPORT_LABELS)[number];
+
+/** 게이트 2단계 응답: 주장의 근거 인용문마다 라벨 하나와 짧은 이유. */
+export const GateSupportResponseSchema = z.object({
+  judgments: z.array(
+    z.object({ quoteId: z.string(), label: z.enum(GATE_SUPPORT_LABELS), reason: z.string() }),
+  ),
+});
+
 /**
  * 상충 판정 응답의 인용문 쌍 하나. `양립 불가` 쌍은 a·b 양쪽 인용의 다른 점(`differsIn`)을 반드시
  * 가지고, 다른 라벨은 가지지 않는다(#22 Ruling 22-6). a는 주장을 뒷받침, b는 양립 불가한 명제다.

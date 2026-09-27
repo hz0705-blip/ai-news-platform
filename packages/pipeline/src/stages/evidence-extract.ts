@@ -1,5 +1,7 @@
 import { findSpan } from "@newsplatform/domain";
 import { z } from "zod";
+import * as prompt from "../prompts/evidence-extract.ts";
+import { buildRequest } from "../prompts/prompt.ts";
 import { CodePointSpanSchema, EvidenceExtractResponseSchema } from "../schemas.ts";
 import { type ModelClient, StageFailure } from "../types.ts";
 
@@ -30,7 +32,7 @@ export function idempotencyKey(input: EvidenceExtractInput): string {
 }
 
 /**
- * 기록된 인용문 원문을 `findSpan`으로 본문 기준 코드 포인트 구간으로 바꾼다.
+ * 모델이 고른 인용문 원문을 `findSpan`으로 본문 기준 코드 포인트 구간으로 바꾼다.
  * 본문에 없는 인용문은 출력에서 빼고 `dropped`로 돌려준다.
  */
 export async function runEvidenceExtract(
@@ -38,7 +40,16 @@ export async function runEvidenceExtract(
   modelClient: ModelClient,
 ): Promise<{ output: EvidenceExtractOutput; dropped: readonly DroppedQuote[] }> {
   const key = idempotencyKey(input);
-  const parsed = EvidenceExtractResponseSchema.safeParse(await modelClient.complete(STAGE, key));
+  const { output: response } = await modelClient.complete(
+    buildRequest(
+      prompt.PROMPT,
+      STAGE,
+      key,
+      prompt.render(input.body),
+      prompt.toRecord(input.articleVersionId, input.body),
+    ),
+  );
+  const parsed = EvidenceExtractResponseSchema.safeParse(response);
   if (!parsed.success) {
     throw new StageFailure(STAGE, key, `응답 스키마 불일치: ${z.prettifyError(parsed.error)}`);
   }
