@@ -1,4 +1,4 @@
-export { PROMPT_VERSIONS, runBatch } from "./batch-run.ts";
+export { BATCH_CONCURRENCY, PROMPT_VERSIONS, runBatch } from "./batch-run.ts";
 export {
   type ClaimGenerateRecord,
   type ContradictionLabelRecord,
@@ -15,6 +15,8 @@ export {
   createOpenAiModelClient,
   MODEL_ID,
   MODEL_MAX_RETRIES,
+  MODEL_RETRY_DELAY_MS,
+  MODEL_TIMEOUT_MS,
   type OpenAiModelOptions,
   requestReservationUsd,
 } from "./openai/client.ts";
@@ -36,6 +38,7 @@ export {
   type TokenUsage,
   usageToUsd,
 } from "./openai/pricing.ts";
+export { type PriorityInput, prioritizeStories } from "./priority.ts";
 export {
   createRecordedModelClient,
   createRecordingModelClient,
@@ -77,11 +80,13 @@ export {
 } from "./stages/assign.ts";
 export {
   type ArticleInput,
+  BatchDeadlineError,
   type BatchDeps,
   type BatchInput,
   type BatchReport,
   type BatchResult,
   type Budget,
+  BudgetExceededError,
   CHANGE_KINDS,
   type Change,
   type ChangeKind,
@@ -93,6 +98,7 @@ export {
   type ModelRequest,
   type ModelResponse,
   ModelResponseError,
+  ModelTransportError,
   type ModelUsage,
   type ReasoningEffort,
   StageFailure,

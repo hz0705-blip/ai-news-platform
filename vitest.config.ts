@@ -14,9 +14,10 @@ export default defineConfig({
         // Next.js tsconfig는 jsx: preserve라 Vitest(oxc)가 JSX를 변환하도록 여기서 지정한다.
         oxc: { jsx: { runtime: "automatic" } },
       },
-      { test: { name: "worker", root: "./apps/worker", environment: "node" } },
+      // 실 DB 테스트(db·worker)는 세션 advisory lock으로 직렬화되고 그 대기가 테스트 시간에 들어가므로 여유를 둔다.
+      { test: { name: "worker", root: "./apps/worker", environment: "node", testTimeout: 60_000 } },
       { test: { name: "domain", root: "./packages/domain", environment: "node" } },
-      { test: { name: "db", root: "./packages/db", environment: "node" } },
+      { test: { name: "db", root: "./packages/db", environment: "node", testTimeout: 60_000 } },
       { test: { name: "pipeline", root: "./packages/pipeline", environment: "node" } },
     ],
   },

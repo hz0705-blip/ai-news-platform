@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "start": "node --env-file-if-exists=../../.env src/index.ts",
+    "batch:run": "node --env-file-if-exists=../../.env scripts/run-batch.ts",
     "demo:load": "node --env-file-if-exists=../../.env scripts/load-demo-story.ts",
     "collect:gnews": "node --env-file-if-exists=../../.env scripts/collect-gnews.ts",
     "assign:stories": "node --env-file-if-exists=../../.env scripts/assign-stories.ts"
@@ -12,6 +14,7 @@
   "dependencies": {
     "@newsplatform/db": "workspace:*",
     "@newsplatform/domain": "workspace:*",
-    "@newsplatform/pipeline": "workspace:*"
+    "@newsplatform/pipeline": "workspace:*",
+    "pg-boss": "12.34.0"
   }
 }

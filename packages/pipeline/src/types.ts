@@ -21,6 +21,8 @@ export interface StoryState {
   readonly story: Story;
   /** 마지막 발행 개정판. 있으면 개정판 번호 계산과 중복 제거(스펙 134행)에 쓴다. */
   readonly latestRevision?: Revision;
+  /** 이전 배치가 한도 도달로 미룬 시각("수집됨, 분석 대기"). 있으면 이번 배치에서 우선 처리한다. */
+  readonly deferredSince?: Date;
 }
 
 /** 가드 ①로 이번 개정판에서 빠진 주장 하나(#22 Ruling 22-4). */
@@ -111,15 +113,24 @@ export interface EmbeddingClient {
 export interface BatchInput {
   readonly articles: readonly ArticleInput[];
   readonly now: Date;
+  /** 이번 배치가 쓸 수 있는 남은 예산(일일 예산에서 같은 KST 날짜의 앞선 지출을 뺀 값). */
   readonly dailyBudget: Budget;
   readonly sources: readonly Source[];
   readonly existingStories: readonly StoryState[];
+  /** 동시에 처리하는 사건 수. 기본 `BATCH_CONCURRENCY`. */
+  readonly concurrency?: number;
+  /** 이 시각 뒤에는 모델 호출을 시작하지 않고 남은 사건을 미룬다(잡 만료보다 짧은 배치 기한). */
+  readonly deadline?: Date;
 }
 
 export interface BatchDeps {
   readonly modelClient: ModelClient;
   readonly embeddingClient: EmbeddingClient;
   readonly clock: () => Date;
+  /** 전송 오류 재시도 전 대기. 테스트는 즉시 돌아오는 함수를 준다. */
+  readonly sleep?: (ms: number) => Promise<void>;
+  /** 호출 전 예약액(USD). 기본 `requestReservationUsd`. */
+  readonly reservation?: (request: ModelRequest) => number;
 }
 
 export interface BatchReport {
@@ -127,6 +138,8 @@ export interface BatchReport {
   readonly deferred: number;
   readonly failed: number;
   readonly failures: readonly { readonly storyId: string; readonly reason: string }[];
+  /** 미룬 사건(우선순위 순). 다음 배치에서 우선 처리된다. */
+  readonly deferredStories: readonly string[];
   readonly droppedClaims: readonly DroppedClaim[];
   readonly usage: readonly {
     readonly stage: string;
@@ -134,6 +147,8 @@ export interface BatchReport {
     readonly spend: number;
   }[];
   readonly budgetReached: boolean;
+  /** 배치 기한에 닿아 사건을 미뤘는가. */
+  readonly deadlineReached: boolean;
 }
 
 export interface BatchResult {
@@ -165,5 +180,47 @@ export class ModelResponseError extends StageFailure {
   constructor(stage: string, key: string, detail: string, usage: ModelUsage) {
     super(stage, key, detail);
     this.usage = usage;
+  }
+}
+
+/**
+ * 모델 응답을 받지 못했다(전송 오류·429·5xx·제한 시간). 재시도는 클라이언트가 아니라 배치가 하며,
+ * 시도마다 다시 예약한다(#55). `billable`은 제한 시간 초과처럼 응답 없이도 과금됐을 수 있는 시도다 —
+ * 배치는 그 시도를 예약액만큼 지출로 센다. `retryable`이 아니면(제한 시간) 그 사건을 실패로 두고
+ * 다음 배치에서 다시 처리한다.
+ */
+export class ModelTransportError extends StageFailure {
+  readonly retryable: boolean;
+  readonly billable: boolean;
+
+  constructor(
+    stage: string,
+    key: string,
+    detail: string,
+    options: { readonly retryable: boolean; readonly billable: boolean },
+  ) {
+    super(stage, key, detail);
+    this.retryable = options.retryable;
+    this.billable = options.billable;
+  }
+}
+
+/** 예약액이 남은 예산을 넘어 호출하지 않았다. 배치는 그 사건을 미룬다(스펙 "배치와 비용"). */
+export class BudgetExceededError extends Error {
+  override readonly name = "BudgetExceededError";
+
+  constructor(stage: string, key: string, reservation: number, remaining: number) {
+    super(
+      `${stage} [${key}]: 예약액 $${reservation.toFixed(4)}이 남은 예산 $${remaining.toFixed(4)}을 넘는다`,
+    );
+  }
+}
+
+/** 배치 기한이 지나 호출을 시작하지 않았다. 배치는 그 사건을 미룬다. */
+export class BatchDeadlineError extends Error {
+  override readonly name = "BatchDeadlineError";
+
+  constructor(stage: string, key: string) {
+    super(`${stage} [${key}]: 배치 기한 초과`);
   }
 }

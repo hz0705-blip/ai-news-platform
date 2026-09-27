@@ -8,8 +8,10 @@ import {
 } from "@newsplatform/domain";
 import {
   boolean,
+  doublePrecision,
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -60,6 +62,8 @@ export const stories = pgTable("stories", {
   centroid: vector({ dimensions: EMBEDDING_DIMENSIONS }),
   last_new_report_at: timestamptz("last_new_report_at"),
   last_processed_at: timestamptz("last_processed_at"),
+  // 배치가 한도·기한 도달로 미룬 시각("수집됨, 분석 대기", #55). 처리되면 null로 돌아간다.
+  deferred_at: timestamptz("deferred_at"),
 });
 
 /**
@@ -134,6 +138,7 @@ export const storyRevisions = pgTable(
     contradiction_status: text({ enum: CONTRADICTION_STATUSES }).notNull(),
     prompt_evidence_extract: text().notNull(),
     prompt_claim_generate: text().notNull(),
+    prompt_gate: text().notNull(),
     prompt_contradiction_label: text().notNull(),
     model_id: text().notNull(),
   },
@@ -212,6 +217,28 @@ export const evidence = pgTable(
   (t) => [index("evidence_claim_revision_id_idx").on(t.claim_revision_id)],
 );
 
+/** 배치 실행 상태(슬롯 원장). */
+export const BATCH_RUN_STATUSES = ["running", "completed", "failed"] as const;
+
+/**
+ * 슬롯 원장(#55, 스펙 "배포와 운영" 스케줄러). 행 하나 = 의도한 KST 슬롯 하나(`slot_key`, 예 `2026-09-27T17:00+09:00`),
+ * 시각은 UTC로 저장한다. `running` 행의 `lease_expires_at`이 DB 리스다 — 유효한 리스가 하나라도 있으면
+ * 다른 슬롯의 배치는 시작하지 않는다(한 번에 한 배치). `report`는 배치 리포트 JSON, `spend_usd`는
+ * 같은 KST 날짜의 일일 예산 잔액 계산용 합계다.
+ */
+export const batchRuns = pgTable("batch_runs", {
+  slot_key: text("slot_key").primaryKey(),
+  slot_at: timestamptz("slot_at").notNull(),
+  status: text({ enum: BATCH_RUN_STATUSES }).notNull(),
+  attempt: integer().notNull(),
+  lease_expires_at: timestamptz("lease_expires_at"),
+  started_at: timestamptz("started_at").notNull(),
+  finished_at: timestamptz("finished_at"),
+  spend_usd: doublePrecision("spend_usd").notNull(),
+  report: jsonb(),
+  error: text(),
+});
+
 export type SourceRow = typeof sources.$inferSelect;
 export type StoryRow = typeof stories.$inferSelect;
 export type ArticleRow = typeof articles.$inferSelect;
@@ -220,3 +247,4 @@ export type StoryRevisionRow = typeof storyRevisions.$inferSelect;
 export type ClaimRow = typeof claims.$inferSelect;
 export type ClaimRevisionRow = typeof claimRevisions.$inferSelect;
 export type EvidenceRow = typeof evidence.$inferSelect;
+export type BatchRunRow = typeof batchRuns.$inferSelect;

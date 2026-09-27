@@ -54,7 +54,12 @@ const base: Revision = {
   title: "제목",
   publishedAt: at,
   contradictionStatus: "복수 출처 일치",
-  promptVersions: { evidenceExtract: "e@1", claimGenerate: "c@1", contradictionLabel: "l@1" },
+  promptVersions: {
+    evidenceExtract: "e@1",
+    claimGenerate: "c@1",
+    gate: "g@1",
+    contradictionLabel: "l@1",
+  },
   modelId: "recorded",
   claims: [claim0],
   sources: [

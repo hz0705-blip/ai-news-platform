@@ -9,6 +9,19 @@ export {
   touchStory,
 } from "./assign.ts";
 export {
+  type BatchArticle,
+  type BatchStory,
+  clearStoriesDeferred,
+  finishBatchRun,
+  loadBatchRunsSince,
+  loadBatchStories,
+  loadLastCompletedSlot,
+  loadSpendBetween,
+  markStoriesDeferred,
+  type StartBatchRunResult,
+  startBatchRun,
+} from "./batch.ts";
+export {
   type SaveCollectedInput,
   type SaveCollectedResult,
   saveCollectedArticles,
@@ -25,3 +38,4 @@ export { loadLatestRevision } from "./queries/revision.ts";
 export { loadPublishedStory, type StoryPageData } from "./queries/story.ts";
 export { loadPublishedToday, type TodayData, type TodayStoryCard } from "./queries/today.ts";
 export { createRuntimeDb, type RuntimeDb } from "./runtime.ts";
+export { type BatchRunRow, batchRuns } from "./schema/index.ts";

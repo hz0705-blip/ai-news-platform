@@ -98,6 +98,7 @@ export const RevisionSourceSchema: z.ZodType<RevisionSource> = z.object({
 export const PromptVersionsSchema = z.object({
   evidenceExtract: z.string(),
   claimGenerate: z.string(),
+  gate: z.string(),
   contradictionLabel: z.string(),
 });
 
@@ -198,6 +199,7 @@ export const BudgetSchema: z.ZodType<Budget> = z.object({
 export const StoryStateSchema: z.ZodType<StoryState> = z.object({
   story: StorySchema,
   latestRevision: RevisionSchema.exactOptional(),
+  deferredSince: z.date().exactOptional(),
 });
 
 export const BatchInputSchema: z.ZodType<BatchInput> = z.object({
@@ -206,6 +208,8 @@ export const BatchInputSchema: z.ZodType<BatchInput> = z.object({
   dailyBudget: BudgetSchema,
   sources: z.array(SourceSchema),
   existingStories: z.array(StoryStateSchema),
+  concurrency: z.number().int().positive().exactOptional(),
+  deadline: z.date().exactOptional(),
 });
 
 export const BatchReportSchema: z.ZodType<BatchReport> = z.object({
@@ -213,6 +217,7 @@ export const BatchReportSchema: z.ZodType<BatchReport> = z.object({
   deferred: z.number().int().nonnegative(),
   failed: z.number().int().nonnegative(),
   failures: z.array(z.object({ storyId: z.string(), reason: z.string().min(1) })),
+  deferredStories: z.array(z.string()),
   droppedClaims: z.array(
     z.object({ storyId: z.string(), claimKey: z.string(), reason: z.string().min(1) }),
   ),
@@ -224,4 +229,5 @@ export const BatchReportSchema: z.ZodType<BatchReport> = z.object({
     }),
   ),
   budgetReached: z.boolean(),
+  deadlineReached: z.boolean(),
 });
