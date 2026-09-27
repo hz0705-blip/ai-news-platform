@@ -4,6 +4,9 @@ import {
   type Revision,
   type RevisionSource,
 } from "@newsplatform/domain";
+import * as claimGeneratePrompt from "./prompts/claim-generate.ts";
+import * as contradictionPrompt from "./prompts/contradiction-label.ts";
+import * as evidenceExtractPrompt from "./prompts/evidence-extract.ts";
 import { BatchInputSchema } from "./schemas.ts";
 import * as claimGenerate from "./stages/claim-generate.ts";
 import * as contradiction from "./stages/contradiction.ts";
@@ -18,18 +21,21 @@ import {
   type BatchResult,
   type ConfirmedRevision,
   type DroppedClaim,
+  type ModelClient,
+  ModelResponseError,
+  type ModelUsage,
   StageFailure,
 } from "./types.ts";
 
-/** 개정판이 기록하는 프롬프트 버전(`<단계>@<정수>`). */
+/**
+ * 개정판이 기록하는 프롬프트 버전(`<단계>@<정수>`, `src/prompts/`). 게이트 2단계 프롬프트 버전(`gate@N`)은
+ * 개정판 저장 열이 아직 없어 기록하지 않는다(#54 PR 본문 "무엇을 남겼나").
+ */
 export const PROMPT_VERSIONS = {
-  evidenceExtract: "evidence-extract@1",
-  claimGenerate: "claim-generate@1",
-  contradictionLabel: "contradiction-label@1",
+  evidenceExtract: evidenceExtractPrompt.PROMPT.version,
+  claimGenerate: claimGeneratePrompt.PROMPT.version,
+  contradictionLabel: contradictionPrompt.PROMPT.version,
 } as const;
-
-/** #21 Ruling 4: 이 티켓은 기록된 응답만 쓴다. */
-const MODEL_ID = "recorded";
 
 /** 리포트 사용량 줄의 순서. 수집·중복 제거·임베딩·사건 배정은 #21에서 통과 단계라 없다. */
 const STAGES = [
@@ -42,6 +48,27 @@ const STAGES = [
 
 type Usage = { tokens: number; spend: number };
 
+/** 모델 호출마다 사용량을 단계별로 더하는 클라이언트. 실패한 호출도 이미 쓴 사용량을 센다. */
+function meteredClient(inner: ModelClient, usage: Map<string, Usage>): ModelClient {
+  const add = (stage: string, used: ModelUsage) => {
+    const entry = usage.get(stage) ?? { tokens: 0, spend: 0 };
+    usage.set(stage, { tokens: entry.tokens + used.tokens, spend: entry.spend + used.spend });
+  };
+  return {
+    modelId: inner.modelId,
+    async complete(request) {
+      try {
+        const response = await inner.complete(request);
+        add(request.stage, response.usage);
+        return response;
+      } catch (error) {
+        if (error instanceof ModelResponseError) add(request.stage, error.usage);
+        throw error;
+      }
+    },
+  };
+}
+
 /** 사건 하나의 처리 결과: 새 개정판, 또는 이전 개정판과 같아 확인만 함(Ruling 22-11). */
 type StoryOutcome =
   | { readonly kind: "revision"; readonly revision: Revision }
@@ -49,18 +76,19 @@ type StoryOutcome =
 
 /**
  * 배치 한 번(docs/spec/v1.md "배치와 비용"). 기사를 사건별로 묶어 사건마다
- * 근거 추출 → 주장 생성 → 게이트 1단계 → 상충 판정 → 개정판 생성을 돈다.
+ * 근거 추출 → 주장 생성 → 게이트 1단계 → 게이트 2단계 → 상충 판정 → 개정판 생성을 돈다.
  * 사건 단위 원자성: 한 단계라도 실패하면 그 사건의 개정판을 만들지 않고 리포트에 사유를
  * 남긴 뒤 다음 사건으로 넘어간다. 배치 자체는 입력 스키마 위반이 아니면 던지지 않는다.
- * 상충 판정이 미발행(가드 ①)으로 정한 주장은 그 주장만 빼고 `droppedClaims`에 남긴다(Ruling 22-4).
+ * 게이트 2단계를 통과하지 못했거나 상충 판정이 미발행(가드 ①)으로 정한 주장은 그 주장만 빼고
+ * `droppedClaims`에 남긴다(Ruling 22-4).
  * 이전 개정판과 내용이 같으면 개정판 대신 `confirmed`에 확인만 남긴다(스펙 134행, Ruling 22-11).
  */
 export async function runBatch(rawInput: BatchInput, deps: BatchDeps): Promise<BatchResult> {
   const input = BatchInputSchema.parse(rawInput);
 
-  // 기록된 클라이언트는 사용량을 보고하지 않으므로 #21에서는 늘 0이다. 실제 모델 클라이언트가
-  // 사용량을 돌려주게 되면 단계 호출마다 여기에 더한다.
+  // 기록된 클라이언트의 사용량은 0이다. 실제 모델 클라이언트는 응답 usage를 USD로 바꿔 돌려준다.
   const usage = new Map<string, Usage>(STAGES.map((stage) => [stage, { tokens: 0, spend: 0 }]));
+  const storyDeps = { ...deps, modelClient: meteredClient(deps.modelClient, usage) };
   const revisions: Revision[] = [];
   const confirmed: ConfirmedRevision[] = [];
   const failures: { storyId: string; reason: string }[] = [];
@@ -74,7 +102,7 @@ export async function runBatch(rawInput: BatchInput, deps: BatchDeps): Promise<B
       continue;
     }
     try {
-      const outcome = await processStory(storyId, articles, input, deps, droppedClaims);
+      const outcome = await processStory(storyId, articles, input, storyDeps, droppedClaims);
       if (outcome.kind === "revision") revisions.push(outcome.revision);
       else confirmed.push(outcome.confirmed);
     } catch (error) {
@@ -154,7 +182,8 @@ async function processStory(
   // 1. 근거 추출
   const located: gate.GateInput["located"] = [];
   const quoteIds: string[] = [];
-  for (const { version } of processable) {
+  const claimArticles: claimGenerate.ClaimGenerateInput["articles"] = [];
+  for (const { version, article, source } of processable) {
     const { output, dropped } = await evidenceExtract.runEvidenceExtract(
       { articleVersionId: version.id, body: version.body },
       deps.modelClient,
@@ -164,11 +193,25 @@ async function processStory(
       quoteIds.push(quote.quoteId);
     }
     for (const quote of dropped) quoteIds.push(quote.quoteId);
+    claimArticles.push({
+      sourceName: source.name,
+      title: article.title,
+      quotes: output.quotes.map(({ quoteId, quote }) => ({ quoteId, quote })),
+    });
+  }
+  const duplicate = quoteIds.find((id, index) => quoteIds.indexOf(id) !== index);
+  if (duplicate !== undefined) {
+    throw new StageFailure(evidenceExtract.STAGE, storyId, `인용문 식별자 중복: ${duplicate}`);
   }
 
   // 2. 주장 생성
   const generated = await claimGenerate.runClaimGenerate(
-    { storyId, articleVersionIds: processable.map((v) => v.version.id), quoteIds },
+    {
+      storyId,
+      articleVersionIds: processable.map((v) => v.version.id),
+      quoteIds,
+      articles: claimArticles,
+    },
     deps.modelClient,
   );
 
@@ -189,23 +232,42 @@ async function processStory(
     }),
   );
 
-  // 4. 상충 판정
+  // 3-2. 게이트 2단계, 4. 상충 판정
   const byVersionId = new Map(versions.map((v) => [v.version.id, v]));
   const claims: revisionStage.RevisionInput["claims"] = [];
   for (const [index, claim] of generated.claims.entries()) {
-    const evidence = (gated[index]?.evidence ?? []).map((item) => {
-      const origin = byVersionId.get(item.articleVersionId);
-      if (origin === undefined) throw new Error(`기사 버전 없음: ${item.articleVersionId}`);
-      return { ...item, origin };
-    });
+    const passed = gated[index]?.evidence ?? [];
+    const support = await gate.runGateSupport(
+      {
+        storyId,
+        claimKey: claim.claimKey,
+        claim: { text: claim.text, claimType: claim.claimType, modality: claim.modality },
+        evidence: passed.map(({ quoteId, spanText }) => ({ quoteId, spanText })),
+      },
+      deps.modelClient,
+    );
+    if (!support.publish) {
+      droppedClaims.push({ storyId, claimKey: claim.claimKey, reason: support.reason });
+      continue;
+    }
+    const kept = new Set(support.kept);
+    const evidence = passed
+      .filter((item) => kept.has(item.quoteId))
+      .map((item) => {
+        const origin = byVersionId.get(item.articleVersionId);
+        if (origin === undefined) throw new Error(`기사 버전 없음: ${item.articleVersionId}`);
+        return { ...item, origin };
+      });
     const claimId = revisionStage.claimId(story.slug, claim.claimKey);
     const { result, differsIn } = await contradiction.runContradictionLabel(
       {
         storyId,
         claimKey: claim.claimKey,
+        claimText: claim.text,
         previous: latest?.claims.find((c) => c.id === claimId)?.contradictionStatus,
         evidence: evidence.map((item) => ({
           quoteId: item.quoteId,
+          quote: item.spanText,
           sourceId: item.origin.source.id,
           rightsTier: item.origin.source.rightsTier,
           ...(item.origin.source.wireId === undefined ? {} : { wireId: item.origin.source.wireId }),
@@ -264,7 +326,7 @@ async function processStory(
     title: generated.title,
     publishedAt: deps.clock(),
     promptVersions: PROMPT_VERSIONS,
-    modelId: MODEL_ID,
+    modelId: deps.modelClient.modelId,
     claims,
     sources,
   });

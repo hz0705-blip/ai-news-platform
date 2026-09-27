@@ -16,6 +16,12 @@ import type {
  */
 export const DEMO_REFERENCE_TIME = new Date("2026-09-17T00:30:00.000Z");
 
+/**
+ * 실제 기사로 만든 기록 픽스처(`live-*`, #54)의 기준 시각: 기사 수집일(2026-09-27) KST 17:00 배치.
+ * 기록할 때와 리플레이할 때 같은 값을 써야 같은 개정판이 나온다.
+ */
+export const LIVE_REFERENCE_TIME = new Date("2026-09-27T08:00:00.000Z");
+
 /** 기사 메타데이터에 기사 버전 식별자를 더한 것(#21 브리프: 고정 문자열 `av-*`). */
 export interface DemoArticleMeta extends Article {
   readonly articleVersionId: string;
