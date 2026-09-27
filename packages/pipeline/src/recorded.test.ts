@@ -1,14 +1,29 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import { createRecordedModelClient } from "./recorded.ts";
+import type { ModelRequest } from "./types.ts";
+
+/** 기록된 클라이언트는 `stage`·`key`만 본다. */
+const stubRequest: ModelRequest = {
+  stage: "",
+  key: "",
+  promptVersion: "test@1",
+  instructions: "",
+  input: "",
+  reasoningEffort: "low",
+  maxOutputTokens: 1,
+  schemaName: "stub",
+  schema: z.object({}),
+  decode: (raw) => raw,
+};
 
 describe("기록된 모델 클라이언트", () => {
   it("slug 하나(문자열)와 slug 목록을 모두 받는다", async () => {
     const key = "story-demo-1-agreement:c-1";
     const single = createRecordedModelClient("demo-1-agreement");
     const listed = createRecordedModelClient(["demo-1-agreement"]);
-    expect(await listed.complete("contradiction-label", key)).toEqual(
-      await single.complete("contradiction-label", key),
-    );
+    const request = { ...stubRequest, stage: "contradiction-label", key };
+    expect(await listed.complete(request)).toEqual(await single.complete(request));
   });
 
   it("여러 slug의 기록에 같은 키가 있으면 만들 때 던진다", () => {

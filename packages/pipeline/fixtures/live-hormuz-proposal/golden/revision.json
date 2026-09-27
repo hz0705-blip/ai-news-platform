@@ -1,0 +1,168 @@
+{
+  "id": "live-hormuz-proposal:rev-1",
+  "storyId": "story-live-hormuz-proposal",
+  "revisionNumber": 1,
+  "title": "호르무즈 해협 재개 제안 거부와 이란의 대응",
+  "publishedAt": "2026-09-27T08:00:00.000Z",
+  "contradictionStatus": "단일 출처",
+  "promptVersions": {
+    "evidenceExtract": "evidence-extract@1",
+    "claimGenerate": "claim-generate@1",
+    "contradictionLabel": "contradiction-label@1"
+  },
+  "modelId": "gpt-5-mini-2025-08-07",
+  "claims": [
+    {
+      "id": "live-hormuz-proposal:c-1",
+      "text": "이란은 도널드 트럼프 대통령이 호르무즈 해협 재개 제안을 거부한 뒤 미 협상단의 공식 답변을 기다리겠다고 밝혔다.",
+      "claimType": "보도된 사실",
+      "modality": "단정",
+      "order": 0,
+      "contradictionStatus": "복수 출처 일치",
+      "evidence": [
+        {
+          "id": "live-hormuz-proposal:rev-1/live-hormuz-proposal:c-1:q-8bb1a3-1",
+          "claimId": "live-hormuz-proposal:c-1",
+          "articleId": "article-hormuz-1",
+          "articleVersionId": "av-hormuz-1",
+          "sourceId": "gnews:da05009467a13bbcc84557ea09d86db3",
+          "span": {
+            "start": 0,
+            "end": 193
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Iran has said it will wait for an official response from US negotiators after President Donald Trump rejected a proposal to reopen the Strait of Hormuz to commercial shipping within seven days.",
+          "spanHash": "c19e00c3ff30c1e88980fd320f3f3974705c65249e7b33cc12feb4065019432e",
+          "excerpt": "Iran has said it will wait for an official response from US negotiators after President Donald Trump rejected a proposal to reopen the Strait of Hormuz to commercial shipping within seven days.",
+          "excerptSpan": {
+            "start": 0,
+            "end": 193
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 193
+          },
+          "sourceUrl": "https://www.bbc.co.uk/news/articles/cmvgyyw2jeego",
+          "verifiedAt": "2026-09-27T08:00:00.000Z"
+        },
+        {
+          "id": "live-hormuz-proposal:rev-1/live-hormuz-proposal:c-1:q-22ea02-1",
+          "claimId": "live-hormuz-proposal:c-1",
+          "articleId": "article-hormuz-2",
+          "articleVersionId": "av-hormuz-2",
+          "sourceId": "gnews:f331a5ed3965fb59761dfcecfc7e7a34",
+          "span": {
+            "start": 0,
+            "end": 193
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Iran has said it will wait for an official response from US negotiators after President Donald Trump rejected a proposal to reopen the Strait of Hormuz to commercial shipping within seven days.",
+          "spanHash": "c19e00c3ff30c1e88980fd320f3f3974705c65249e7b33cc12feb4065019432e",
+          "excerpt": "Iran has said it will wait for an official response from US negotiators after President Donald Trump rejected a proposal to reopen the Strait of Hormuz to commercial shipping within seven days.",
+          "excerptSpan": {
+            "start": 0,
+            "end": 193
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 193
+          },
+          "sourceUrl": "https://www.bbc.com/news/articles/cmvgyyw2jeego",
+          "verifiedAt": "2026-09-27T08:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "live-hormuz-proposal:c-4",
+      "text": "아라그치가 텔레그램에 트럼프에 대해 \"많은 좋은 발언과 함께 또한 많은 모순되는 발언을 해왔다\"고 비판했다.",
+      "claimType": "귀속 입장",
+      "modality": "단정",
+      "order": 1,
+      "contradictionStatus": "단일 출처",
+      "evidence": [
+        {
+          "id": "live-hormuz-proposal:rev-1/live-hormuz-proposal:c-4:q-22ea02-8",
+          "claimId": "live-hormuz-proposal:c-4",
+          "articleId": "article-hormuz-2",
+          "articleVersionId": "av-hormuz-2",
+          "sourceId": "gnews:f331a5ed3965fb59761dfcecfc7e7a34",
+          "span": {
+            "start": 1184,
+            "end": 1330
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Araghchi wrote on Telegram that Trump \"has made many good statements, as well as many contradictory ones, which unfortunately we hear frequently\".",
+          "spanHash": "c3c5ad8fcceeac5a2d350ca6e8a8ac1b05971949f1ede6e851aeaca4b4584bd1",
+          "excerpt": "Araghchi wrote on Telegram that Trump \"has made many good statements, as well as many contradictory ones, which unfortunately we hear frequently\".",
+          "excerptSpan": {
+            "start": 1184,
+            "end": 1330
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 146
+          },
+          "sourceUrl": "https://www.bbc.com/news/articles/cmvgyyw2jeego",
+          "verifiedAt": "2026-09-27T08:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "live-hormuz-proposal:c-5",
+      "text": "보도에 따르면 이 중요한 해역은 2월 전쟁 발발 이후 사실상 폐쇄돼 왔다.",
+      "claimType": "보도된 사실",
+      "modality": "단정",
+      "order": 2,
+      "contradictionStatus": "단일 출처",
+      "evidence": [
+        {
+          "id": "live-hormuz-proposal:rev-1/live-hormuz-proposal:c-5:q-22ea02-6",
+          "claimId": "live-hormuz-proposal:c-5",
+          "articleId": "article-hormuz-2",
+          "articleVersionId": "av-hormuz-2",
+          "sourceId": "gnews:f331a5ed3965fb59761dfcecfc7e7a34",
+          "span": {
+            "start": 857,
+            "end": 1019
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The vital waterway through which around a fifth of the world's gas and oil supply usually flows has been effectively closed since the outbreak of war in February.",
+          "spanHash": "b6f1679b3859746e0c530ae9e30fce0640b8bac0ded327d8fd1dadbfd11a99c3",
+          "excerpt": "The vital waterway through which around a fifth of the world's gas and oil supply usually flows has been effectively closed since the outbreak of war in February.",
+          "excerptSpan": {
+            "start": 857,
+            "end": 1019
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 162
+          },
+          "sourceUrl": "https://www.bbc.com/news/articles/cmvgyyw2jeego",
+          "verifiedAt": "2026-09-27T08:00:00.000Z"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "sourceId": "gnews:da05009467a13bbcc84557ea09d86db3",
+      "articleId": "article-hormuz-1",
+      "articleTitle": "Iran says it will wait for official US response after Trump rejects Strait of Hormuz proposal",
+      "articleUrl": "https://www.bbc.co.uk/news/articles/cmvgyyw2jeego",
+      "publishedAt": "2026-09-27T02:16:52.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    },
+    {
+      "sourceId": "gnews:f331a5ed3965fb59761dfcecfc7e7a34",
+      "articleId": "article-hormuz-2",
+      "articleTitle": "Iran says it will wait for official US response after Trump rejects Strait of Hormuz proposal",
+      "articleUrl": "https://www.bbc.com/news/articles/cmvgyyw2jeego",
+      "publishedAt": "2026-09-27T02:16:52.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    }
+  ]
+}

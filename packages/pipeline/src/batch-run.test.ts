@@ -1,7 +1,8 @@
 import type { Source } from "@newsplatform/domain";
 import { describe, expect, it } from "vitest";
 import { runBatch } from "./batch-run.ts";
-import { DEMO_REFERENCE_TIME, loadDemoStoryFixture } from "./fixtures.ts";
+import { DEMO_REFERENCE_TIME, LIVE_REFERENCE_TIME, loadDemoStoryFixture } from "./fixtures.ts";
+import { MODEL_ID } from "./openai/client.ts";
 import { createRecordedModelClient, type RecordedModelClientOptions } from "./recorded.ts";
 import { BatchReportSchema } from "./schemas.ts";
 
@@ -334,5 +335,68 @@ describe("두 사건 배치", () => {
       storyId: one.story.id,
       reason: expect.stringMatching(/구간 없음/),
     });
+  });
+  it("게이트 2단계 응답이 스키마를 어기면 그 사건만 실패하고 다른 사건은 발행된다", async () => {
+    const result = await runBatch(
+      both(),
+      bothDeps({
+        gate: {
+          "story-demo-1-agreement:gate:c-1": {
+            judgments: [{ quoteId: "q-m-1", label: "확실함", reason: "" }],
+          },
+        },
+      }),
+    );
+    expect(result.revisions).toEqual([two.golden]);
+    expect(result.report.failures).toEqual([
+      { storyId: one.story.id, reason: expect.stringMatching(/^gate .*응답 스키마 불일치/) },
+    ]);
+  });
+  it("게이트 2단계가 뒷받침하지 않는 주장은 그 주장만 빼고 발행한다", async () => {
+    const result = await runBatch(
+      both(),
+      bothDeps({
+        gate: {
+          "story-demo-1-agreement:gate:c-1": {
+            judgments: [
+              { quoteId: "q-m-1", label: "부분 뒷받침", reason: "시점이 없다" },
+              { quoteId: "q-h-1", label: "뒷받침 안 됨", reason: "다른 명제" },
+            ],
+          },
+        },
+      }),
+    );
+    expect(result.revisions[0]?.claims.map((c) => c.id)).not.toContain("demo-1-agreement:c-1");
+    expect(result.report.droppedClaims).toEqual([
+      {
+        storyId: one.story.id,
+        claimKey: "c-1",
+        reason: "게이트 2단계 미통과: q-m-1=부분 뒷받침, q-h-1=뒷받침 안 됨",
+      },
+    ]);
+  });
+});
+
+describe("실제 모델로 기록한 사건(live-hormuz-proposal, #54)", () => {
+  const live = loadDemoStoryFixture("live-hormuz-proposal");
+  const liveInput = () => ({
+    articles: live.articles.map((a) => ({ ...a.meta, rawBody: a.rawBody })),
+    now: LIVE_REFERENCE_TIME,
+    dailyBudget: { tokens: 1_000_000, spend: 1 },
+    sources: live.sources,
+    existingStories: [{ story: live.story }],
+  });
+  const liveDeps = () => ({
+    modelClient: createRecordedModelClient("live-hormuz-proposal", { modelId: MODEL_ID }),
+    embeddingClient: { embed: async () => ({ vectors: [], usage: { tokens: 0, spend: 0 } }) },
+    clock: () => LIVE_REFERENCE_TIME,
+  });
+
+  it("기록된 실제 응답을 리플레이하면 기록 때와 같은 개정판이 나온다", async () => {
+    const result = await runBatch(liveInput(), liveDeps());
+    expect(result.revisions).toEqual([live.golden]);
+    expect(result.revisions[0]?.modelId).toBe("gpt-5-mini-2025-08-07");
+    // 기록 때 게이트 2단계가 부분 뒷받침으로 뺀 주장은 리플레이에서도 빠진다.
+    expect(result.report.droppedClaims.map((d) => d.claimKey)).toEqual(["c-2", "c-3"]);
   });
 });

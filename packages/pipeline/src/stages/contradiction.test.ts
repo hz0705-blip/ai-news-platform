@@ -3,14 +3,18 @@ import type { ModelClient } from "../types.ts";
 import { runContradictionLabel } from "./contradiction.ts";
 
 const tier = "본문 처리 + 발췌 표시" as const;
-const client = (response: unknown): ModelClient => ({ complete: async () => response });
+const client = (response: unknown): ModelClient => ({
+  modelId: "test",
+  complete: async () => ({ output: response, usage: { tokens: 0, spend: 0 } }),
+});
 const input = {
   storyId: "story-x",
   claimKey: "c-1",
+  claimText: "주장 문장",
   previous: undefined,
   evidence: [
-    { quoteId: "q-a", sourceId: "source-a", rightsTier: tier },
-    { quoteId: "q-b", sourceId: "source-b", rightsTier: tier },
+    { quoteId: "q-a", quote: "q-a 원문", sourceId: "source-a", rightsTier: tier },
+    { quoteId: "q-b", quote: "q-b 원문", sourceId: "source-b", rightsTier: tier },
   ],
 };
 
@@ -86,8 +90,8 @@ describe("상충 판정 단계", () => {
     const same = {
       ...input,
       evidence: [
-        { quoteId: "q-a", sourceId: "source-a", rightsTier: tier },
-        { quoteId: "q-a2", sourceId: "source-a", rightsTier: tier },
+        { quoteId: "q-a", quote: "q-a 원문", sourceId: "source-a", rightsTier: tier },
+        { quoteId: "q-a2", quote: "q-a2 원문", sourceId: "source-a", rightsTier: tier },
       ],
     };
     const out = await runContradictionLabel(
@@ -115,7 +119,9 @@ describe("상충 판정 단계", () => {
   it("링크만 등급 근거는 원점이 아니다", async () => {
     const linkOnly = {
       ...input,
-      evidence: [{ quoteId: "q-a", sourceId: "source-a", rightsTier: "링크만" as const }],
+      evidence: [
+        { quoteId: "q-a", quote: "q-a 원문", sourceId: "source-a", rightsTier: "링크만" as const },
+      ],
     };
     const out = await runContradictionLabel(linkOnly, client({ pairs: [] }));
     expect(out.result).toMatchObject({ publish: false, guard: 1 });
@@ -124,7 +130,10 @@ describe("상충 판정 단계", () => {
   describe("주장 쪽·반대 쪽 분리(Ruling 22-1 개정)", () => {
     const three = {
       ...input,
-      evidence: [...input.evidence, { quoteId: "q-c", sourceId: "source-c", rightsTier: tier }],
+      evidence: [
+        ...input.evidence,
+        { quoteId: "q-c", quote: "q-c 원문", sourceId: "source-c", rightsTier: tier },
+      ],
     };
     const conflict = (a: string, b: string) => ({
       a,

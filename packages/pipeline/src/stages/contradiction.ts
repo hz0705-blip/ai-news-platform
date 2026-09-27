@@ -6,6 +6,8 @@ import {
   reportingOrigins,
 } from "@newsplatform/domain";
 import { z } from "zod";
+import * as prompt from "../prompts/contradiction-label.ts";
+import { buildRequest } from "../prompts/prompt.ts";
 import { ContradictionLabelResponseSchema } from "../schemas.ts";
 import { type ModelClient, StageFailure } from "../types.ts";
 
@@ -13,16 +15,18 @@ import { type ModelClient, StageFailure } from "../types.ts";
 export const STAGE = "contradiction-label";
 
 /**
- * 게이트 1단계를 통과한 주장 하나의 근거들(인용문 식별자와 출처)과 이전 개정판의 주장 상태.
+ * 게이트를 통과한 주장 하나의 문장과 근거들(인용문 식별자·원문·출처), 이전 개정판의 주장 상태.
  * `wireId`는 출처가 전재한 통신 기사 식별자다(Ruling 22-13).
  */
 export const InputSchema = z.object({
   storyId: z.string(),
   claimKey: z.string(),
+  claimText: z.string(),
   previous: z.enum(CONTRADICTION_STATUSES).optional(),
   evidence: z.array(
     z.object({
       quoteId: z.string(),
+      quote: z.string(),
       sourceId: z.string(),
       wireId: z.string().exactOptional(),
       rightsTier: z.enum(RIGHTS_TIERS),
@@ -47,7 +51,7 @@ export function idempotencyKey(input: ContradictionInput): string {
 }
 
 /**
- * 기록된 관계 라벨로 주장 상태를 정한다(Ruling 22-1 개정·22-6). 인용을 주장 쪽과 반대 쪽으로
+ * 관계 라벨로 주장 상태를 정한다(Ruling 22-1 개정·22-6). 인용을 주장 쪽과 반대 쪽으로
  * 나눠(`partitionSides`) 주장 쪽 원점을 뒷받침 원점으로, 주장 쪽과 겹치지 않는 반대 쪽 원점을
  * 상충 원점으로 센다. 근거가 둘 이상인데 쌍이 없으면 뒷받침 원점이 0이다.
  * 응답 스키마 불일치로 실패하는 경우: 쌍의 a·b가 이 주장의 근거 인용이 아니거나 서로 같다,
@@ -59,7 +63,16 @@ export async function runContradictionLabel(
   modelClient: ModelClient,
 ): Promise<ContradictionOutput> {
   const key = idempotencyKey(input);
-  const parsed = ContradictionLabelResponseSchema.safeParse(await modelClient.complete(STAGE, key));
+  // 근거가 하나 이하면 라벨할 쌍이 없으므로 모델을 부르지 않는다.
+  const response =
+    input.evidence.length < 2
+      ? { pairs: [] }
+      : (
+          await modelClient.complete(
+            buildRequest(prompt.PROMPT, STAGE, key, prompt.render(input), prompt.toRecord),
+          )
+        ).output;
+  const parsed = ContradictionLabelResponseSchema.safeParse(response);
   if (!parsed.success) {
     throw new StageFailure(STAGE, key, `응답 스키마 불일치: ${z.prettifyError(parsed.error)}`);
   }

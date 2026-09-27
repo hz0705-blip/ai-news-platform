@@ -6,10 +6,18 @@ export {
   type DemoArticleMeta,
   type DemoStoryFixture,
   type EvidenceExtractRecord,
+  LIVE_REFERENCE_TIME,
   listGoldenSetSlugs,
   loadDemoStoryFixture,
   loadDemoStoryInputs,
 } from "./fixtures.ts";
+export {
+  createOpenAiModelClient,
+  MODEL_ID,
+  MODEL_MAX_RETRIES,
+  type OpenAiModelOptions,
+  requestReservationUsd,
+} from "./openai/client.ts";
 export {
   createOpenAiEmbeddingClient,
   EMBEDDING_MODEL,
@@ -21,11 +29,27 @@ export {
   type RecordedEmbeddingResponse,
 } from "./openai/embedding-recorded.ts";
 export {
+  estimateInputTokens,
+  MODEL_PRICES,
+  type PricedModel,
+  reservationUsd,
+  type TokenUsage,
+  usageToUsd,
+} from "./openai/pricing.ts";
+export {
   createRecordedModelClient,
+  createRecordingModelClient,
+  RECORDED_STAGES,
   type RecordedModelClientOptions,
   RecordedResponseMissingError,
 } from "./recorded.ts";
-export { BatchInputSchema, BatchReportSchema, RevisionSchema } from "./schemas.ts";
+export {
+  BatchInputSchema,
+  BatchReportSchema,
+  GATE_SUPPORT_LABELS,
+  type GateSupportLabel,
+  RevisionSchema,
+} from "./schemas.ts";
 export {
   buildGnewsRequest,
   type CollectGnewsDeps,
@@ -66,6 +90,11 @@ export {
   type EmbeddingClient,
   type EmbeddingResult,
   type ModelClient,
+  type ModelRequest,
+  type ModelResponse,
+  ModelResponseError,
+  type ModelUsage,
+  type ReasoningEffort,
   StageFailure,
   type StoryState,
 } from "./types.ts";
