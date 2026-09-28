@@ -43,6 +43,11 @@ export const sources = pgTable("sources", {
   wire_id: text("wire_id"),
   // 제공자 쪽 식별자(GNews `source.id`). 데모의 가상 출처에는 없다(#52).
   external_id: text("external_id").unique(),
+  // 출처 표(#76, `packages/db/sources/sources.json`을 `sources:sync`가 동기화)에 등록된 출처만 채운다.
+  // `domains`는 수집 기사를 이 출처에 맞추는 호스트 목록(빈 배열 = 미등록), `is_excluded`면 수집 단계에서 버린다.
+  domains: text().array().notNull().default([]),
+  is_wire: boolean("is_wire").notNull().default(false),
+  is_excluded: boolean("is_excluded").notNull().default(false),
 });
 
 /**

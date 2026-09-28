@@ -1,4 +1,9 @@
-import type { CollectedArticle, Source, Topic } from "@newsplatform/domain";
+import {
+  type CollectedArticle,
+  matchSourceByDomain,
+  type Source,
+  type Topic,
+} from "@newsplatform/domain";
 import { z } from "zod";
 
 /**
@@ -118,28 +123,40 @@ export function sourceIdFor(gnewsSourceId: string): string {
 }
 
 /**
- * 순수 매퍼: 응답 한 페이지를 출처와 수집 기사로 바꾼다. 권리 등급은 GNews Essential 계약대로
- * "본문 처리 + 발췌 표시", 지역은 GNews `country`, 소유 형태는 알 수 없고(리서치 대기 #9) 언어는 영어다.
+ * 순수 매퍼: 응답 한 페이지를 출처와 수집 기사로 바꾼다. GNews `source.url`의 도메인이 출처 표(`registry`, #76)에
+ * 있으면 그 출처이고, 제외 출처의 기사는 버리고 센다. 없으면 `gnews:<source.id>` 출처를 만든다 —
+ * 권리 등급은 GNews Essential 계약대로 "본문 처리 + 발췌 표시", 지역은 GNews `country`(없으면 "미확인"),
+ * 소유 형태는 `unknown`, 언어는 `en`(요청이 `lang=en`).
  */
 export function toCollected(
   response: GnewsResponse,
   topic: Topic,
-): { sources: Source[]; articles: CollectedArticle[] } {
+  registry: readonly Source[] = [],
+): { sources: Source[]; articles: CollectedArticle[]; excluded: number } {
   const sources = new Map<string, Source>();
   const articles: CollectedArticle[] = [];
+  let excluded = 0;
   for (const item of response.articles) {
-    const sourceId = sourceIdFor(item.source.id);
+    const registered = matchSourceByDomain(item.source.url, registry);
+    if (registered?.isExcluded) {
+      excluded++;
+      continue;
+    }
+    const sourceId = registered?.id ?? sourceIdFor(item.source.id);
     if (!sources.has(sourceId)) {
-      sources.set(sourceId, {
-        id: sourceId,
-        name: item.source.name,
-        rightsTier: "본문 처리 + 발췌 표시",
-        region: item.source.country ?? "불명",
-        ownership: "불명",
-        language: "영어",
-        isFictional: false,
-        externalId: item.source.id,
-      });
+      sources.set(
+        sourceId,
+        registered ?? {
+          id: sourceId,
+          name: item.source.name,
+          rightsTier: "본문 처리 + 발췌 표시",
+          region: item.source.country ?? "미확인",
+          ownership: "unknown",
+          language: "en",
+          isFictional: false,
+          externalId: item.source.id,
+        },
+      );
     }
     articles.push({
       sourceId,
@@ -152,7 +169,7 @@ export function toCollected(
       rawBody: item.content,
     });
   }
-  return { sources: [...sources.values()], articles };
+  return { sources: [...sources.values()], articles, excluded };
 }
 
 // ── 수집 ────────────────────────────────────────────────────────
@@ -169,6 +186,8 @@ export interface CollectGnewsResult {
   readonly articles: readonly CollectedArticle[];
   /** 재시도를 포함해 실제로 보낸 요청 수. */
   readonly requestCount: number;
+  /** 제외 출처(출처 표 `isExcluded`)라 버린 기사 수. */
+  readonly excludedArticles: number;
   /** 재시도 뒤에도 실패한 토픽·페이지. 나머지 토픽의 기사는 그대로 돌려준다. */
   readonly failures: readonly { topic: Topic; page: number; reason: string }[];
 }
@@ -221,7 +240,7 @@ async function requestPage(
  * (재시도 제외). 페이지 2는 `totalArticles`가 첫 페이지를 넘을 때만 요청한다.
  */
 export async function collectGnews(
-  input: { slotAt: Date; previousTo: Date },
+  input: { slotAt: Date; previousTo: Date; registry?: readonly Source[] },
   deps: CollectGnewsDeps,
 ): Promise<CollectGnewsResult> {
   const window = collectionWindow(input);
@@ -229,6 +248,7 @@ export async function collectGnews(
   const sources = new Map<string, Source>();
   const articles: CollectedArticle[] = [];
   const failures: { topic: Topic; page: number; reason: string }[] = [];
+  let excludedArticles = 0;
 
   for (const query of GNEWS_TOPIC_QUERIES) {
     for (let page = 1; page <= GNEWS_MAX_PAGES_PER_TOPIC; page++) {
@@ -243,12 +263,19 @@ export async function collectGnews(
         });
         break;
       }
-      const mapped = toCollected(response, query.topic);
+      const mapped = toCollected(response, query.topic, input.registry);
       for (const source of mapped.sources) sources.set(source.id, source);
       articles.push(...mapped.articles);
+      excludedArticles += mapped.excluded;
       if (response.totalArticles <= page * GNEWS_PAGE_SIZE) break;
     }
   }
 
-  return { sources: [...sources.values()], articles, requestCount: count.requests, failures };
+  return {
+    sources: [...sources.values()],
+    articles,
+    requestCount: count.requests,
+    excludedArticles,
+    failures,
+  };
 }

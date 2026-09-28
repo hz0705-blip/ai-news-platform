@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { dedupeExact } from "@newsplatform/domain";
+import { dedupeExact, type Source } from "@newsplatform/domain";
 import { describe, expect, it } from "vitest";
 import {
   buildGnewsRequest,
@@ -10,6 +10,16 @@ import {
   toCollected,
 } from "./gnews.ts";
 import { createRecordedGnewsFetch, recordedGnewsPath } from "./gnews-recorded.ts";
+
+const registeredSource: Source = {
+  id: "other.example",
+  name: "Other",
+  rightsTier: "본문 처리 + 발췌 표시",
+  region: "kr",
+  ownership: "private",
+  language: "en",
+  isFictional: false,
+};
 
 const slotAt = new Date("2026-09-27T04:07:03.000Z");
 const previousTo = new Date("2026-09-26T16:07:03.000Z");
@@ -127,7 +137,8 @@ describe("GNews 응답 매핑", () => {
     const source = sources.find((s) => s.id === first?.sourceId);
     expect(source).toMatchObject({
       rightsTier: "본문 처리 + 발췌 표시",
-      language: "영어",
+      ownership: "unknown",
+      language: "en",
       isFictional: false,
       externalId: expect.any(String),
     });
@@ -138,6 +149,70 @@ describe("GNews 응답 매핑", () => {
     });
     expect(first?.publishedAt.getTime()).not.toBeNaN();
     expect(first?.rawBody.length).toBeGreaterThan(100);
+  });
+
+  it("collect drops articles from excluded sources and reports count", async () => {
+    const registered = (id: string, isExcluded: boolean): Source => ({
+      id,
+      name: id,
+      rightsTier: "본문 처리 + 발췌 표시",
+      region: "in",
+      ownership: "private",
+      language: "en",
+      isFictional: false,
+      domains: [id],
+      isExcluded,
+    });
+    // korea 1페이지: lokmattimes.com, economictimes.indiatimes.com, scmp.com 각 1건.
+    const registry = [registered("lokmattimes.com", true), registered("indiatimes.com", false)];
+    const mapped = toCollected(recorded("korea", 1), "한국 관련 해외 보도", registry);
+    expect(mapped.excluded).toBe(1);
+    expect(mapped.articles.map((a) => a.sourceId)).toEqual([
+      "indiatimes.com",
+      expect.stringMatching(/^gnews:/),
+    ]);
+    // 등록 출처는 표의 행 그대로다(서브도메인 `economictimes.indiatimes.com`이 `indiatimes.com`에 맞는다).
+    expect(mapped.sources.find((s) => s.id === "indiatimes.com")).toEqual(registry[1]);
+
+    const result = await collectGnews(
+      { slotAt, previousTo, registry },
+      { apiKey: "k", fetch: createRecordedGnewsFetch() },
+    );
+    expect(result.excludedArticles).toBe(1);
+    expect(result.articles).toHaveLength(20);
+  });
+
+  it("unregistered GNews source falls back to 미확인 metadata", () => {
+    const response = GnewsResponseSchema.parse({
+      totalArticles: 1,
+      articles: [
+        {
+          id: "a1",
+          title: "Title",
+          description: null,
+          content: "Body",
+          url: "https://www.unknown-paper.example/story",
+          publishedAt: "2026-09-27T03:00:00Z",
+          source: { id: "src-1", name: "Unknown Paper", url: "https://www.unknown-paper.example" },
+        },
+      ],
+    });
+    const { sources, excluded } = toCollected(response, "기술·AI", [
+      { ...registeredSource, domains: ["other.example"], isExcluded: true },
+    ]);
+    expect(excluded).toBe(0);
+    expect(sources).toEqual([
+      {
+        id: "gnews:src-1",
+        name: "Unknown Paper",
+        rightsTier: "본문 처리 + 발췌 표시",
+        region: "미확인",
+        ownership: "unknown",
+        language: "en",
+        isFictional: false,
+        externalId: "src-1",
+      },
+    ]);
   });
 
   it("같은 기사가 두 토픽 쿼리에서 오면 정확 중복 제거 뒤 토픽 합집합을 가진 기사 하나다", () => {

@@ -3,6 +3,7 @@ import {
   ARTICLE_PUBLISHED,
   FICTIONAL_SOURCE,
   languageName,
+  ownershipName,
   SOURCE_LANGUAGE,
   SOURCE_OWNERSHIP,
   SOURCE_REGION,
@@ -35,7 +36,7 @@ export function SourceSection({ sources }: { sources: readonly SourceView[] }) {
                 <dt className="text-muted-foreground">{SOURCE_REGION}</dt>
                 <dd className="m-0">{source.region}</dd>
                 <dt className="text-muted-foreground">{SOURCE_OWNERSHIP}</dt>
-                <dd className="m-0">{source.ownership}</dd>
+                <dd className="m-0">{ownershipName(source.ownership)}</dd>
                 <dt className="text-muted-foreground">{SOURCE_LANGUAGE}</dt>
                 <dd className="m-0">{languageName(source.language)}</dd>
                 <dt className="text-muted-foreground">{SOURCE_RIGHTS_TIER}</dt>

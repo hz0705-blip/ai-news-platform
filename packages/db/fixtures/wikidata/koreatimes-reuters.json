@@ -1,0 +1,180 @@
+{
+  "recordedAt": "2026-09-28",
+  "domains": ["koreatimes.co.kr", "reuters.com"],
+  "request": {
+    "url": "https://query.wikidata.org/sparql",
+    "query": "SELECT ?item ?itemLabel ?site ?countryCode ?ownerLabel ?parentLabel ?langCode ?type WHERE {\n  VALUES ?site { <https://www.koreatimes.co.kr> <https://www.koreatimes.co.kr/> <https://koreatimes.co.kr> <https://koreatimes.co.kr/> <http://www.koreatimes.co.kr> <http://www.koreatimes.co.kr/> <http://koreatimes.co.kr> <http://koreatimes.co.kr/> <https://www.reuters.com> <https://www.reuters.com/> <https://reuters.com> <https://reuters.com/> <http://www.reuters.com> <http://www.reuters.com/> <http://reuters.com> <http://reuters.com/> }\n  ?item wdt:P856 ?site .\n  OPTIONAL { ?item wdt:P17 ?country . ?country wdt:P297 ?countryCode }\n  OPTIONAL { ?item wdt:P127 ?owner }\n  OPTIONAL { ?item wdt:P749 ?parent }\n  OPTIONAL { ?item wdt:P407 ?lang . ?lang wdt:P424 ?langCode }\n  OPTIONAL { ?item wdt:P31 ?type }\n  SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\". }\n}"
+  },
+  "status": 200,
+  "body": {
+    "head": {
+      "vars": [
+        "item",
+        "itemLabel",
+        "site",
+        "countryCode",
+        "ownerLabel",
+        "parentLabel",
+        "langCode",
+        "type"
+      ]
+    },
+    "results": {
+      "bindings": [
+        {
+          "item": {
+            "type": "uri",
+            "value": "http://www.wikidata.org/entity/Q130879"
+          },
+          "countryCode": {
+            "type": "literal",
+            "value": "GB"
+          },
+          "site": {
+            "type": "uri",
+            "value": "https://www.reuters.com/"
+          },
+          "type": {
+            "type": "uri",
+            "value": "http://www.wikidata.org/entity/Q192283"
+          },
+          "itemLabel": {
+            "xml:lang": "en",
+            "type": "literal",
+            "value": "Reuters"
+          },
+          "ownerLabel": {
+            "xml:lang": "en",
+            "type": "literal",
+            "value": "Thomson Reuters"
+          },
+          "parentLabel": {
+            "xml:lang": "en",
+            "type": "literal",
+            "value": "Thomson Reuters"
+          }
+        },
+        {
+          "item": {
+            "type": "uri",
+            "value": "http://www.wikidata.org/entity/Q130879"
+          },
+          "countryCode": {
+            "type": "literal",
+            "value": "GB"
+          },
+          "site": {
+            "type": "uri",
+            "value": "https://www.reuters.com/"
+          },
+          "type": {
+            "type": "uri",
+            "value": "http://www.wikidata.org/entity/Q4830453"
+          },
+          "itemLabel": {
+            "xml:lang": "en",
+            "type": "literal",
+            "value": "Reuters"
+          },
+          "ownerLabel": {
+            "xml:lang": "en",
+            "type": "literal",
+            "value": "Thomson Reuters"
+          },
+          "parentLabel": {
+            "xml:lang": "en",
+            "type": "literal",
+            "value": "Thomson Reuters"
+          }
+        },
+        {
+          "item": {
+            "type": "uri",
+            "value": "http://www.wikidata.org/entity/Q486950"
+          },
+          "countryCode": {
+            "type": "literal",
+            "value": "KR"
+          },
+          "site": {
+            "type": "uri",
+            "value": "http://www.koreatimes.co.kr"
+          },
+          "type": {
+            "type": "uri",
+            "value": "http://www.wikidata.org/entity/Q11032"
+          },
+          "itemLabel": {
+            "xml:lang": "en",
+            "type": "literal",
+            "value": "The Korea Times"
+          },
+          "ownerLabel": {
+            "xml:lang": "en",
+            "type": "literal",
+            "value": "Hankook Ilbo"
+          },
+          "langCode": {
+            "type": "literal",
+            "value": "en"
+          }
+        },
+        {
+          "item": {
+            "type": "uri",
+            "value": "http://www.wikidata.org/entity/Q486950"
+          },
+          "countryCode": {
+            "type": "literal",
+            "value": "KR"
+          },
+          "site": {
+            "type": "uri",
+            "value": "http://www.koreatimes.co.kr"
+          },
+          "type": {
+            "type": "uri",
+            "value": "http://www.wikidata.org/entity/Q1002697"
+          },
+          "itemLabel": {
+            "xml:lang": "en",
+            "type": "literal",
+            "value": "The Korea Times"
+          },
+          "ownerLabel": {
+            "xml:lang": "en",
+            "type": "literal",
+            "value": "Hankook Ilbo"
+          },
+          "langCode": {
+            "type": "literal",
+            "value": "en"
+          }
+        },
+        {
+          "item": {
+            "type": "uri",
+            "value": "http://www.wikidata.org/entity/Q22343541"
+          },
+          "site": {
+            "type": "uri",
+            "value": "http://www.reuters.com/"
+          },
+          "type": {
+            "type": "uri",
+            "value": "http://www.wikidata.org/entity/Q1153191"
+          },
+          "itemLabel": {
+            "xml:lang": "en",
+            "type": "literal",
+            "value": "reuters.com"
+          },
+          "langCode": {
+            "type": "literal",
+            "value": "en"
+          }
+        }
+      ]
+    }
+  }
+}

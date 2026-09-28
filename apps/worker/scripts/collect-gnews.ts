@@ -30,6 +30,7 @@ try {
       slotAt: slotAt.toISOString(),
       previousTo: previousTo.toISOString(),
       requestCount: result.requestCount,
+      excludedArticles: result.excludedArticles,
       newArticles: result.newArticles,
       mergedArticles: result.mergedArticles,
       savedVersions: result.savedVersions.length,

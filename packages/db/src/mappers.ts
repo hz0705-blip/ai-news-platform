@@ -224,6 +224,9 @@ export function toSourceRow(source: Source): SourceRow {
     is_fictional: source.isFictional,
     wire_id: source.wireId ?? null,
     external_id: source.externalId ?? null,
+    domains: [...(source.domains ?? [])],
+    is_wire: source.isWire ?? false,
+    is_excluded: source.isExcluded ?? false,
   };
 }
 
@@ -238,6 +241,9 @@ export function toDomainSource(row: SourceRow): Source {
     isFictional: row.is_fictional,
     ...(row.wire_id === null ? {} : { wireId: row.wire_id }),
     ...(row.external_id === null ? {} : { externalId: row.external_id }),
+    ...(row.domains.length === 0 ? {} : { domains: row.domains }),
+    ...(row.is_wire ? { isWire: true } : {}),
+    ...(row.is_excluded ? { isExcluded: true } : {}),
   };
 }
 

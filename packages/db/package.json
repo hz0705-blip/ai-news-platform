@@ -13,12 +13,15 @@
     "migrate": "node --env-file-if-exists=../../.env scripts/migrate.ts",
     "gate:pgvector": "node --env-file-if-exists=../../.env scripts/pgvector-gate.ts",
     "backup:encrypt": "node --env-file-if-exists=../../.env scripts/backup-encrypt.ts",
-    "backup:decrypt": "node --env-file-if-exists=../../.env scripts/backup-decrypt.ts"
+    "backup:decrypt": "node --env-file-if-exists=../../.env scripts/backup-decrypt.ts",
+    "sources:sync": "node --env-file-if-exists=../../.env scripts/sources-sync.ts",
+    "sources:wikidata": "node scripts/sources-wikidata.ts"
   },
   "dependencies": {
     "@newsplatform/domain": "workspace:*",
     "drizzle-orm": "0.45.2",
-    "postgres": "3.4.9"
+    "postgres": "3.4.9",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "drizzle-kit": "0.31.10"
