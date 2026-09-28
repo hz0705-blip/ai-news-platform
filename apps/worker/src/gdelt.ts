@@ -93,7 +93,7 @@ export async function runGdeltStage(
       storyById.set(storyId, found.story);
       return found.revision;
     },
-    publishRevision: async (revision) => {
+    publishRevision: async (revision, changes) => {
       const story = storyById.get(revision.storyId);
       if (story === undefined) throw new Error(`사건 없음: ${revision.storyId}`);
       await publishRevision(db, {
@@ -102,6 +102,7 @@ export async function runGdeltStage(
         articles: [],
         articleVersions: [],
         sources: [],
+        changes,
       });
     },
   };

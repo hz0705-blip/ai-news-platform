@@ -2,6 +2,7 @@ import {
   cosineSimilarity,
   countReportingOrigins,
   type Revision,
+  type RevisionChange,
   type RevisionSource,
   type Source,
 } from "@newsplatform/domain";
@@ -65,6 +66,7 @@ function memoryStore(revision: Revision, existingUrls: ReadonlyMap<string, strin
   const saved: { articleId: string; storyId: string; source: Source; url: string }[] = [];
   const observed: { articleId: string; observedAt: Date }[] = [];
   const published: Revision[] = [];
+  const publishedChanges: (readonly RevisionChange[])[] = [];
   const store: LinkOnlyStore = {
     async findArticleIdsByUrl(urls) {
       return new Map([...existingUrls].filter(([url]) => urls.includes(url)));
@@ -86,21 +88,15 @@ function memoryStore(revision: Revision, existingUrls: ReadonlyMap<string, strin
       saved.push({ articleId, storyId, source, url: link.url });
     },
     async loadRevisionToExtend() {
-      const linkSources: RevisionSource[] = saved.map((s) => ({
-        sourceId: s.source.id,
-        articleId: s.articleId,
-        articleTitle: "",
-        articleUrl: s.url,
-        publishedAt: now,
-        rightsTier: s.source.rightsTier,
-      }));
-      return { ...revision, sources: [...revision.sources, ...linkSources] };
+      // 발행된 개정판 그대로(방금 붙은 링크는 그 개정판의 출처 구획에 없다).
+      return revision;
     },
-    async publishRevision(next) {
+    async publishRevision(next, changes) {
       published.push(next);
+      publishedChanges.push(changes);
     },
   };
-  return { store, saved, observed, published };
+  return { store, saved, observed, published, publishedChanges };
 }
 
 describe("링크만 기사(GDELT, 기록된 응답)", () => {
@@ -148,6 +144,19 @@ describe("링크만 기사(GDELT, 기록된 응답)", () => {
       first.claims.map((c) => [c.id, c.text, c.contradictionStatus]),
     );
     expect(next?.sources.length).toBe(first.sources.length + memory.saved.length);
+  });
+
+  it("link-only revision records source-added change", async () => {
+    const collected = await gdeltLinks();
+    const memory = memoryStore(live.golden);
+    await attachLinkOnlyArticles(
+      { linksByStory: collected.linksByStory, sources: collected.sources, now },
+      { embeddingClient, store: memory.store },
+    );
+    expect(memory.saved.length).toBeGreaterThan(0);
+    expect(memory.publishedChanges).toEqual([
+      memory.saved.map((s) => ({ kind: "출처 추가", articleId: s.articleId })),
+    ]);
   });
 
   it("same-content reprocess after a source-added revision only confirms", async () => {

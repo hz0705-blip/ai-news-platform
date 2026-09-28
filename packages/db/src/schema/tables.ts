@@ -1,4 +1,6 @@
 import {
+  CHANGE_KINDS,
+  CLAIM_CHANGES,
   CLAIM_TYPES,
   CONTRADICTION_STATUSES,
   MODALITIES,
@@ -151,6 +153,9 @@ export const storyRevisions = pgTable(
     prompt_gate: text().notNull(),
     prompt_contradiction_label: text().notNull(),
     model_id: text().notNull(),
+    // 이 개정판의 출처 구획(기사 식별자). 다음 개정판의 "출처 추가" 변화와 개정판 생성 조건이 이것과 비교한다(#85).
+    // 마이그레이션 전 개정판은 그 시점 사건의 기사 전부로 채웠다.
+    source_article_ids: text("source_article_ids").array().notNull().default([]),
   },
   (t) => [
     unique().on(t.story_id, t.revision_number),
@@ -227,6 +232,34 @@ export const evidence = pgTable(
   (t) => [index("evidence_claim_revision_id_idx").on(t.claim_revision_id)],
 );
 
+/**
+ * 변화(CONTEXT.md "변화", #85): 개정판과 직전 개정판 사이의 차이 한 줄. 종류(`kind`)마다 쓰는 열이 다르다 —
+ * 주장 변화는 `claim_change`·`claim_id`·문장(추가는 현재, 삭제는 이전, 수정은 둘 다)과 계보(`lineage_claim_id`,
+ * 이전 주장과 연속으로 잇지 못한 새 주장), 상충 상태 변화는 상태 이전→현재(`claim_id`가 null이면 사건 상태),
+ * 원문 변경은 `article_id`·`article_version_id`, 출처 추가는 `article_id`. 첫 개정판과 마이그레이션 전 개정판은 행이 없다.
+ */
+export const revisionChanges = pgTable(
+  "revision_changes",
+  {
+    id: text().primaryKey(),
+    story_revision_id: text()
+      .notNull()
+      .references(() => storyRevisions.id),
+    display_order: integer().notNull(),
+    kind: text({ enum: CHANGE_KINDS }).notNull(),
+    claim_change: text({ enum: CLAIM_CHANGES }),
+    claim_id: text().references(() => claims.id),
+    lineage_claim_id: text().references(() => claims.id),
+    previous_text: text(),
+    current_text: text(),
+    previous_status: text({ enum: CONTRADICTION_STATUSES }),
+    current_status: text({ enum: CONTRADICTION_STATUSES }),
+    article_id: text().references(() => articles.id),
+    article_version_id: text().references(() => articleVersions.id),
+  },
+  (t) => [index("revision_changes_story_revision_id_idx").on(t.story_revision_id)],
+);
+
 /** 배치 실행 상태(슬롯 원장). */
 export const BATCH_RUN_STATUSES = ["running", "completed", "failed"] as const;
 
@@ -257,4 +290,5 @@ export type StoryRevisionRow = typeof storyRevisions.$inferSelect;
 export type ClaimRow = typeof claims.$inferSelect;
 export type ClaimRevisionRow = typeof claimRevisions.$inferSelect;
 export type EvidenceRow = typeof evidence.$inferSelect;
+export type RevisionChangeRow = typeof revisionChanges.$inferSelect;
 export type BatchRunRow = typeof batchRuns.$inferSelect;

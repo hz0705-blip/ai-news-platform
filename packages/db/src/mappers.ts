@@ -4,6 +4,7 @@ import type {
   Claim,
   Evidence,
   Revision,
+  RevisionChange,
   RevisionSource,
   RightsTier,
   Source,
@@ -16,6 +17,7 @@ import type {
   ClaimRevisionRow,
   ClaimRow,
   EvidenceRow,
+  RevisionChangeRow,
   SourceRow,
   StoryRevisionRow,
   StoryRow,
@@ -24,8 +26,8 @@ import type {
 /**
  * 행 ↔ 도메인 순수 매퍼(#21 Task 6). DB 접근 없이 값만 바꾼다.
  *
- * 개정판의 출처 구획(`Revision.sources`)은 별도 테이블이 없다(테이블 여덟, Ruling 5).
- * 읽을 때 그 사건의 `articles`와 `sources`를 이어 만든다 — `RevisionSourceRow`가 그 이은 행 모양이다.
+ * 개정판의 출처 구획(`Revision.sources`)은 별도 테이블이 없다(테이블 여덟, Ruling 5). 개정판 행은 기사 식별자
+ * 목록(`source_article_ids`, #85)만 갖고, 읽을 때 `articles`와 `sources`를 이어 만든다 — `RevisionSourceRow`가 그 이은 행 모양이다.
  */
 export interface RevisionSourceRow {
   readonly source_id: string;
@@ -113,6 +115,7 @@ export function toRows(revision: Revision): RevisionRows {
       prompt_gate: revision.promptVersions.gate,
       prompt_contradiction_label: revision.promptVersions.contradictionLabel,
       model_id: revision.modelId,
+      source_article_ids: revision.sources.map((s) => s.articleId),
     },
     claims: revision.claims.map((claim) => ({ id: claim.id, story_id: revision.storyId })),
     claimRevisions,
@@ -283,4 +286,109 @@ export function toArticleVersionRow(
     captured_at: version.capturedAt,
     body_expires_at: new Date(basis.getTime() + BODY_RETENTION_MS),
   };
+}
+
+/** 변화 행(#85). 식별자는 `<개정판 id>/change-<순서>`. 종류에 쓰지 않는 열은 null이다. */
+export function toChangeRows(
+  revisionId: string,
+  changes: readonly RevisionChange[],
+): RevisionChangeRow[] {
+  return changes.map((change, order) => {
+    const row: RevisionChangeRow = {
+      id: `${revisionId}/change-${order}`,
+      story_revision_id: revisionId,
+      display_order: order,
+      kind: change.kind,
+      claim_change: null,
+      claim_id: null,
+      lineage_claim_id: null,
+      previous_text: null,
+      current_text: null,
+      previous_status: null,
+      current_status: null,
+      article_id: null,
+      article_version_id: null,
+    };
+    switch (change.kind) {
+      case "주장 추가·삭제·수정":
+        return {
+          ...row,
+          claim_change: change.claimChange,
+          claim_id: change.claimId,
+          lineage_claim_id: change.claimChange === "추가" ? (change.lineageClaimId ?? null) : null,
+          previous_text: change.claimChange === "추가" ? null : change.previousText,
+          current_text: change.claimChange === "삭제" ? null : change.currentText,
+        };
+      case "상충 상태 변화":
+        return {
+          ...row,
+          claim_id: change.claimId ?? null,
+          previous_status: change.previousStatus,
+          current_status: change.currentStatus,
+        };
+      case "원문 변경":
+        return {
+          ...row,
+          article_id: change.articleId,
+          article_version_id: change.articleVersionId,
+        };
+      case "출처 추가":
+        return { ...row, article_id: change.articleId };
+    }
+    return row;
+  });
+}
+
+function required<T>(value: T | null, row: RevisionChangeRow, column: string): T {
+  if (value === null) throw new Error(`변화 행 ${row.id}의 ${column}이 비었다(${row.kind})`);
+  return value;
+}
+
+/** 변화 행을 도메인 변화로 되돌린다. 종류에 필요한 열이 비었으면 던진다. */
+export function toDomainChange(row: RevisionChangeRow): RevisionChange {
+  switch (row.kind) {
+    case "주장 추가·삭제·수정": {
+      const claimId = required(row.claim_id, row, "claim_id");
+      const claimChange = required(row.claim_change, row, "claim_change");
+      if (claimChange === "추가") {
+        return {
+          kind: row.kind,
+          claimChange,
+          claimId,
+          currentText: required(row.current_text, row, "current_text"),
+          ...(row.lineage_claim_id === null ? {} : { lineageClaimId: row.lineage_claim_id }),
+        };
+      }
+      if (claimChange === "삭제") {
+        return {
+          kind: row.kind,
+          claimChange,
+          claimId,
+          previousText: required(row.previous_text, row, "previous_text"),
+        };
+      }
+      return {
+        kind: row.kind,
+        claimChange,
+        claimId,
+        previousText: required(row.previous_text, row, "previous_text"),
+        currentText: required(row.current_text, row, "current_text"),
+      };
+    }
+    case "상충 상태 변화":
+      return {
+        kind: row.kind,
+        ...(row.claim_id === null ? {} : { claimId: row.claim_id }),
+        previousStatus: required(row.previous_status, row, "previous_status"),
+        currentStatus: required(row.current_status, row, "current_status"),
+      };
+    case "원문 변경":
+      return {
+        kind: row.kind,
+        articleId: required(row.article_id, row, "article_id"),
+        articleVersionId: required(row.article_version_id, row, "article_version_id"),
+      };
+    case "출처 추가":
+      return { kind: row.kind, articleId: required(row.article_id, row, "article_id") };
+  }
 }

@@ -1,7 +1,10 @@
 import {
+  computeChanges,
   createArticleVersion,
   isSameRevisionContent,
+  matchClaims,
   type Revision,
+  type RevisionChange,
   type RevisionSource,
 } from "@newsplatform/domain";
 import { MODEL_MAX_RETRIES, MODEL_RETRY_DELAY_MS, requestReservationUsd } from "./openai/client.ts";
@@ -31,6 +34,7 @@ import {
   ModelResponseError,
   ModelTransportError,
   type ModelUsage,
+  type RevisionChanges,
   StageFailure,
 } from "./types.ts";
 
@@ -117,7 +121,11 @@ function budgetedClient(
 
 /** 사건 하나의 처리 결과: 새 개정판, 또는 이전 개정판과 같아 확인만 함(Ruling 22-11). */
 type StoryOutcome =
-  | { readonly kind: "revision"; readonly revision: Revision }
+  | {
+      readonly kind: "revision";
+      readonly revision: Revision;
+      readonly changes: readonly RevisionChange[];
+    }
   | { readonly kind: "confirmed"; readonly confirmed: ConfirmedRevision };
 
 /** 사건 하나가 배치 안에서 끝난 모양. 미룸은 실패가 아니다(다음 배치에서 우선). */
@@ -201,6 +209,7 @@ export async function runBatch(rawInput: BatchInput, deps: BatchDeps): Promise<B
   await reportUsage();
 
   const revisions: Revision[] = [];
+  const changes: RevisionChanges[] = [];
   const confirmed: ConfirmedRevision[] = [];
   const failures: { storyId: string; reason: string }[] = [];
   const deferredStories: string[] = [];
@@ -208,8 +217,17 @@ export async function runBatch(rawInput: BatchInput, deps: BatchDeps): Promise<B
   for (const [index, result] of results.entries()) {
     const storyId = groups[index]?.storyId ?? "";
     if (result.kind === "done") {
-      if (result.outcome.kind === "revision") revisions.push(result.outcome.revision);
-      else confirmed.push(result.outcome.confirmed);
+      if (result.outcome.kind === "revision") {
+        const { revision } = result.outcome;
+        revisions.push(revision);
+        changes.push({
+          storyId: revision.storyId,
+          revisionId: revision.id,
+          changes: result.outcome.changes,
+        });
+      } else {
+        confirmed.push(result.outcome.confirmed);
+      }
     } else if (result.kind === "deferred") {
       deferredStories.push(storyId);
       if (result.reason === "deadline") deadlineReached = true;
@@ -230,7 +248,7 @@ export async function runBatch(rawInput: BatchInput, deps: BatchDeps): Promise<B
     deadlineReached,
   };
 
-  return { revisions, confirmed, changes: [], report };
+  return { revisions, confirmed, changes, report };
 }
 
 /** 입력 순서를 지키며 기사를 `storyId`별로 묶는다. */
@@ -365,9 +383,14 @@ async function processStory(
     }),
   );
 
-  // 3-2. 게이트 2단계, 4. 상충 판정
+  // 3-2. 게이트 2단계
   const byVersionId = new Map(versions.map((v) => [v.version.id, v]));
-  const claims: revisionStage.RevisionInput["claims"] = [];
+  const supported: {
+    readonly claim: (typeof generated.claims)[number];
+    readonly evidence: (gate.GateOutput["evidence"][number] & {
+      readonly origin: (typeof versions)[number];
+    })[];
+  }[] = [];
   for (const [index, claim] of generated.claims.entries()) {
     const passed = gated[index]?.evidence ?? [];
     const support = await gate.runGateSupport(
@@ -391,7 +414,25 @@ async function processStory(
         if (origin === undefined) throw new Error(`기사 버전 없음: ${item.articleVersionId}`);
         return { ...item, origin };
       });
-    const claimId = revisionStage.claimId(story.slug, claim.claimKey);
+    supported.push({ claim, evidence });
+  }
+
+  // 주장 매칭(#85): 이전 개정판 주장과 근거 구간 겹침으로 식별자를 잇는다. 상충 판정이 이전 상태를 보므로 그 앞에서 한다.
+  const matches = matchClaims(
+    latest?.claims ?? [],
+    supported.map(({ claim, evidence }) => ({ claimType: claim.claimType, evidence })),
+  );
+  const lineage = new Map<string, string>();
+
+  // 4. 상충 판정
+  const claims: revisionStage.RevisionInput["claims"] = [];
+  for (const [index, { claim, evidence }] of supported.entries()) {
+    const match = matches[index] ?? {};
+    const claimId =
+      match.previousId ?? revisionStage.claimId(story.slug, claim.claimKey, revisionNumber);
+    if (match.previousId === undefined && match.lineageOf !== undefined) {
+      lineage.set(claimId, match.lineageOf);
+    }
     const { result, differsIn } = await contradiction.runContradictionLabel(
       {
         storyId,
@@ -413,6 +454,7 @@ async function processStory(
       continue;
     }
     claims.push({
+      id: claimId,
       claimKey: claim.claimKey,
       text: claim.text,
       claimType: claim.claimType,
@@ -448,9 +490,7 @@ async function processStory(
     );
   }
   // Ruling 22-8: 이전 개정판에서 보도 상충이던 주장이 이번 개정판에 없으면 그 에피소드는 아직 열려 있다.
-  const publishedClaimIds = new Set(
-    claims.map((c) => revisionStage.claimId(story.slug, c.claimKey)),
-  );
+  const publishedClaimIds = new Set(claims.map((c) => c.id));
   const openEpisodes =
     latest?.claims.filter(
       (c) => c.contradictionStatus === "보도 상충" && !publishedClaimIds.has(c.id),
@@ -472,5 +512,12 @@ async function processStory(
       confirmed: { storyId: story.id, revisionId: latest.id, checkedAt: input.now },
     };
   }
-  return { kind: "revision", revision: draft };
+  const changes = computeChanges(latest, draft, {
+    lineage,
+    articleVersions: versions.map(({ article, version }) => ({
+      articleId: article.id,
+      articleVersionId: version.id,
+    })),
+  });
+  return { kind: "revision", revision: draft, changes };
 }
