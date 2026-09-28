@@ -1,5 +1,6 @@
 import { createRuntimeDb } from "@newsplatform/db";
 import { createOpenAiEmbeddingClient, createOpenAiModelClient } from "@newsplatform/pipeline";
+import { pipelineDailyBudget } from "../src/budget.ts";
 import { createCacheInvalidator } from "../src/revalidate.ts";
 import { runBatchSlot } from "../src/run-batch-slot.ts";
 
@@ -9,7 +10,8 @@ import { runBatchSlot } from "../src/run-batch-slot.ts";
  *
  * 실행: pnpm --filter @newsplatform/worker batch:run <슬롯 키> [--skip-collect]
  * (예 2026-09-27T17:00+09:00. DATABASE_MIGRATION_URL·OPENAI_API_KEY 필수, 수집하면 GNEWS_API_KEY도.
- * WEB_REVALIDATE_URL·REVALIDATE_SECRET이 있으면 발행 뒤 캐시를 무효화한다.)
+ * WEB_REVALIDATE_URL·REVALIDATE_SECRET이 있으면 발행 뒤 캐시를 무효화한다. 일일 예산은 워커와 같이
+ * PIPELINE_DAILY_BUDGET_USD로 덮어쓴다.)
  */
 const url = process.env.DATABASE_MIGRATION_URL;
 const openAiKey = process.env.OPENAI_API_KEY;
@@ -23,6 +25,8 @@ if (!url || !openAiKey || (!skipCollect && !gnewsKey) || !slotKey) {
   process.exit(1);
 }
 
+// 잘못된 예산 값이면 DB에 붙기 전에 던진다.
+const dailyBudget = pipelineDailyBudget(process.env);
 const { db, sql } = createRuntimeDb({ DATABASE_URL: url });
 try {
   const invalidateCache = createCacheInvalidator(process.env);
@@ -34,6 +38,7 @@ try {
       embeddingClient: createOpenAiEmbeddingClient({ apiKey: openAiKey }),
       modelClient: createOpenAiModelClient({ apiKey: openAiKey }),
       clock: () => new Date(),
+      dailyBudget,
       ...(invalidateCache === undefined ? {} : { invalidateCache }),
     },
   );
