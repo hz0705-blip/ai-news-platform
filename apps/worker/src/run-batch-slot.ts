@@ -270,17 +270,6 @@ export async function runBatchSlot(
       at: batchStartedAt,
     });
 
-    // 5. 웹 캐시 무효화(오늘 + 발행된 사건의 최신 포인터). 오늘 화면은 배치 상태(한도 도달·진행 중 해소)도
-    // 보이므로 발행이 없어도 오늘 태그는 만료한다(#56).
-    let cacheInvalidated = false;
-    if (deps.invalidateCache !== undefined) {
-      await deps.invalidateCache([
-        TODAY_CACHE_TAG,
-        ...publishedStoryIds.map((id) => `story:${id}:latest`),
-      ]);
-      cacheInvalidated = true;
-    }
-
     const finishedAt = deps.clock();
     const totalUsd = embeddingUsd + modelUsd;
     const report: BatchSlotReport = {
@@ -305,7 +294,7 @@ export async function runBatchSlot(
         totalUsd,
         budgetReached: result.report.budgetReached,
       },
-      cacheInvalidated,
+      cacheInvalidated: false,
     };
     await finishBatchRun(deps.db, {
       slotKey: input.slotKey,
@@ -313,8 +302,30 @@ export async function runBatchSlot(
       finishedAt,
       report,
     });
-    log({ at: finishedAt.toISOString(), stage: "finish", result: "completed", ...report });
-    return { kind: "completed", report };
+
+    // 5. 웹 캐시 무효화(오늘 + 발행된 사건의 최신 포인터). 원장이 `completed`로 커밋된 뒤에 만료해야 그 사이의
+    // 요청이 `running` 행을 다시 캐시하지 않는다. 오늘 화면은 배치 상태도 보이므로 발행이 없어도 오늘 태그를
+    // 만료한다(#56). 이미 완료한 슬롯이므로 무효화·기록 실패는 배치를 실패로 만들지 않고 로그만 남긴다.
+    let finalReport = report;
+    if (deps.invalidateCache !== undefined) {
+      try {
+        await deps.invalidateCache([
+          TODAY_CACHE_TAG,
+          ...publishedStoryIds.map((id) => `story:${id}:latest`),
+        ]);
+        finalReport = { ...report, cacheInvalidated: true };
+        await finishBatchRun(deps.db, {
+          slotKey: input.slotKey,
+          status: "completed",
+          finishedAt,
+          report: finalReport,
+        });
+      } catch (cacheError) {
+        stageLog("invalidate", { result: "failed", error: String(cacheError) });
+      }
+    }
+    log({ at: finishedAt.toISOString(), stage: "finish", result: "completed", ...finalReport });
+    return { kind: "completed", report: finalReport };
   } catch (error) {
     const finishedAt = deps.clock();
     const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
