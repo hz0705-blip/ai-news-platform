@@ -1,6 +1,6 @@
 import { loadBatchRunsSince, type RuntimeDb } from "@newsplatform/db";
+import { latestSlotAtOrBefore, missedSlots, slotKeyOf } from "@newsplatform/domain/batch-slot";
 import { PgBoss } from "pg-boss";
-import { latestSlotAtOrBefore, missedSlots, slotKeyOf } from "./slot.ts";
 
 /** 배치 잡 큐(스펙 "배포와 운영" 스케줄러: pg-boss가 유일한 스케줄 권한). */
 export const BATCH_QUEUE = "batch";

@@ -11,6 +11,7 @@ import {
   type RuntimeDb,
   startBatchRun,
 } from "@newsplatform/db";
+import { kstDayRange, slotAtOf } from "@newsplatform/domain/batch-slot";
 import {
   type BatchReport,
   type CollectGnewsDeps,
@@ -20,7 +21,6 @@ import {
 } from "@newsplatform/pipeline";
 import { assignStories } from "./assign.ts";
 import { type CollectResult, collectFromGnews } from "./collect.ts";
-import { kstDayRange, slotAtOf } from "./slot.ts";
 
 /** 파이프라인 일일 예산(USD; 스펙 "개발 중 결정 항목" 토큰 계량). 시도가 실제로 도는 KST 날짜의 모든 실행이 나눠 쓴다. */
 export const DAILY_PIPELINE_BUDGET_USD = 1.2;
@@ -270,9 +270,10 @@ export async function runBatchSlot(
       at: batchStartedAt,
     });
 
-    // 5. 발행 뒤 웹 캐시 무효화(오늘 + 발행된 사건의 최신 포인터).
+    // 5. 웹 캐시 무효화(오늘 + 발행된 사건의 최신 포인터). 오늘 화면은 배치 상태(한도 도달·진행 중 해소)도
+    // 보이므로 발행이 없어도 오늘 태그는 만료한다(#56).
     let cacheInvalidated = false;
-    if (deps.invalidateCache !== undefined && publishedStoryIds.length > 0) {
+    if (deps.invalidateCache !== undefined) {
       await deps.invalidateCache([
         TODAY_CACHE_TAG,
         ...publishedStoryIds.map((id) => `story:${id}:latest`),
@@ -326,6 +327,12 @@ export async function runBatchSlot(
     }).catch((ledgerError: unknown) =>
       stageLog("finish", { result: "ledger-failed", error: String(ledgerError) }),
     );
+    // 오늘 화면이 "갱신 진행 중" 대신 "배치 실패"를 보이도록 오늘 태그를 만료한다(#56). 실패해도 원래 오류를 덮지 않는다.
+    await deps
+      .invalidateCache?.([TODAY_CACHE_TAG])
+      .catch((cacheError: unknown) =>
+        stageLog("finish", { result: "invalidate-failed", error: String(cacheError) }),
+      );
     stageLog("finish", {
       result: "failed",
       error: message,

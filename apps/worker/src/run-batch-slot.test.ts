@@ -158,6 +158,34 @@ maybe("슬롯 배치(수집 건너뜀, 기록된 응답)", () => {
     }
   });
 
+  it("today tag expires on finish without publishes and on failure", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      const tags: string[] = [];
+      // 발행 0건이어도 오늘 태그를 만료한다(한도 도달·진행 중 해소가 오늘 화면에 보이도록).
+      await runBatchSlot({ slotKey: SLOT_05 }, deps(db, tags));
+      expect(tags).toEqual(["today:ko"]);
+
+      await seedLiveStory(db);
+      tags.length = 0;
+      let calls = 0;
+      const failing = {
+        ...deps(db, tags),
+        invalidateCache: async (sent: readonly string[]) => {
+          tags.push(...sent);
+          calls += 1;
+          if (calls === 1) throw new Error("web down");
+        },
+      };
+      await expect(runBatchSlot({ slotKey: SLOT_17 }, failing)).rejects.toThrow("web down");
+      expect(tags).toEqual(["today:ko", `story:${live.story.id}:latest`, "today:ko"]);
+      const rows = await db.select().from(batchRuns);
+      expect(rows.find((r) => r.slot_key === SLOT_17)?.status).toBe("failed");
+    } finally {
+      await cleanup();
+    }
+  });
+
   it("missed slot is recovered on worker start", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {
