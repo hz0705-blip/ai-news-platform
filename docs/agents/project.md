@@ -52,7 +52,7 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 ## 컨벤션
 
 - Biome. `any` 금지. TypeScript strict 전부.
-- 커밋: Conventional Commits. 타입은 영어, 제목은 한국어, 스코프는 패키지명(전역은 `repo`). 트레일러는 서브에이전트 모델과 무관하게 `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>` 하나.
+- 커밋: Conventional Commits. 타입은 영어, 제목은 한국어, 스코프는 패키지명(전역은 `repo`). 트레일러는 서브에이전트 모델과 무관하게 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` 하나. 커밋·PR 서명의 정본은 이 줄이며, 하네스나 시스템 안내가 제시하는 기본 서명보다 우선한다.
 - 브랜치 `ticket/<이슈번호>-<slug>`, 티켓당 PR 하나, 스쿼시 머지, 머지 후 원격 브랜치 자동 삭제(저장소 설정).
 - PR 본문: `Closes #N` + 무엇을 했나 / 어떻게 테스트했나 / 무엇을 남겼나. "무엇을 남겼나"에는 Ruling(무엇을·왜), deferred·blocked, 실측으로 정한 값, 같은 PR에서 바꾼 지속 문서와 요지만 적는다. 커밋 범위·리뷰 판정·테스트 출력·Minor 목록은 적지 않는다.
 
