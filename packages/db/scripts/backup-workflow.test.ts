@@ -1,22 +1,10 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parse } from "yaml";
+import { loadWorkflow } from "./workflow-contract.ts";
 
 /**
  * 백업 워크플로의 보안 계약만 지킨다. 덤프·검증 절차는 수동 실행이 검증한다.
  */
-type Step = { uses?: string; run?: string; with?: Record<string, unknown> };
-type Job = { steps: Step[]; environment?: string };
-type Workflow = { permissions: unknown; jobs: Record<string, Job> };
-
-const WORKFLOW_PATH = fileURLToPath(
-  new URL("../../../.github/workflows/backup.yml", import.meta.url),
-);
-const text = readFileSync(WORKFLOW_PATH, "utf8");
-const workflow = parse(text) as Workflow;
-const jobs = Object.values(workflow.jobs);
-const steps = jobs.flatMap((job) => job.steps);
+const { text, workflow, jobs, steps, uses } = loadWorkflow(".github/workflows/backup.yml");
 const dumpRun = steps.find((s) => s.run?.includes("pg_dump --dbname"))?.run ?? "";
 
 describe("backup.yml 보안 계약", () => {
@@ -33,7 +21,6 @@ describe("backup.yml 보안 계약", () => {
   });
 
   it("모든 uses는 40자 커밋 SHA로 고정한다", () => {
-    const uses = steps.filter((s) => typeof s.uses === "string");
     expect(uses.length).toBeGreaterThan(0);
     for (const step of uses) {
       // 스펙 "시크릿": Actions는 SHA로 고정
