@@ -10,6 +10,7 @@ export type Step = { name?: string; uses?: string; run?: string; with?: Record<s
 export type Job = {
   steps: Step[];
   environment?: string;
+  env?: Record<string, string>;
   services?: Record<string, { image?: string; options?: string }>;
 };
 export type Workflow = {

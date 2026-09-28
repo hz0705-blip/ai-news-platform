@@ -44,6 +44,15 @@ describe("ci.yml 보안 계약", () => {
       expect(job.environment).toBeUndefined();
     }
   });
+
+  it("실 DB 테스트 URL은 서비스 컨테이너(localhost)만 가리킨다", () => {
+    // 이슈 #42: 실 DB 테스트는 DATABASE_TEST_URL로만 붙고, 그 URL은 프로덕션이 아니라 잡의 일회용 컨테이너다
+    const urls = jobs.flatMap((job) =>
+      job.env?.DATABASE_TEST_URL ? [job.env.DATABASE_TEST_URL] : [],
+    );
+    expect(urls.length).toBeGreaterThan(0);
+    for (const url of urls) expect(url).toMatch(/^postgresql:\/\/[^@]+@localhost:5432\//);
+  });
 });
 
 describe("ci.yml PostgreSQL 메이저·트리거", () => {

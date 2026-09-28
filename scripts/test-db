@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# 실 DB 테스트(이슈 #42): 로컬 pgvector 컨테이너를 띄우거나 이미 있는 것을 쓰고, 마이그레이션 뒤 db·worker 테스트를 돈다.
+# 사용: pnpm test:db  (docker 필요. .env를 읽지 않는다 — 프로덕션 DB의 DATABASE_MIGRATION_URL에 닿지 않게)
+# 이미지·digest는 .github/workflows/ci.yml의 서비스 컨테이너와 같다. 컨테이너는 남겨 두고 다음 실행에서 재사용한다.
+set -euo pipefail
+
+name="newsplatform-test-db"
+port="54329"
+image="pgvector/pgvector:0.8.6-pg17@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f"
+url="postgresql://test:test@localhost:${port}/newsplatform_test"
+
+cd "$(git rev-parse --show-toplevel)"
+
+if [ -z "$(docker ps -aq --filter "name=^${name}$")" ]; then
+  docker run -d --name "$name" -p "127.0.0.1:${port}:5432" \
+    -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test -e POSTGRES_DB=newsplatform_test \
+    "$image" >/dev/null
+else
+  docker start "$name" >/dev/null
+fi
+
+# 초기화 중에는 유닉스 소켓만 열리므로 -h localhost로 최종 기동을 기다린다.
+tries=0
+until docker exec "$name" pg_isready -h localhost -U test -d newsplatform_test >/dev/null 2>&1; do
+  tries=$((tries + 1))
+  if [ "$tries" -ge 60 ]; then
+    echo "테스트 DB 컨테이너 ${name}이(가) 60초 안에 준비되지 않았다" >&2
+    exit 1
+  fi
+  sleep 1
+done
+
+DATABASE_MIGRATION_URL="$url" node packages/db/scripts/migrate.ts
+DATABASE_TEST_URL="$url" node ./node_modules/vitest/vitest.mjs run --project db --project worker

@@ -2,14 +2,14 @@ import { describe, expect, it } from "vitest";
 import { confirmRevision, publishRevision } from "./publish.ts";
 import { loadLatestRevision } from "./queries/revision.ts";
 import { loadPublishedStory } from "./queries/story.ts";
-import { createMigrationDb } from "./test-db.ts"; // DATABASE_MIGRATION_URL로 연결하고 테스트 끝에 truncate
+import { createMigrationDb, readTestDbUrl } from "./test-db.ts"; // DATABASE_TEST_URL로 연결하고 테스트 끝에 truncate
 // revision·story·articles·articleVersions·sources 픽스처는 mappers.test.ts와 같은 값을 공유한다.
 import { fixture, UNPUBLISHED_BODY_SENTENCE } from "./test-fixtures.ts";
 
-const url = process.env.DATABASE_MIGRATION_URL;
+const url = readTestDbUrl();
 const maybe = url === undefined ? describe.skip : describe;
 // Vitest는 테스트가 전부 건너뛰어진 파일의 console 출력을 보고하지 않으므로 stderr에 직접 쓴다.
-if (url === undefined) process.stderr.write("DATABASE_MIGRATION_URL 없음 — 실 DB 테스트 건너뜀\n");
+if (url === undefined) process.stderr.write("DATABASE_TEST_URL 없음 — 실 DB 테스트 건너뜀\n");
 
 maybe("publishRevision", () => {
   it("같은 개정판을 두 번 발행하면 두 번째는 아무것도 쓰지 않는다", async () => {
