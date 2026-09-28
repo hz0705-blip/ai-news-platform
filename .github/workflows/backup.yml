@@ -5,7 +5,7 @@
 # - 매일 UTC 18:30(KST 03:30) + 수동 + workflow_call. ubuntu-24.04 러너는 PostgreSQL 16 클라이언트가 선설치돼
 #   /usr/bin/pg_dump(pg_wrapper)가 16을 고르므로 /usr/lib/postgresql/17/bin을 GITHUB_PATH에 넣고 덤프 전 메이저를 확인한다.
 # - pg_dump --format=custom --no-owner --no-privileges --schema=public --schema=drizzle → NPBK1(AES-256-GCM,
-#   packages/db/scripts/backup-crypto.ts, 파일을 메모리에 한 번에 읽어 상한 1 GiB, 스트리밍은 이슈 #31)
+#   packages/db/scripts/backup-crypto.ts, 스트리밍이라 크기 상한 없음)
 #   → 아티팩트 db-backup-<YYYYMMDD>T<HHMMSS>Z-<run_id>(newsplatform.dump.enc·.sha256·manifest.json, 보관 90일 = 공개 저장소 최대, v4+ 불변).
 # - 검증 잡: sha256sum -c → backup-decrypt.ts → pg_restore --list.
 # - 덤프는 --schema 한정이라 확장 정의를 담지 않는다. 복원 전 마이그레이션 또는 create extension vector. --no-owner --no-privileges로
