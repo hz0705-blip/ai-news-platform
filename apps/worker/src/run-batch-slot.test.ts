@@ -312,6 +312,17 @@ maybe("GDELT 단계(기록된 GDELT 응답)", () => {
       const next = await run("2026-09-28T05:00+09:00");
       expect(next).toMatchObject({ kind: "completed", report: { published: 0 } });
       expect(modelCalls).toBe(before);
+
+      // 입력이 바뀌어(처리 시각 갱신) 같은 내용으로 재처리되면 확인만 한다 — 링크만 출처가 이어져야 같은 개정판이다.
+      await sql`update stories set last_processed_at = now() + interval '1 day' where id = ${live.story.id}`;
+      const reprocessed = await run("2026-09-28T17:00+09:00");
+      expect(reprocessed).toMatchObject({
+        kind: "completed",
+        report: { published: 0, confirmed: 1 },
+      });
+      expect(modelCalls).toBeGreaterThan(before);
+      const after = await loadPublishedStory(db, { slug: live.story.slug });
+      expect(after?.revision.revisionNumber).toBe(2);
     } finally {
       await cleanup();
     }

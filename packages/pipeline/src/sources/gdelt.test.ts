@@ -4,6 +4,7 @@ import {
   buildGdeltQuery,
   buildGdeltRequest,
   collectGdelt,
+  GDELT_MAX_CONSECUTIVE_FAILURES,
   GDELT_MIN_INTERVAL_MS,
   type GdeltResponse,
   type GdeltStoryQuery,
@@ -181,5 +182,61 @@ describe("GDELT 수집", () => {
     expect(result.requestCount).toBe(3);
     expect(result.failures).toEqual([{ storyId: "s-1", reason: expect.stringContaining("429") }]);
     expect(result.linksByStory.map((s) => s.storyId)).toEqual(["s-0", "s-2"]);
+  });
+
+  it("gdelt request times out and counts as a failure", async () => {
+    const result = await collectGdelt(
+      { stories: stories(1), batchStartedAt },
+      {
+        timeoutMs: 20,
+        sleep: async () => {},
+        // 응답하지 않는 서버: 신호가 끊을 때까지 기다린다.
+        fetch: (_url, init) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+          }),
+      },
+    );
+    expect(result.failures).toEqual([
+      { storyId: "s-0", reason: expect.stringMatching(/timed? ?out/i) },
+    ]);
+  });
+
+  it("gdelt skips remaining stories once the deadline is reached", async () => {
+    const time = fakeTime();
+    const deadline = new Date(batchStartedAt.getTime() + 2 * GDELT_MIN_INTERVAL_MS);
+    const result = await collectGdelt(
+      { stories: stories(5), batchStartedAt, deadline },
+      {
+        clock: time.clock,
+        sleep: time.sleep,
+        fetch: async () => new Response("", { status: 200 }),
+      },
+    );
+    // 0초·6초 요청 뒤 세 번째 요청 시각(12초)이 기한이다.
+    expect(result.requestCount).toBe(2);
+    expect(result.skippedDeadline).toBe(3);
+  });
+
+  it("gdelt stops after 3 consecutive failed requests", async () => {
+    const time = fakeTime();
+    let call = 0;
+    const result = await collectGdelt(
+      { stories: stories(8), batchStartedAt },
+      {
+        clock: time.clock,
+        sleep: time.sleep,
+        fetch: async () => {
+          call++;
+          // 성공 한 번은 연속을 끊는다: 실패, 성공, 실패 ×3 → 멈춤.
+          return call === 2
+            ? new Response("", { status: 200 })
+            : new Response("Please limit requests", { status: 429 });
+        },
+      },
+    );
+    expect(result.requestCount).toBe(1 + 1 + GDELT_MAX_CONSECUTIVE_FAILURES);
+    expect(result.failures).toHaveLength(4);
+    expect(result.skippedAfterFailures).toBe(3);
   });
 });

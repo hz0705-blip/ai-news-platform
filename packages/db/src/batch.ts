@@ -1,4 +1,11 @@
-import type { Article, DueBatchRun, Revision, Source, Story } from "@newsplatform/domain";
+import type {
+  Article,
+  DueBatchRun,
+  Revision,
+  RevisionSource,
+  Source,
+  Story,
+} from "@newsplatform/domain";
 import { slotAtOf } from "@newsplatform/domain/batch-slot";
 import { and, desc, eq, gt, gte, inArray, isNotNull, lt, lte, ne, or, sql } from "drizzle-orm";
 import { toDomainSource } from "./mappers.ts";
@@ -216,12 +223,15 @@ export interface BatchStory {
   readonly articles: readonly BatchArticle[];
   readonly latestRevision?: Revision;
   readonly deferredSince?: Date;
+  /** 붙은 링크만 기사(#77, 본문 버전 없음)의 출처 구획 줄. 발행 시각·기사 식별자 순. */
+  readonly linkOnlySources?: readonly RevisionSource[];
 }
 
 /**
  * 이번 배치가 처리할 라이브 사건(스펙 "개정판 생성 조건": 입력이 바뀐 사건만): 종료가 아니고,
  * 개정판이 없거나 마지막 처리 시각(`last_processed_at`, 배정·갱신 버전이 올린다)이 최신 개정판의 확인
- * 시각보다 늦거나, 이전 배치가 미룬 사건. 기사는 마지막 버전의 본문과 함께 오고, 버전이 없는 기사는 뺀다.
+ * 시각보다 늦거나, 이전 배치가 미룬 사건. 기사는 마지막 버전의 본문과 함께 오고, 버전이 없는 기사는 뺀다
+ * (링크만 기사는 `linkOnlySources`로 따로 온다).
  * 우선순위는 파이프라인이 정한다(`prioritizeStories`).
  */
 export async function loadBatchStories(
@@ -275,13 +285,28 @@ export async function loadBatchStories(
       ? []
       : await db.select().from(sources).where(inArray(sources.id, sourceIds));
 
+  const tierById = new Map(sourceRows.map((s) => [s.id, s.rights_tier]));
   const result: BatchStory[] = [];
   for (const row of storyRows) {
     const batchArticles: BatchArticle[] = [];
+    const linkOnlySources: RevisionSource[] = [];
     for (const article of articleRows) {
       if (article.story_id !== row.id) continue;
       const version = versionByArticle.get(article.id);
-      if (version === undefined) continue;
+      if (version === undefined) {
+        const tier = tierById.get(article.source_id);
+        if (article.is_link_only && tier !== undefined) {
+          linkOnlySources.push({
+            sourceId: article.source_id,
+            articleId: article.id,
+            articleTitle: article.title,
+            articleUrl: article.url,
+            publishedAt: article.published_at,
+            rightsTier: tier,
+          });
+        }
+        continue;
+      }
       batchArticles.push({
         id: article.id,
         sourceId: article.source_id,
@@ -308,6 +333,7 @@ export async function loadBatchStories(
       articles: batchArticles,
       ...(latestRevision === undefined ? {} : { latestRevision }),
       ...(row.deferred_at === null ? {} : { deferredSince: row.deferred_at }),
+      ...(linkOnlySources.length === 0 ? {} : { linkOnlySources }),
     });
   }
   return { stories: result, sources: sourceRows.map(toDomainSource) };

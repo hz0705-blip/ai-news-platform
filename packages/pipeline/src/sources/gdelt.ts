@@ -18,6 +18,10 @@ export const GDELT_MAX_RECORDS = 250;
 export const GDELT_MIN_INTERVAL_MS = 6000;
 /** 배치당 조회하는 사건 상한. */
 export const GDELT_MAX_STORIES_PER_BATCH = 20;
+/** 요청당 제한 시간(연결·응답 전체). */
+export const GDELT_REQUEST_TIMEOUT_MS = 30_000;
+/** 연속 실패(429·시간 초과·오류)가 이만큼이면 그 배치의 GDELT 조회를 멈춘다(IP 단위 스로틀은 쉬어야 풀린다). */
+export const GDELT_MAX_CONSECUTIVE_FAILURES = 3;
 /** 창 시작 = 사건 첫 기사 발행 24시간 전. */
 export const GDELT_WINDOW_BEFORE_MS = 24 * 60 * 60 * 1000;
 const MIN_TERMS = 2;
@@ -188,6 +192,8 @@ export interface CollectGdeltDeps {
   /** 간격 대기. 기본 `setTimeout`. 테스트는 시계만 옮기는 함수를 준다. */
   readonly sleep?: (ms: number) => Promise<void>;
   readonly clock?: () => Date;
+  /** 요청당 제한 시간. 기본 `GDELT_REQUEST_TIMEOUT_MS`. */
+  readonly timeoutMs?: number;
 }
 
 export interface CollectGdeltResult {
@@ -200,6 +206,10 @@ export interface CollectGdeltResult {
   readonly skippedNoQuery: number;
   /** 상한(20)에 걸려 조회하지 않은 사건 수. */
   readonly skippedOverCap: number;
+  /** 기한(`deadline`)에 걸려 조회하지 않은 사건 수. */
+  readonly skippedDeadline: number;
+  /** 연속 실패로 조회를 멈춰 남은 사건 수. */
+  readonly skippedAfterFailures: number;
   /** 429·오류로 건너뛴 사건. 배치는 실패하지 않는다. */
   readonly failures: readonly { storyId: string; reason: string }[];
 }
@@ -216,13 +226,16 @@ export class GdeltRequestError extends Error {
 
 /**
  * 수집 한 번: 사건을 받은 순서대로 최대 20개, 요청 사이 6초 이상 간격으로 직렬 조회한다. 첫 요청은 기다리지 않는다.
- * 429·오류·검증 실패는 그 사건만 실패로 남기고 다음 사건으로 간다(재시도 없음 — 재시도는 한도만 더 축낸다).
+ * 429·오류·시간 초과(요청당 30초)·검증 실패는 그 사건만 실패로 남기고 다음 사건으로 간다(재시도 없음 — 재시도는
+ * 한도만 더 축낸다). 연속 3회 실패하면 남은 사건을 조회하지 않는다. `deadline`에 이르면 남은 사건을 건너뛴다.
  */
 export async function collectGdelt(
   input: {
     readonly stories: readonly GdeltStoryQuery[];
     readonly batchStartedAt: Date;
     readonly registry?: readonly Source[];
+    /** 이 시각 이후에는 요청을 시작하지 않는다(배치 리스 안에서 끝내기 위해). */
+    readonly deadline?: Date;
   },
   deps: CollectGdeltDeps,
 ): Promise<CollectGdeltResult> {
@@ -235,9 +248,17 @@ export async function collectGdelt(
   let requestCount = 0;
   let skippedNoQuery = 0;
   let lastRequestAt: number | undefined;
+  let consecutiveFailures = 0;
+  let skippedDeadline = 0;
+  let skippedAfterFailures = 0;
+  const timeoutMs = deps.timeoutMs ?? GDELT_REQUEST_TIMEOUT_MS;
 
   const stories = input.stories.slice(0, GDELT_MAX_STORIES_PER_BATCH);
-  for (const story of stories) {
+  for (const [index, story] of stories.entries()) {
+    if (consecutiveFailures >= GDELT_MAX_CONSECUTIVE_FAILURES) {
+      skippedAfterFailures = stories.length - index;
+      break;
+    }
     const query = buildGdeltQuery(story.title);
     if (query === undefined) {
       skippedNoQuery++;
@@ -254,11 +275,15 @@ export async function collectGdelt(
       const wait = GDELT_MIN_INTERVAL_MS - (clock().getTime() - lastRequestAt);
       if (wait > 0) await sleep(wait);
     }
+    if (input.deadline !== undefined && clock().getTime() >= input.deadline.getTime()) {
+      skippedDeadline = stories.length - index;
+      break;
+    }
     lastRequestAt = clock().getTime();
     requestCount++;
     let response: GdeltResponse;
     try {
-      const raw = await deps.fetch(url);
+      const raw = await deps.fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
       const text = await raw.text();
       if (!raw.ok) throw new GdeltRequestError(raw.status, text.slice(0, 200));
       response = parseGdeltResponse(text);
@@ -273,8 +298,10 @@ export async function collectGdelt(
               : error.message
             : String(error),
       });
+      consecutiveFailures++;
       continue;
     }
+    consecutiveFailures = 0;
     const mapped = mapGdeltArticles(response, input.registry);
     for (const source of mapped.sources) sources.set(source.id, source);
     dropped.nonEnglish += mapped.dropped.nonEnglish;
@@ -292,6 +319,8 @@ export async function collectGdelt(
     dropped,
     skippedNoQuery,
     skippedOverCap: input.stories.length - stories.length,
+    skippedDeadline,
+    skippedAfterFailures,
     failures,
   };
 }

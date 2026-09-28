@@ -24,6 +24,8 @@ export interface GdeltStageReport {
   readonly candidateStories: number;
   readonly skippedNoQuery: number;
   readonly skippedOverCap: number;
+  readonly skippedDeadline: number;
+  readonly skippedAfterFailures: number;
   readonly results: number;
   readonly dropped: {
     readonly nonEnglish: number;
@@ -49,6 +51,7 @@ export async function runGdeltStage(
     readonly storyIds: readonly string[];
     readonly batchStartedAt: Date;
     readonly now: Date;
+    readonly deadline?: Date;
   },
   deps: {
     readonly db: RuntimeDb["db"];
@@ -60,7 +63,12 @@ export async function runGdeltStage(
   const stories = await loadGdeltStories(db, input.storyIds);
   const registry = await loadSourceRegistry(db);
   const collected = await collectGdelt(
-    { stories, batchStartedAt: input.batchStartedAt, registry },
+    {
+      stories,
+      batchStartedAt: input.batchStartedAt,
+      registry,
+      ...(input.deadline === undefined ? {} : { deadline: input.deadline }),
+    },
     deps.gdelt,
   );
 
@@ -108,6 +116,8 @@ export async function runGdeltStage(
     candidateStories: stories.length,
     skippedNoQuery: collected.skippedNoQuery,
     skippedOverCap: collected.skippedOverCap,
+    skippedDeadline: collected.skippedDeadline,
+    skippedAfterFailures: collected.skippedAfterFailures,
     results: collected.linksByStory.reduce((sum, s) => sum + s.links.length, 0),
     dropped: collected.dropped,
     observed: count("observed"),

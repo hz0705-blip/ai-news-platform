@@ -150,6 +150,44 @@ describe("링크만 기사(GDELT, 기록된 응답)", () => {
     expect(next?.sources.length).toBe(first.sources.length + memory.saved.length);
   });
 
+  it("same-content reprocess after a source-added revision only confirms", async () => {
+    const liveInput = (latestRevision: Revision, linkOnlySources?: readonly RevisionSource[]) => ({
+      articles: live.articles.map((a) => ({ ...a.meta, rawBody: a.rawBody })),
+      now,
+      dailyBudget: { tokens: 1_000_000, spend: 10 },
+      sources: live.sources,
+      existingStories: [
+        {
+          story: live.story,
+          latestRevision,
+          ...(linkOnlySources === undefined ? {} : { linkOnlySources }),
+        },
+      ],
+    });
+    const batchDeps = () => ({
+      modelClient: createRecordedModelClient("live-hormuz-proposal", { modelId: MODEL_ID }),
+      embeddingClient: { embed: async () => ({ vectors: [], usage: { tokens: 0, spend: 0 } }) },
+      clock: () => now,
+    });
+    const collected = await gdeltLinks();
+    const memory = memoryStore(live.golden);
+    await attachLinkOnlyArticles(
+      { linksByStory: collected.linksByStory, sources: collected.sources, now },
+      { embeddingClient, store: memory.store },
+    );
+    const [sourceAdded] = memory.published;
+    if (sourceAdded === undefined) throw new Error("출처 추가 개정판 없음");
+    const linkOnlySources = sourceAdded.sources.filter((s) => s.rightsTier === "링크만");
+    expect(linkOnlySources.length).toBe(memory.saved.length);
+
+    // 주장·상태가 같은 재처리는 확인 시각만 갱신한다(새 개정판 없음).
+    const again = await runBatch(liveInput(sourceAdded, linkOnlySources), batchDeps());
+    expect(again.revisions).toEqual([]);
+    expect(again.confirmed).toEqual([
+      { storyId: live.story.id, revisionId: sourceAdded.id, checkedAt: now },
+    ]);
+  });
+
   it("unassignable link-only article is discarded (no new story)", async () => {
     const collected = await gdeltLinks();
     const memory = memoryStore(live.golden);

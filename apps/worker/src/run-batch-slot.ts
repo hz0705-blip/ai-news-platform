@@ -30,6 +30,8 @@ import { type GdeltStageReport, runGdeltStage } from "./gdelt.ts";
 export const BATCH_LEASE_MS = 90 * 60 * 1000;
 /** 배치 기한: 시작 70분 뒤에는 모델 호출을 시작하지 않는다(잡 만료보다 짧게, #55 Ruling). */
 export const BATCH_MODEL_DEADLINE_MS = 70 * 60 * 1000;
+/** GDELT 단계 기한: 시작 80분 뒤에는 GDELT 요청을 시작하지 않는다(리스 90분 안, #77 Ruling). */
+export const BATCH_GDELT_DEADLINE_MS = 80 * 60 * 1000;
 /** 첫 배치(원장이 비었을 때)의 수집 창 시작: 슬롯 12시간 전. */
 const FIRST_COLLECTION_WINDOW_MS = 12 * 60 * 60 * 1000;
 
@@ -209,11 +211,14 @@ export async function runBatchSlot(
         now: batchStartedAt,
         dailyBudget: { tokens: budget.tokens, spend: remainingUsd },
         sources,
-        existingStories: stories.map(({ story, latestRevision, deferredSince }) => ({
-          story,
-          ...(latestRevision === undefined ? {} : { latestRevision }),
-          ...(deferredSince === undefined ? {} : { deferredSince }),
-        })),
+        existingStories: stories.map(
+          ({ story, latestRevision, deferredSince, linkOnlySources }) => ({
+            story,
+            ...(latestRevision === undefined ? {} : { latestRevision }),
+            ...(deferredSince === undefined ? {} : { deferredSince }),
+            ...(linkOnlySources === undefined ? {} : { linkOnlySources }),
+          }),
+        ),
         deadline: new Date(startedAt.getTime() + BATCH_MODEL_DEADLINE_MS),
         ...(deps.concurrency === undefined ? {} : { concurrency: deps.concurrency }),
       },
@@ -289,8 +294,18 @@ export async function runBatchSlot(
     if (deps.gdelt !== undefined) {
       try {
         const linked = await runGdeltStage(
-          { storyIds: publishedStoryIds, batchStartedAt: startedAt, now: deps.clock() },
-          { db: deps.db, gdelt: deps.gdelt, embeddingClient: deps.embeddingClient },
+          {
+            storyIds: publishedStoryIds,
+            batchStartedAt: startedAt,
+            now: deps.clock(),
+            deadline: new Date(startedAt.getTime() + BATCH_GDELT_DEADLINE_MS),
+          },
+          {
+            db: deps.db,
+            // 기한은 배치 시계 기준이므로 GDELT 간격·기한도 같은 시계로 잰다.
+            gdelt: { clock: deps.clock, ...deps.gdelt },
+            embeddingClient: deps.embeddingClient,
+          },
         );
         embeddingUsd += linked.usage.spend;
         await addBatchRunSpend(deps.db, { slotKey: input.slotKey, spendUsd: linked.usage.spend });

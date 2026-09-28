@@ -428,15 +428,18 @@ async function processStory(
     });
   }
 
-  // 5. 개정판 생성
-  const sources: RevisionSource[] = versions.map(({ article, source }) => ({
-    sourceId: source.id,
-    articleId: article.id,
-    articleTitle: article.title,
-    articleUrl: article.url,
-    publishedAt: article.publishedAt,
-    rightsTier: source.rightsTier,
-  }));
+  // 5. 개정판 생성. 출처 구획 = 본문 있는 기사 + 붙은 링크만 기사(#77).
+  const sources: RevisionSource[] = [
+    ...versions.map(({ article, source }) => ({
+      sourceId: source.id,
+      articleId: article.id,
+      articleTitle: article.title,
+      articleUrl: article.url,
+      publishedAt: article.publishedAt,
+      rightsTier: source.rightsTier,
+    })),
+    ...(state.linkOnlySources ?? []),
+  ];
   if (claims.length === 0) {
     throw new StageFailure(
       revisionStage.STAGE,
