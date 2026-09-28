@@ -33,6 +33,14 @@ describe("POST /api/revalidate", () => {
     ]);
   });
 
+  it("immediate면 stale-while-revalidate 없이 즉시 만료한다(권리 등급 변경)", async () => {
+    process.env.REVALIDATE_SECRET = "s3cret";
+    const tags = ["story:s-1:latest", "story:s-1:rev:r-1:ko:v1"];
+    const response = await POST(post({ tags, immediate: true }, "Bearer s3cret"));
+    expect(response.status).toBe(200);
+    expect(revalidateTag.mock.calls).toEqual(tags.map((tag) => [tag, { expire: 0 }]));
+  });
+
   it("시크릿이 틀리거나 없으면 거부하고, 설정되지 않은 배포에서는 항상 거부한다", async () => {
     process.env.REVALIDATE_SECRET = "s3cret";
     expect((await POST(post({ tags: ["today:ko"] }, "Bearer wrong"))).status).toBe(401);

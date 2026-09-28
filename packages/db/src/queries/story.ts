@@ -53,6 +53,10 @@ export interface StoryPageData {
     readonly articleTitle: string;
     readonly articleUrl: string;
     readonly publishedAt: Date;
+    /** GDELT가 만든 링크만 기사(#77)면 참. 발행 시각을 모르므로 화면은 `observedAt`을 "관측 시각"으로 보인다. */
+    readonly isLinkOnly: boolean;
+    /** GDELT가 기사를 본 시각(`seendate`). GDELT에 나온 적 없는 기사는 null. */
+    readonly observedAt: Date | null;
   })[];
 }
 
@@ -113,6 +117,8 @@ export async function loadPublishedStory(
       articleTitle: articles.title,
       articleUrl: articles.url,
       publishedAt: articles.published_at,
+      isLinkOnly: articles.is_link_only,
+      observedAt: articles.observed_at,
     })
     .from(articles)
     .innerJoin(sources, eq(sources.id, articles.source_id))
@@ -183,6 +189,8 @@ export async function loadPublishedStory(
       articleTitle: r.articleTitle,
       articleUrl: r.articleUrl,
       publishedAt: r.publishedAt,
+      isLinkOnly: r.isLinkOnly,
+      observedAt: r.observedAt,
     })),
   };
 }

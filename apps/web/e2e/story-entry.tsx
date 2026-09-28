@@ -9,14 +9,15 @@ declare global {
   }
 }
 
-/** JSON으로 건너온 뷰의 ISO 문자열을 Date로 되살린다(뷰에서 Date인 필드는 publishedAt·updatedAt뿐). */
+/** JSON으로 건너온 뷰의 ISO 문자열을 Date로 되살린다(뷰에서 Date인 필드는 publishedAt·updatedAt·observedAt뿐). */
 function reviveDates(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(reviveDates);
   if (value !== null && typeof value === "object") {
     return Object.fromEntries(
       Object.entries(value).map(([key, item]) => [
         key,
-        (key === "publishedAt" || key === "updatedAt") && typeof item === "string"
+        (key === "publishedAt" || key === "updatedAt" || key === "observedAt") &&
+        typeof item === "string"
           ? new Date(item)
           : reviveDates(item),
       ]),

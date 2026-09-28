@@ -5,6 +5,8 @@ export const DEMO_NOTICE = "기능 설명을 위해 만든 데모 사건입니�
 export const TOPICS_LABEL = "토픽";
 export const STORY_UPDATED = "사건 갱신";
 export const ARTICLE_PUBLISHED = "기사 발행";
+/** 링크만 기사(GDELT)의 시각 라벨. GDELT가 기사를 본 시각이며 발행 시각이 아니다(스펙 "데이터 소스와 권리"). */
+export const ARTICLE_OBSERVED = "관측 시각";
 export const FOLLOW = "팔로우";
 export const SHARE = "공유";
 export const sourceCount = (count: number): string => `출처 ${count}곳`;
@@ -62,6 +64,8 @@ export const SOURCE_REGION = "지역";
 export const SOURCE_OWNERSHIP = "소유 형태";
 export const SOURCE_LANGUAGE = "언어";
 export const SOURCE_RIGHTS_TIER = "권리 등급";
+/** 출처의 권리 등급이 링크만이라 근거 발췌가 없는 행(색만으로 구분하지 않는다). */
+export const SOURCE_NO_EXCERPT = "링크만 제공하는 출처라 근거 발췌가 없습니다.";
 const LANGUAGE_NAMES: Readonly<Record<string, string>> = { en: "영어", ko: "한국어" };
 export const languageName = (code: string): string => LANGUAGE_NAMES[code] ?? code;
 /** 출처 표(#76)의 소유 형태 값. 데모 출처의 자유 문자열은 그대로 보인다. */

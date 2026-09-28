@@ -1,17 +1,19 @@
+import type { StoryPageData } from "@newsplatform/db";
 import { expect, type Page, test } from "@playwright/test";
 import { build } from "esbuild";
 import { buildStoryView } from "../lib/story-view.ts";
 import { expectNoAxeViolations } from "./axe.ts";
 import { DESKTOP_MIN, evidenceOf } from "./evidence.ts";
 import { expectReflow, measureReflow } from "./reflow.ts";
-import { HIDDEN_SPAN, LONG_MIXED, stateFixture } from "./story-data.ts";
+import { HIDDEN_SPAN, LONG_MIXED, linkOnlyFixture, stateFixture } from "./story-data.ts";
 
 // Node에서 만든 뷰만 브라우저로 보낸다(원본 픽스처·구간 텍스트는 페이지에 들어가지 않는다).
-const VIEW_SCRIPT = `window.__STORY_VIEW__ = ${JSON.stringify(buildStoryView(stateFixture))};`;
+const viewScript = (data: StoryPageData) =>
+  `window.__STORY_VIEW__ = ${JSON.stringify(buildStoryView(data))};`;
 
 // Worker-local memory bundle: actual UI, no public fixture route or persisted fake rows.
 let bundle: Promise<string> | undefined;
-async function mountStory(page: Page, hash = "") {
+async function mountStory(page: Page, hash = "", data: StoryPageData = stateFixture) {
   bundle ??= build({
     entryPoints: ["e2e/story-entry.tsx"],
     bundle: true,
@@ -36,7 +38,7 @@ async function mountStory(page: Page, hash = "") {
   await page.goto(`/__story_fixture${hash}`);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.addScriptTag({ content: VIEW_SCRIPT });
+  await page.addScriptTag({ content: viewScript(data) });
   await page.addScriptTag({ content: await bundle });
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   expect(errors).toEqual([]);
@@ -87,8 +89,33 @@ test.describe("근거 발췌 불가 상태", () => {
     await expect(page.locator("#claim-1")).toBeFocused();
     const status = page.getByText("근거 발췌를 표시할 수 없음").first();
     await expect(status).not.toHaveAttribute("data-slot", "badge");
-    await expect(page.getByRole("region", { name: "출처" }).getByText("링크만")).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "출처" }).getByText("링크만", { exact: true }),
+    ).toBeVisible();
   });
+});
+
+test("story page shows two rights tiers differently", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mountStory(page, "", linkOnlyFixture);
+  const rows = page.getByRole("region", { name: "출처" }).getByRole("listitem");
+  await expect(rows).toHaveCount(3);
+  const body = rows.filter({ hasText: "Meridian Wire" });
+  await expect(body).toContainText("본문 처리 + 발췌 표시");
+  await expect(body).toContainText("기사 발행");
+  await expect(body).not.toContainText("근거 발췌가 없습니다");
+  // GDELT 링크만 기사: 미등록 출처는 도메인 이름, 관측 시각, 발췌 없음 문구, 원문 링크
+  const link = rows.filter({ hasText: "harbor-ledger.example" });
+  await expect(link).toContainText("링크만");
+  await expect(link).toContainText("관측 시각");
+  await expect(link).not.toContainText("기사 발행");
+  await expect(link).toContainText("링크만 제공하는 출처라 근거 발췌가 없습니다.");
+  await expect(link.getByRole("link", { name: "Harbor ledger berth report" })).toHaveAttribute(
+    "href",
+    "https://harbor-ledger.example/berth",
+  );
+  await expect(link.locator("time")).toHaveAttribute("datetime", "2026-09-17T01:15:00.000Z");
+  await expectNoAxeViolations(page, testInfo, "sources-link-only");
 });
 
 for (const width of [320, 640, 1440]) {
