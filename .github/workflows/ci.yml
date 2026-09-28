@@ -1,16 +1,19 @@
 # PR 체크(이슈 #19, 스펙 "배포와 운영" 배포 흐름, "골든셋과 평가" CI는 결정론 검사만).
 # 시크릿 없이 돈다. 유료 모델을 호출하지 않는다.
 # 일회용 PostgreSQL 17 + pgvector 서비스 컨테이너(프로덕션 Supabase와 같은 메이저 17, pgvector는 0.8.x)에
-# 빈 DB 마이그레이션을 적용한 뒤 pgvector 게이트를 읽기 스모크로 돈다.
+# 빈 DB 마이그레이션을 적용한 뒤 pgvector 게이트(임시 테이블·HNSW 인덱스 생성)를 스모크로 돈다.
 # "이전 릴리스 픽스처 DB"에 마이그레이션을 적용하는 검사는 픽스처 DB가 생기는 M2a로 미룬다(스펙 배포 흐름의 양쪽 적용 중 빈 DB만 여기서 돈다).
 # 잡 셋이 병렬로 돈다: checks(고정 설치·lint·typecheck·test·web build), migration-smoke(pgvector/pgvector:0.8.x-pg17 digest 고정,
 # 자격은 ci/ci-<run_id>로 워크플로 안에서 생성, db:migrate → db:gate), e2e(playwright install --with-deps → web build → test:e2e,
 # 실패해도 아티팩트 web-e2e(playwright-report·test-results, 보관 7일)를 올림, 타임아웃 15분).
-# 시크릿·환경을 읽지 않으므로 포크 PR에서도 돈다. 캐시는 actions/setup-node의 cache: pnpm. 후속은 이슈 #36.
+# 시크릿·환경을 읽지 않으므로 포크 PR에서도 돈다. main push(스쿼시 머지 뒤)에도 같은 잡이 돈다. 캐시는 actions/setup-node의 cache: pnpm.
+# 서비스 이미지 태그는 env를 보간할 수 없어 -pg<N>을 하드코딩한다. PG_MAJOR와 같음은 ci-workflow.test.ts가 단언한다.
 name: ci
 
 on:
   pull_request:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -64,7 +67,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U ci -d newsplatform_ci"
+          --health-cmd "pg_isready -h localhost -U ci -d newsplatform_ci"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -121,7 +124,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U ci -d newsplatform_ci"
+          --health-cmd "pg_isready -h localhost -U ci -d newsplatform_ci"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -143,11 +146,11 @@ jobs:
         run: |
           version_num=$(docker exec "${{ job.services.postgres.id }}" psql -U ci -d newsplatform_ci -Atc "show server_version_num")
           echo "server_version_num=${version_num}"
-          [ "${version_num:0:2}" = "${PG_MAJOR}" ] || {
+          [ "$((version_num / 10000))" = "${PG_MAJOR}" ] || {
             echo "PostgreSQL 메이저가 ${PG_MAJOR}이 아니다: ${version_num}" >&2
             exit 1
           }
       - name: 빈 DB 마이그레이션 적용(drizzle)
         run: pnpm db:migrate
-      - name: pgvector 게이트 스모크(읽기)
+      - name: pgvector 게이트 스모크(임시 테이블·HNSW 인덱스)
         run: pnpm db:gate

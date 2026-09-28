@@ -1,20 +1,10 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parse } from "yaml";
+import { loadWorkflow } from "./workflow-contract.ts";
 
 /**
- * PR CI 워크플로의 보안 계약만 지킨다. 잡 구성·명령은 PR 체크 실행 자체가 검증한다.
+ * PR CI 워크플로의 보안 계약과 PostgreSQL 메이저 정합만 지킨다. 잡 구성·명령은 PR 체크 실행 자체가 검증한다.
  */
-type Step = { uses?: string; with?: Record<string, unknown> };
-type Job = { steps: Step[]; environment?: string };
-type Workflow = { permissions: unknown; jobs: Record<string, Job> };
-
-const WORKFLOW_PATH = fileURLToPath(new URL("../../../.github/workflows/ci.yml", import.meta.url));
-const text = readFileSync(WORKFLOW_PATH, "utf8");
-const workflow = parse(text) as Workflow;
-const jobs = Object.values(workflow.jobs);
-const uses = jobs.flatMap((job) => job.steps).filter((s) => typeof s.uses === "string");
+const { text, workflow, jobs, uses } = loadWorkflow(".github/workflows/ci.yml");
 
 describe("ci.yml 보안 계약", () => {
   it("워크플로 권한은 contents: read만이다", () => {
@@ -27,6 +17,15 @@ describe("ci.yml 보안 계약", () => {
     for (const step of uses) {
       // 스펙 "시크릿": Actions는 SHA로 고정
       expect(step.uses).toMatch(/@[0-9a-f]{40}$/);
+    }
+  });
+
+  it("고정한 SHA마다 버전 주석(# vN.N.N)을 단다", () => {
+    const pinned = text.split("\n").filter((line) => /uses: \S+@[0-9a-f]{40}/.test(line));
+    expect(pinned.length).toBe(uses.length);
+    for (const line of pinned) {
+      // 사람이 고정 버전을 읽고 갱신할 수 있게 SHA 옆에 태그를 둔다
+      expect(line).toMatch(/@[0-9a-f]{40} # v\d+\.\d+\.\d+$/);
     }
   });
 
@@ -44,5 +43,22 @@ describe("ci.yml 보안 계약", () => {
       // project.md "GitHub Actions": PR 체크는 Production 환경을 선언하지 않는다
       expect(job.environment).toBeUndefined();
     }
+  });
+});
+
+describe("ci.yml PostgreSQL 메이저·트리거", () => {
+  it("서비스 이미지 태그의 -pg<N>이 PG_MAJOR와 같다", () => {
+    const images = jobs.flatMap((job) => Object.values(job.services ?? {}).map((svc) => svc.image));
+    expect(images.length).toBeGreaterThan(0);
+    for (const image of images) {
+      // 스펙 "배포와 운영": CI DB는 프로덕션과 같은 Postgres 메이저. 이미지 태그는 env를 보간할 수 없어 여기서 묶는다
+      expect(image).toMatch(new RegExp(`-pg${workflow.env?.PG_MAJOR}@sha256:[0-9a-f]{64}$`));
+    }
+  });
+
+  it("스쿼시 머지 뒤 main push에서도 돈다", () => {
+    // 이슈 #36: PR 밖으로 들어간 main 커밋도 검사한다
+    expect(workflow.on.push).toEqual({ branches: ["main"] });
+    expect(workflow.on).toHaveProperty("pull_request");
   });
 });
