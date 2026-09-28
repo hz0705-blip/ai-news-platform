@@ -15,6 +15,7 @@ export default defineRailway(() =>
           GNEWS_API_KEY: preserve(),
           WEB_REVALIDATE_URL: preserve(),
           REVALIDATE_SECRET: preserve(),
+          PIPELINE_DAILY_BUDGET_USD: preserve(),
         },
         build: {
           builder: "RAILPACK",
