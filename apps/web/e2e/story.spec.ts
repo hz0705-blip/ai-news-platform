@@ -51,7 +51,7 @@ test("핵심 루프: 주장 → 근거 펼침 → 원문 링크 → 변화 구�
   // 출처 구획: 셋 모두, 링크만 등급 표기
   const sources = page.getByRole("region", { name: "출처" });
   await expect(sources.getByText("Atlas Dispatch")).toBeVisible();
-  await expect(sources.getByText("링크만")).toBeVisible();
+  await expect(sources.getByText("링크만", { exact: true })).toBeVisible();
 
   await expect(
     page.getByRole("region", { name: "변화" }).getByText("아직 변화가 없습니다"),

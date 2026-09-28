@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./testing": "./src/test-db.ts"
+    "./testing": "./src/test-db.ts",
+    "./sources-file": "./src/sources-file.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -14,7 +15,6 @@
     "gate:pgvector": "node --env-file-if-exists=../../.env scripts/pgvector-gate.ts",
     "backup:encrypt": "node --env-file-if-exists=../../.env scripts/backup-encrypt.ts",
     "backup:decrypt": "node --env-file-if-exists=../../.env scripts/backup-decrypt.ts",
-    "sources:sync": "node --env-file-if-exists=../../.env scripts/sources-sync.ts",
     "sources:wikidata": "node scripts/sources-wikidata.ts"
   },
   "dependencies": {
