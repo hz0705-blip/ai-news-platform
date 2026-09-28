@@ -3,13 +3,13 @@ import { describe, expect, it } from "vitest";
 import { toStoryRow } from "../mappers.ts";
 import { publishRevision } from "../publish.ts";
 import { articles, stories } from "../schema/index.ts";
-import { createMigrationDb } from "../test-db.ts";
+import { createMigrationDb, readTestDbUrl } from "../test-db.ts";
 import { fixture, UNPUBLISHED_BODY_SENTENCE } from "../test-fixtures.ts";
 import { loadPublishedToday } from "./today.ts";
 
-const url = process.env.DATABASE_MIGRATION_URL;
+const url = readTestDbUrl();
 const maybe = url === undefined ? describe.skip : describe;
-if (url === undefined) process.stderr.write("DATABASE_MIGRATION_URL 없음 — 실 DB 테스트 건너뜀\n");
+if (url === undefined) process.stderr.write("DATABASE_TEST_URL 없음 — 실 DB 테스트 건너뜀\n");
 
 maybe("loadPublishedToday", () => {
   it("미발행 사건은 제외하고 라이브 0건의 갱신 시각은 없다", async () => {

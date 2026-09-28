@@ -9,6 +9,7 @@ import {
   articles,
   articleVersions,
   createMigrationDb,
+  readTestDbUrl,
   sources,
   stories,
   toSourceRow,
@@ -25,15 +26,15 @@ import { describe, expect, it } from "vitest";
 import { runBatchSlot } from "./run-batch-slot.ts";
 import { findMissedSlotKeys } from "./schedule.ts";
 
-const url = process.env.DATABASE_MIGRATION_URL;
+const url = readTestDbUrl();
 const maybe = url === undefined ? describe.skip : describe;
-if (url === undefined) process.stderr.write("DATABASE_MIGRATION_URL 없음 — 실 DB 테스트 건너뜀\n");
+if (url === undefined) process.stderr.write("DATABASE_TEST_URL 없음 — 실 DB 테스트 건너뜀\n");
 
 const SLOT_17 = "2026-09-27T17:00+09:00";
 const SLOT_05 = "2026-09-27T05:00+09:00";
 const live = loadDemoStoryFixture("live-hormuz-proposal");
 
-/** 실제 기사로 기록한 픽스처를 dev DB에 넣는다(사건 하나, 기사 둘, 개정판 없음). 기록의 멱등키가 사건·기사 버전 id를 담으므로 id를 그대로 쓴다. */
+/** 실제 기사로 기록한 픽스처를 테스트 DB에 넣는다(사건 하나, 기사 둘, 개정판 없음). 기록의 멱등키가 사건·기사 버전 id를 담으므로 id를 그대로 쓴다. */
 async function seedLiveStory(db: Awaited<ReturnType<typeof createMigrationDb>>["db"]) {
   await db.insert(sources).values(live.sources.map(toSourceRow));
   await db.insert(stories).values({

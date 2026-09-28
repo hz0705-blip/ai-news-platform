@@ -37,14 +37,14 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 - **GitHub Actions `ci`**(PR 체크, main push): 시크릿·환경을 읽지 않는다. 절차·함정의 정본은 YAML 머리 주석.
 - **Vercel**: 팀 `hz`(슬러그 `hz23`) Hobby, 프로젝트 `ai-news-platform`, Root Directory `apps/web`, Node 24, 리전 `icn1`. 환경변수 `DATABASE_URL`·`REVALIDATE_SECRET`(Production만, 워커의 값과 같다. 바꾸면 프로덕션 재배포 `vercel redeploy https://ai-news-platform-six.vercel.app --scope hz23`가 있어야 반영된다). 자동 도메인 `ai-news-platform-six.vercel.app`. `main` 푸시마다 자동 배포. PR 프리뷰는 자격 없이 빌드되고 Deployment Protection이 켜져 있어 익명 요청은 302로 SSO에 간다(자동 검사가 프리뷰를 열려면 우회 토큰 필요).
 - **Railway**: 워크스페이스 `hz0705-blip's Projects`(체험 크레딧, 체험 종료 전 Hobby 전환 필요), 프로젝트 `ai-news-platform`, 환경 `production`, 서비스 `worker` 하나(웹은 Vercel). 리전 싱가포르 `asia-southeast1-eqsg3a`, 복제 1, 슬립 끔, Railpack 빌더, 시작 명령 `pnpm --filter @newsplatform/worker start`, 소스는 GitHub `main` 자동 배포(watch 경로: `apps/worker`·`packages`·루트 매니페스트·`.railway`). 설정의 정본은 `.railway/railway.ts`(IaC, 루트 devDependency `railway`): 바꾸면 `railway config plan` → `railway config apply`. `railway.json`은 폐기 예정이라 쓰지 않는다. 변수 `WORKER_DATABASE_URL`(세션 풀러 5432)·`OPENAI_API_KEY`·`GNEWS_API_KEY`·`WEB_REVALIDATE_URL`·`REVALIDATE_SECRET`·`PIPELINE_DAILY_BUDGET_USD`(출시 전 개발 값, 출시 때 지운다 — 스펙 "개발 중 결정 항목" 토큰 계량), 값은 `railway variable set <이름> --stdin --service worker`로 넣고 파일에는 `preserve()`만 둔다. CLI는 `railway link -p <프로젝트 id> -e production` 뒤 `railway logs --service worker`·`railway deployment list`. 워커는 시작 시 24시간 안의 누락 슬롯을 즉시 회복하므로 재배포 직후 배치가 돌 수 있다.
-- **로컬**: `.env.example`이 변수 이름을 정의한다. `pnpm db:migrate`·`pnpm db:gate`·`pnpm test:db`·`demo:load`는 `.env`의 `DATABASE_MIGRATION_URL`만 읽는다.
+- **로컬**: `.env.example`이 변수 이름을 정의한다. `pnpm db:migrate`·`pnpm db:gate`·`demo:load`는 `.env`의 `DATABASE_MIGRATION_URL`만 읽는다. `pnpm test:db`는 `.env`를 읽지 않는다.
 
 ## 명령어
 
 - 설치: `pnpm install --frozen-lockfile`. npm·yarn은 쓰지 않는다. pnpm 12는 의존성 빌드 스크립트를 승인 없이 막는다(`ERR_PNPM_IGNORED_BUILDS`) — `pnpm approve-builds`로 승인하고 `pnpm-workspace.yaml`의 `allowBuilds`를 커밋한다.
 - 개발 서버 `pnpm dev`. 린트·포맷 `pnpm lint`, `pnpm format`(Biome). 타입 `pnpm typecheck`.
 - 테스트 `pnpm test`(Vitest). 패키지 하나는 `pnpm test --project <domain|db|pipeline|worker|web>`(**`--`를 넣으면 pnpm 12가 필터를 버리고 전체가 돈다**). E2E `pnpm --filter @newsplatform/web test:e2e`(Playwright).
-- 실 DB 테스트 `pnpm test:db` — `db`·`worker` 프로젝트만(파일들이 advisory lock으로 직렬화되므로 두 프로젝트의 `testTimeout`은 60초), `DATABASE_MIGRATION_URL`의 DB를 truncate한다. 이 DB는 프로덕션 웹·워커가 쓰는 유일한 Supabase 프로젝트이므로 **#42로 테스트 DB를 분리하기 전까지 실행 금지**(CI의 격리 DB에서만 돈다).
+- 실 DB 테스트 `pnpm test:db`(`scripts/test-db`, docker 필요) — 로컬 컨테이너 `newsplatform-test-db`(CI와 같은 `pgvector/pgvector:0.8.6-pg17` image@digest, `127.0.0.1:54329`)를 없으면 만들고 있으면 시작해 마이그레이션을 적용한 뒤 `db`·`worker` 프로젝트만 돈다(파일들이 advisory lock으로 직렬화되므로 두 프로젝트의 `testTimeout`은 60초). 테스트는 `DATABASE_TEST_URL`만 읽고(없으면 skip) 그 DB를 truncate한다. 호스트가 `localhost`·`127.0.0.1`이 아니거나 `supabase`를 담은 URL은 비우기 전에 거부한다. 컨테이너를 지우려면 `docker rm -f newsplatform-test-db`.
 - 마이그레이션 `pnpm db:migrate`, pgvector 게이트 `pnpm db:gate`.
 - 배치(#55): 수동 슬롯 실행 `pnpm --filter @newsplatform/worker batch:run <슬롯 키> [--skip-collect]`(예 `2026-09-27T17:00+09:00`, `DATABASE_MIGRATION_URL`·`OPENAI_API_KEY`·수집 시 `GNEWS_API_KEY`), 워커 데몬 `pnpm --filter @newsplatform/worker start`(`WORKER_DATABASE_URL` 세션 풀러 5432, pg-boss 스키마 `pgboss`는 시작 시 만든다). 발행 뒤 캐시 무효화는 `WEB_REVALIDATE_URL`·`REVALIDATE_SECRET`이 있을 때만(웹 `POST /api/revalidate`, 웹 환경변수 `REVALIDATE_SECRET`).
 - CI(`.github/workflows/ci.yml`)는 위 명령을 그대로 실행하므로 명령을 바꾸면 워크플로도 함께 고친다. `packages/db/scripts/ci-workflow.test.ts`에는 보안 계약(SHA 고정·권한·시크릿) 단언만 있다.
@@ -75,7 +75,7 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 
 - **스크립트**: 착수 `scripts/cycle-start <이슈> [--check-only]`, 마무리 `scripts/cycle-finish <PR> [--wait-only]`(CI 대기 → 스쿼시 머지 → 로컬 정리 → main 갱신 → 다음 티켓 출력), 인계 상태 `scripts/handoff-state`. 머리말이 사용법.
 - **superpowers**: 프로젝트 스코프 플러그인(`.claude/settings.json` `enabledPlugins`), 마켓플레이스 자동 갱신 끔. 쓰는 것은 SessionStart 주입뿐이다.
-- **브리프**(구현자·리뷰어 프롬프트 첫 블록): 이슈 번호와 본문 전문, 스펙 절 경로, 파일 후보, 테스트 이름, 위 커밋 트레일러 한 줄. 테스트 명령은 저장소 루트에서 `pnpm test`, `pnpm lint`, `pnpm typecheck`(`pnpm test:db`는 로컬 실행 금지, 위 "테스트" 참고). 규격은 이 파일 "스택"·"컨벤션"·"테스트"·"도메인 규칙", 용어는 `CONTEXT.md`. `ui` 티켓이면 스킬 원문 경로와 "스펙이 스킬보다 우선" 한 줄. 보고는 판정 한 줄 + 근거마다 1~2줄과 `파일:행`, diff·로그 원문 없음.
+- **브리프**(구현자·리뷰어 프롬프트 첫 블록): 이슈 번호와 본문 전문, 스펙 절 경로, 파일 후보, 테스트 이름, 위 커밋 트레일러 한 줄. 테스트 명령은 저장소 루트에서 `pnpm test`, `pnpm lint`, `pnpm typecheck`(`pnpm test:db`는 로컬 컨테이너, 위 "명령어" 참고). 규격은 이 파일 "스택"·"컨벤션"·"테스트"·"도메인 규칙", 용어는 `CONTEXT.md`. `ui` 티켓이면 스킬 원문 경로와 "스펙이 스킬보다 우선" 한 줄. 보고는 판정 한 줄 + 근거마다 1~2줄과 `파일:행`, diff·로그 원문 없음.
 - **PR 생성**은 구현자가 한다: `gh pr create --base main --body-file <파일>`, 본문 형식은 "컨벤션".
 - **Explore·조사 보조** 서브에이전트는 haiku.
 
