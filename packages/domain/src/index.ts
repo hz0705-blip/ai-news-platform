@@ -51,7 +51,13 @@ export type { Revision, RevisionSource } from "./revision.ts";
 export { isSameRevisionContent } from "./revision-equality.ts";
 export { RIGHTS_TIERS, type RightsTier } from "./rights.ts";
 export { splitSentences } from "./sentence.ts";
-export type { Source } from "./source.ts";
+export {
+  matchSourceByDomain,
+  OWNERSHIP_TYPES,
+  type Ownership,
+  type Source,
+  sourceHostOf,
+} from "./source.ts";
 export {
   type CodePointSpan,
   findSpan,

@@ -64,5 +64,14 @@ export const SOURCE_LANGUAGE = "언어";
 export const SOURCE_RIGHTS_TIER = "권리 등급";
 const LANGUAGE_NAMES: Readonly<Record<string, string>> = { en: "영어", ko: "한국어" };
 export const languageName = (code: string): string => LANGUAGE_NAMES[code] ?? code;
+/** 출처 표(#76)의 소유 형태 값. 데모 출처의 자유 문자열은 그대로 보인다. */
+const OWNERSHIP_NAMES: Readonly<Record<string, string>> = {
+  "public-service": "공영",
+  private: "민영",
+  "state-owned": "국영",
+  "nonprofit-cooperative": "비영리·협동조합",
+  unknown: "미확인",
+};
+export const ownershipName = (value: string): string => OWNERSHIP_NAMES[value] ?? value;
 
 export const NO_CHANGES = "아직 변화가 없습니다";

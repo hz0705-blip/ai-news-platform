@@ -41,3 +41,4 @@ export { loadPublishedStory, type StoryPageData } from "./queries/story.ts";
 export { loadPublishedToday, type TodayData, type TodayStoryCard } from "./queries/today.ts";
 export { createRuntimeDb, type RuntimeDb } from "./runtime.ts";
 export { type BatchRunRow, batchRuns } from "./schema/index.ts";
+export { loadSourceRegistry, syncSourceRegistry } from "./sources-registry.ts";
