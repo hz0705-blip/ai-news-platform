@@ -35,6 +35,14 @@ export {
   parseRuntimeConfig,
   type RuntimeConfig,
 } from "./config.ts";
+export {
+  findArticleIdsByNormalizedUrl,
+  loadGdeltStories,
+  loadRecentlyPublishedStoryIds,
+  loadRevisionToExtend,
+  recordArticleObservations,
+  saveLinkOnlyArticle,
+} from "./gdelt.ts";
 export { confirmRevision, type PublishRevisionInput, publishRevision } from "./publish.ts";
 export { loadLatestRevision } from "./queries/revision.ts";
 export { loadPublishedStory, type StoryPageData } from "./queries/story.ts";

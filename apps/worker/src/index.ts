@@ -49,6 +49,7 @@ const boss = await startScheduler({
       {
         db,
         gnews: { fetch, apiKey: gnewsKey },
+        gdelt: { fetch },
         embeddingClient: createOpenAiEmbeddingClient({ apiKey: openAiKey }),
         modelClient: createOpenAiModelClient({ apiKey: openAiKey }),
         clock: () => new Date(),

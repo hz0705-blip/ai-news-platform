@@ -97,6 +97,10 @@ describe("embeddingInputFor", () => {
       "T\nshort",
     );
   });
+
+  it("uses the title alone for a link-only article without description or body", () => {
+    expect(embeddingInputFor({ title: " T ", description: undefined, body: "" })).toBe("T");
+  });
 });
 
 describe("cosineSimilarity", () => {

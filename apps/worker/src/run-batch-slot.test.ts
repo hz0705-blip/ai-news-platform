@@ -9,6 +9,7 @@ import {
   articles,
   articleVersions,
   createMigrationDb,
+  EMBEDDING_DIMENSIONS,
   readTestDbUrl,
   sources,
   stories,
@@ -17,6 +18,7 @@ import {
 } from "@newsplatform/db/testing";
 import { createArticleVersion } from "@newsplatform/domain";
 import {
+  createRecordedGdeltFetch,
   createRecordedModelClient,
   LIVE_REFERENCE_TIME,
   loadDemoStoryFixture,
@@ -226,6 +228,101 @@ maybe("슬롯 배치(수집 건너뜀, 기록된 응답)", () => {
       const done = await runBatchSlot({ slotKey: SLOT_05 }, deps(db, []));
       expect(done.kind).toBe("completed");
       expect(await findMissedSlotKeys(db, { now })).toEqual([SLOT_17]);
+    } finally {
+      await cleanup();
+    }
+  });
+});
+
+/** 1536차원 기저 벡터 하나. */
+function axis(i: number): number[] {
+  const v = new Array<number>(EMBEDDING_DIMENSIONS).fill(0);
+  v[i] = 1;
+  return v;
+}
+
+maybe("GDELT 단계(기록된 GDELT 응답)", () => {
+  it("link-only articles attach to the published story as a source-added revision with zero model calls", async () => {
+    const { db, sql, cleanup } = await createMigrationDb(url as string);
+    try {
+      await seedLiveStory(db);
+      // 사건 배정 후보가 되도록 기사 임베딩·중심을 사건 축에 둔다.
+      const storyAxis = JSON.stringify(axis(0));
+      await sql`update articles set embedding = ${storyAxis}::vector where story_id = ${live.story.id}`;
+      await sql`update stories set centroid = ${storyAxis}::vector where id = ${live.story.id}`;
+
+      const model = createRecordedModelClient("live-hormuz-proposal", { modelId: MODEL_ID });
+      let modelCalls = 0;
+      const callsAt: Record<string, number> = {};
+      const run = (slotKey: string) =>
+        runBatchSlot(
+          { slotKey },
+          {
+            ...deps(db, []),
+            modelClient: {
+              modelId: model.modelId,
+              complete: (request) => {
+                modelCalls++;
+                return model.complete(request);
+              },
+            },
+            // 링크 제목만 임베딩한다: Hormuz가 있으면 사건 축, 없으면 직교 축(배정 실패 → 버림).
+            embeddingClient: {
+              embed: async (texts: readonly string[]) => ({
+                vectors: texts.map((t) => (/hormuz/i.test(t) ? axis(0) : axis(1))),
+                usage: { tokens: texts.length, spend: 0 },
+              }),
+            },
+            gdelt: { fetch: createRecordedGdeltFetch(), sleep: async () => {} },
+            log: (event: Record<string, unknown>) => {
+              if (typeof event.stage === "string") callsAt[event.stage] = modelCalls;
+            },
+          },
+        );
+
+      const result = await run(SLOT_17);
+      expect(result.kind).toBe("completed");
+      if (result.kind !== "completed") return;
+      const gdelt = result.report.gdelt;
+      if (!("attached" in gdelt))
+        throw new Error(`GDELT 단계가 돌지 않았다: ${JSON.stringify(gdelt)}`);
+      expect(gdelt).toMatchObject({
+        requestCount: 1,
+        failures: [],
+        revisedStoryIds: [live.story.id],
+      });
+      expect(gdelt.attached).toBeGreaterThan(0);
+      expect(gdelt.discarded).toBeGreaterThan(0);
+      // 발행 뒤 GDELT 단계에서 모델 호출이 없다.
+      expect(callsAt.gdelt).toBe(callsAt.pipeline);
+
+      const page = await loadPublishedStory(db, { slug: live.story.slug });
+      expect(page?.revision.revisionNumber).toBe(2);
+      expect(page?.claims.length).toBe(live.golden.claims.length);
+      const linkRows = (await db.select().from(articles)).filter((r) => r.is_link_only);
+      expect(linkRows).toHaveLength(gdelt.attached);
+      expect(linkRows.every((r) => r.story_id === live.story.id && r.observed_at !== null)).toBe(
+        true,
+      );
+      // 버린 링크로 새 사건을 만들지 않는다.
+      expect(await db.select({ id: stories.id }).from(stories)).toEqual([{ id: live.story.id }]);
+
+      // 다음 배치는 이 사건을 모델로 다시 처리하지 않는다(링크만 기사는 입력 변경이 아니다).
+      const before = modelCalls;
+      const next = await run("2026-09-28T05:00+09:00");
+      expect(next).toMatchObject({ kind: "completed", report: { published: 0 } });
+      expect(modelCalls).toBe(before);
+
+      // 입력이 바뀌어(처리 시각 갱신) 같은 내용으로 재처리되면 확인만 한다 — 링크만 출처가 이어져야 같은 개정판이다.
+      await sql`update stories set last_processed_at = now() + interval '1 day' where id = ${live.story.id}`;
+      const reprocessed = await run("2026-09-28T17:00+09:00");
+      expect(reprocessed).toMatchObject({
+        kind: "completed",
+        report: { published: 0, confirmed: 1 },
+      });
+      expect(modelCalls).toBeGreaterThan(before);
+      const after = await loadPublishedStory(db, { slug: live.story.slug });
+      expect(after?.revision.revisionNumber).toBe(2);
     } finally {
       await cleanup();
     }

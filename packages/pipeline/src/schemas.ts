@@ -200,6 +200,7 @@ export const StoryStateSchema: z.ZodType<StoryState> = z.object({
   story: StorySchema,
   latestRevision: RevisionSchema.exactOptional(),
   deferredSince: z.date().exactOptional(),
+  linkOnlySources: z.array(RevisionSourceSchema).exactOptional(),
 });
 
 export const BatchInputSchema: z.ZodType<BatchInput> = z.object({

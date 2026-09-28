@@ -35,6 +35,7 @@ try {
     {
       db,
       ...(skipCollect || !gnewsKey ? {} : { gnews: { fetch, apiKey: gnewsKey } }),
+      gdelt: { fetch },
       embeddingClient: createOpenAiEmbeddingClient({ apiKey: openAiKey }),
       modelClient: createOpenAiModelClient({ apiKey: openAiKey }),
       clock: () => new Date(),
@@ -58,6 +59,7 @@ try {
         pipelineUsage: report.pipeline.usage,
         failures: report.pipeline.failures,
         publishFailures: report.publishFailures,
+        gdelt: report.gdelt,
       }),
     );
   }

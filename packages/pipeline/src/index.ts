@@ -54,6 +54,18 @@ export {
   RevisionSchema,
 } from "./schemas.ts";
 export {
+  buildGdeltQuery,
+  type CollectGdeltDeps,
+  type CollectGdeltResult,
+  collectGdelt,
+  GDELT_MAX_STORIES_PER_BATCH,
+  GDELT_MIN_INTERVAL_MS,
+  type GdeltLink,
+  type GdeltStoryQuery,
+  mapGdeltArticles,
+} from "./sources/gdelt.ts";
+export { createRecordedGdeltFetch, type RecordedGdeltResponse } from "./sources/gdelt-recorded.ts";
+export {
   buildGnewsRequest,
   type CollectGnewsDeps,
   type CollectGnewsResult,
@@ -78,6 +90,12 @@ export {
   type AssignmentStore,
   runAssignment,
 } from "./stages/assign.ts";
+export {
+  attachLinkOnlyArticles,
+  type LinkOnlyResult,
+  type LinkOnlyStore,
+  type LinkOutcome,
+} from "./stages/link-only.ts";
 export {
   type ArticleInput,
   BatchDeadlineError,
