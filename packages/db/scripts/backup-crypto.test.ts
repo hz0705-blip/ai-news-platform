@@ -1,17 +1,20 @@
 import { randomBytes } from "node:crypto";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  assertPlainSize,
   BACKUP_FORMAT_MAGIC,
   BACKUP_KEY_VARIABLE,
   BackupFormatError,
   BackupKeyError,
-  BackupSizeError,
   decryptBackup,
+  decryptBackupFile,
   encryptBackup,
-  MAX_PLAIN_BYTES,
+  encryptBackupFile,
   parseBackupKey,
   SHA256_LINE,
+  sha256File,
   sha256Hex,
 } from "./backup-crypto.ts";
 
@@ -109,26 +112,102 @@ describe("sha256Hex / SHA256_LINE", () => {
   });
 });
 
-describe("assertPlainSize", () => {
-  it("0과 MAX_PLAIN_BYTES는 통과한다", () => {
-    expect(() => assertPlainSize(0)).not.toThrow();
-    expect(() => assertPlainSize(MAX_PLAIN_BYTES)).not.toThrow();
+describe("encryptBackupFile / decryptBackupFile (스트리밍)", () => {
+  function tempDir(): string {
+    return mkdtempSync(join(tmpdir(), "backup-stream-"));
+  }
+
+  async function roundTrip(plain: Buffer): Promise<{ dir: string; sealedPath: string }> {
+    const dir = tempDir();
+    const plainPath = join(dir, "plain");
+    const sealedPath = join(dir, "plain.enc");
+    writeFileSync(plainPath, plain);
+    const result = await encryptBackupFile(plainPath, sealedPath, KEY);
+    const sealed = readFileSync(sealedPath);
+    expect(result.plainBytes).toBe(plain.length);
+    expect(result.encryptedBytes).toBe(sealed.length);
+    expect(sealed.length).toBe(5 + 12 + plain.length + 16);
+    expect(result.sha256).toBe(sha256Hex(sealed));
+    const restoredPath = join(dir, "restored");
+    const restored = await decryptBackupFile(sealedPath, restoredPath, KEY);
+    expect(restored.plainBytes).toBe(plain.length);
+    expect(readFileSync(restoredPath).equals(plain)).toBe(true);
+    return { dir, sealedPath };
+  }
+
+  it("여러 청크(highWaterMark 64 KiB보다 큰 5 MiB) 입력을 왕복 복원한다", async () => {
+    await roundTrip(randomBytes(5 * 1024 * 1024 + 7));
   });
 
-  it("MAX_PLAIN_BYTES + 1은 BackupSizeError를 던진다", () => {
-    expect(() => assertPlainSize(MAX_PLAIN_BYTES + 1)).toThrow(BackupSizeError);
+  it("빈 파일도 왕복한다", async () => {
+    await roundTrip(Buffer.alloc(0));
   });
 
-  it("음수는 BackupSizeError를 던진다", () => {
-    expect(() => assertPlainSize(-1)).toThrow(BackupSizeError);
+  it("스트리밍 암호화 산출물을 decryptBackup이 복원한다", async () => {
+    const plain = randomBytes(200 * 1024);
+    const { sealedPath } = await roundTrip(plain);
+    expect(decryptBackup(readFileSync(sealedPath), KEY).equals(plain)).toBe(true);
   });
 
-  it("오류 메시지에 바이트 수를 담는다", () => {
-    try {
-      assertPlainSize(MAX_PLAIN_BYTES + 1);
-      throw new Error("던져야 한다");
-    } catch (error) {
-      expect((error as Error).message).toContain(String(MAX_PLAIN_BYTES + 1));
-    }
+  it("encryptBackup 산출물을 스트리밍 복호화가 복원한다", async () => {
+    const dir = tempDir();
+    const plain = randomBytes(200 * 1024);
+    const sealedPath = join(dir, "buf.enc");
+    writeFileSync(sealedPath, encryptBackup(plain, KEY));
+    const out = join(dir, "out");
+    await decryptBackupFile(sealedPath, out, KEY);
+    expect(readFileSync(out).equals(plain)).toBe(true);
+  });
+
+  async function expectFormatError(sealed: Buffer): Promise<void> {
+    const dir = tempDir();
+    const sealedPath = join(dir, "bad.enc");
+    writeFileSync(sealedPath, sealed);
+    const out = join(dir, "out");
+    await expect(decryptBackupFile(sealedPath, out, KEY)).rejects.toThrow(BackupFormatError);
+    expect(existsSync(out)).toBe(false);
+    expect(readdirSync(dir)).toEqual(["bad.enc"]);
+  }
+
+  it("태그가 변조되면 실패하고 출력·임시 파일이 남지 않는다", async () => {
+    const sealed = Buffer.from(encryptBackup(randomBytes(100 * 1024), KEY));
+    const index = sealed.length - 1;
+    sealed[index] = (sealed[index] ?? 0) ^ 0xff;
+    await expectFormatError(sealed);
+  });
+
+  it("본문 1바이트 변조 시 실패한다", async () => {
+    const sealed = Buffer.from(encryptBackup(randomBytes(100 * 1024), KEY));
+    const index = 5 + 12 + 1000;
+    sealed[index] = (sealed[index] ?? 0) ^ 0xff;
+    await expectFormatError(sealed);
+  });
+
+  it("33바이트 미만 파일은 형식 오류", async () => {
+    await expectFormatError(encryptBackup(Buffer.alloc(0), KEY).subarray(0, 32));
+    await expectFormatError(Buffer.alloc(0));
+  });
+
+  it("magic 불일치는 형식 오류", async () => {
+    const sealed = Buffer.from(encryptBackup(Buffer.from("x"), KEY));
+    sealed[0] = 0x00;
+    await expectFormatError(sealed);
+  });
+
+  it("다른 키로 복호화하면 형식 오류", async () => {
+    const dir = tempDir();
+    const sealedPath = join(dir, "k.enc");
+    writeFileSync(sealedPath, encryptBackup(Buffer.from("secret"), KEY));
+    await expect(decryptBackupFile(sealedPath, join(dir, "out"), randomBytes(32))).rejects.toThrow(
+      BackupFormatError,
+    );
+  });
+
+  it("sha256File은 파일 전체의 SHA-256을 돌려준다", async () => {
+    const dir = tempDir();
+    const data = randomBytes(300 * 1024);
+    const path = join(dir, "data");
+    writeFileSync(path, data);
+    expect(await sha256File(path)).toBe(sha256Hex(data));
   });
 });
