@@ -36,6 +36,20 @@ test("타이포 유틸은 64rem 경계에서 모바일·데스크톱 크기로 �
   }
 });
 
+test("Pretendard 조각은 페이지와 같은 오리진에서만 받는다", async ({ page }) => {
+  const fontRequests: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname.endsWith(".woff2")) fontRequests.push(request.url());
+  });
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+
+  const origin = new URL(page.url()).origin;
+  expect(fontRequests.length).toBeGreaterThan(0);
+  expect(fontRequests.filter((url) => new URL(url).origin !== origin)).toEqual([]);
+});
+
 for (const colorScheme of ["light", "dark"] as const) {
   // 640×450은 1280×900에서 200% 확대했을 때의 CSS 가용 영역 대체 검사다.
   // 브라우저 메뉴 확대·실기기 검증으로 간주하지 않는다.
