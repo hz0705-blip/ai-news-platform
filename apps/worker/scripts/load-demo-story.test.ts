@@ -1,13 +1,13 @@
 import { loadPublishedStory } from "@newsplatform/db";
-import { createMigrationDb } from "@newsplatform/db/testing";
+import { createMigrationDb, readTestDbUrl } from "@newsplatform/db/testing";
 import { DEMO_REFERENCE_TIME } from "@newsplatform/pipeline";
 import { describe, expect, it } from "vitest";
 import { loadAllDemoStories, loadDemoStory } from "./load-demo-story.ts";
 
-const url = process.env.DATABASE_MIGRATION_URL;
+const url = readTestDbUrl();
 const maybe = url === undefined ? describe.skip : describe;
 // Vitest는 테스트가 전부 건너뛰어진 파일의 console 출력을 보고하지 않으므로 stderr에 직접 쓴다.
-if (url === undefined) process.stderr.write("DATABASE_MIGRATION_URL 없음 — 실 DB 테스트 건너뜀\n");
+if (url === undefined) process.stderr.write("DATABASE_TEST_URL 없음 — 실 DB 테스트 건너뜀\n");
 
 maybe("데모 사건 적재", () => {
   // 테스트마다 빈 DB에서 시작하고 끝나면 비운다(공유 beforeAll 없음 — 앞 테스트의 적재가 남으면

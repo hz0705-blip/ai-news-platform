@@ -13,12 +13,12 @@ import {
 } from "./batch.ts";
 import { confirmRevision, publishRevision } from "./publish.ts";
 import { articles, articleVersions, sources, stories } from "./schema/index.ts";
-import { createMigrationDb } from "./test-db.ts";
+import { createMigrationDb, readTestDbUrl } from "./test-db.ts";
 import { fixture } from "./test-fixtures.ts";
 
-const url = process.env.DATABASE_MIGRATION_URL;
+const url = readTestDbUrl();
 const maybe = url === undefined ? describe.skip : describe;
-if (url === undefined) process.stderr.write("DATABASE_MIGRATION_URL 없음 — 실 DB 테스트 건너뜀\n");
+if (url === undefined) process.stderr.write("DATABASE_TEST_URL 없음 — 실 DB 테스트 건너뜀\n");
 
 const now = new Date("2026-09-27T08:00:00.000Z"); // KST 17:00
 const LEASE_MS = 90 * 60 * 1000;

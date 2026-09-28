@@ -72,9 +72,10 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
-      # 마이그레이션·실 DB 테스트·데모 적재는 DATABASE_MIGRATION_URL, 웹 서버(Playwright webServer)는 DATABASE_URL을 읽는다.
-      # CI 컨테이너에는 풀러가 없으므로 둘 다 같은 일회용 URL이다.
+      # 마이그레이션·데모 적재는 DATABASE_MIGRATION_URL, 실 DB 테스트는 DATABASE_TEST_URL(localhost만 받는다, #42),
+      # 웹 서버(Playwright webServer)는 DATABASE_URL을 읽는다. CI 컨테이너에는 풀러가 없으므로 셋 다 같은 일회용 URL이다.
       DATABASE_MIGRATION_URL: postgresql://ci:ci-${{ github.run_id }}@localhost:5432/newsplatform_ci
+      DATABASE_TEST_URL: postgresql://ci:ci-${{ github.run_id }}@localhost:5432/newsplatform_ci
       DATABASE_URL: postgresql://ci:ci-${{ github.run_id }}@localhost:5432/newsplatform_ci
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -91,7 +92,7 @@ jobs:
         run: pnpm --filter @newsplatform/web exec playwright install --with-deps chromium firefox webkit
       - name: 빈 DB 마이그레이션 적용(drizzle)
         run: pnpm db:migrate
-      # checks 잡에서는 DATABASE_MIGRATION_URL이 없어 실 DB 테스트가 skip된다. 여기서 반드시 돈다.
+      # checks 잡에서는 DATABASE_TEST_URL이 없어 실 DB 테스트가 skip된다. 여기서 반드시 돈다.
       - name: 실 DB 테스트(db·worker)
         run: pnpm test --project db --project worker
       # 실 DB 테스트는 테이블을 비우므로 적재는 그 뒤에 한다.
