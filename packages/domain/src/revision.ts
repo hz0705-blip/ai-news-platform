@@ -35,6 +35,8 @@ export interface Revision {
   readonly promptVersions: {
     readonly evidenceExtract: string;
     readonly claimGenerate: string;
+    /** 게이트 2단계 판정 프롬프트(#55에서 저장 열이 생겨 기록한다). */
+    readonly gate: string;
     readonly contradictionLabel: string;
   };
   readonly modelId: string;

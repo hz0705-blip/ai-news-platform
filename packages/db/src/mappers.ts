@@ -110,6 +110,7 @@ export function toRows(revision: Revision): RevisionRows {
       contradiction_status: revision.contradictionStatus,
       prompt_evidence_extract: revision.promptVersions.evidenceExtract,
       prompt_claim_generate: revision.promptVersions.claimGenerate,
+      prompt_gate: revision.promptVersions.gate,
       prompt_contradiction_label: revision.promptVersions.contradictionLabel,
       model_id: revision.modelId,
     },
@@ -187,6 +188,7 @@ export function toDomainRevision(rows: RevisionRows): Revision {
     promptVersions: {
       evidenceExtract: revision.prompt_evidence_extract,
       claimGenerate: revision.prompt_claim_generate,
+      gate: revision.prompt_gate,
       contradictionLabel: revision.prompt_contradiction_label,
     },
     modelId: revision.model_id,
@@ -207,6 +209,7 @@ export function toStoryRow(story: Story): StoryRow {
     centroid: null,
     last_new_report_at: null,
     last_processed_at: null,
+    deferred_at: null,
   };
 }
 

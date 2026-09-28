@@ -58,6 +58,7 @@ export const revision: Revision = {
   promptVersions: {
     evidenceExtract: "evidence-extract@1",
     claimGenerate: "claim-generate@1",
+    gate: "gate@1",
     contradictionLabel: "contradiction-label@1",
   },
   modelId: "recorded",

@@ -1,6 +1,11 @@
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
-import { type ModelClient, type ModelRequest, ModelResponseError } from "../types.ts";
+import {
+  type ModelClient,
+  type ModelRequest,
+  ModelResponseError,
+  ModelTransportError,
+} from "../types.ts";
 import { type PricedModel, reservationUsd, usageToUsd } from "./pricing.ts";
 
 /**
@@ -9,9 +14,14 @@ import { type PricedModel, reservationUsd, usageToUsd } from "./pricing.ts";
  */
 export const MODEL_ID = "gpt-5-mini-2025-08-07" satisfies PricedModel;
 
-/** 전송 오류·429·5xx 재시도 횟수(SDK 지수 백오프). 응답 위반은 재시도하지 않고 그 사건을 실패로 둔다. */
+/**
+ * 전송 오류·429·5xx 재시도 횟수. 재시도는 SDK가 아니라 배치(`runBatch`)가 하며 시도마다 예약한다(#55).
+ * 제한 시간 초과는 재시도하지 않고 그 사건을 실패로 둔다(다음 배치에서 다시 처리).
+ */
 export const MODEL_MAX_RETRIES = 2;
-/** 요청 하나의 제한 시간. */
+/** 재시도 전 대기(지수 백오프의 첫 값). */
+export const MODEL_RETRY_DELAY_MS = 2_000;
+/** 요청 하나의 제한 시간(단계별 기한). */
 export const MODEL_TIMEOUT_MS = 180_000;
 
 export interface OpenAiModelOptions {
@@ -28,31 +38,64 @@ export function requestReservationUsd(request: ModelRequest): number {
   );
 }
 
+/** SDK 오류를 배치가 재시도 여부와 과금 여부를 알 수 있는 `ModelTransportError`로 바꾼다. */
+function toTransportError(request: ModelRequest, error: unknown): unknown {
+  if (error instanceof OpenAI.APIConnectionTimeoutError) {
+    return new ModelTransportError(
+      request.stage,
+      request.key,
+      `제한 시간 초과 (${MODEL_TIMEOUT_MS / 1000}초)`,
+      { retryable: false, billable: true },
+    );
+  }
+  if (error instanceof OpenAI.APIConnectionError) {
+    return new ModelTransportError(request.stage, request.key, `전송 오류: ${error.message}`, {
+      retryable: true,
+      billable: false,
+    });
+  }
+  if (error instanceof OpenAI.APIError) {
+    const status = error.status ?? 0;
+    const retryable = status === 429 || status >= 500;
+    return new ModelTransportError(request.stage, request.key, `HTTP ${status}: ${error.message}`, {
+      retryable,
+      billable: false,
+    });
+  }
+  return error;
+}
+
 /**
  * Responses API 구조화 출력(JSON 스키마 strict, 요청의 zod 스키마에서 생성)으로 `ModelClient`를 구현한다.
  * 응답 `usage`(입력·캐시 입력·출력)를 단가표로 USD로 바꿔 돌려준다. 응답이 미완료이거나
  * 스키마·기록 형식을 어기면 사용량을 담은 `ModelResponseError`를 던진다(배치는 그 사건만 실패로 둔다).
- * HTTP는 주입받은 `fetch`가 하므로 테스트는 기록된 응답으로 네트워크 없이 돈다.
+ * 응답을 받지 못하면 `ModelTransportError`를 던진다 — SDK 재시도는 끄고(`maxRetries: 0`) 배치가
+ * 시도마다 예약하며 재시도한다. HTTP는 주입받은 `fetch`가 하므로 테스트는 기록된 응답으로 네트워크 없이 돈다.
  */
 export function createOpenAiModelClient(options: OpenAiModelOptions): ModelClient {
   const client = new OpenAI({
     apiKey: options.apiKey,
-    maxRetries: MODEL_MAX_RETRIES,
+    maxRetries: 0,
     timeout: MODEL_TIMEOUT_MS,
     ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
   });
   return {
     modelId: MODEL_ID,
     async complete(request) {
-      const response = await client.responses.create({
-        model: MODEL_ID,
-        instructions: request.instructions,
-        input: request.input,
-        reasoning: { effort: request.reasoningEffort },
-        max_output_tokens: request.maxOutputTokens,
-        text: { format: zodTextFormat(request.schema, request.schemaName) },
-        store: false,
-      });
+      let response: Awaited<ReturnType<typeof client.responses.create>>;
+      try {
+        response = await client.responses.create({
+          model: MODEL_ID,
+          instructions: request.instructions,
+          input: request.input,
+          reasoning: { effort: request.reasoningEffort },
+          max_output_tokens: request.maxOutputTokens,
+          text: { format: zodTextFormat(request.schema, request.schemaName) },
+          store: false,
+        });
+      } catch (error) {
+        throw toTransportError(request, error);
+      }
       const used = {
         inputTokens: response.usage?.input_tokens ?? 0,
         cachedInputTokens: response.usage?.input_tokens_details.cached_tokens ?? 0,
