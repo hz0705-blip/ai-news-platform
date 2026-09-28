@@ -14,18 +14,16 @@ import {
 import { kstDayRange, slotAtOf } from "@newsplatform/domain/batch-slot";
 import {
   type BatchReport,
+  type Budget,
   type CollectGnewsDeps,
   type EmbeddingClient,
   type ModelClient,
   runBatch,
 } from "@newsplatform/pipeline";
 import { assignStories } from "./assign.ts";
+import { DAILY_PIPELINE_BUDGET_TOKENS, DAILY_PIPELINE_BUDGET_USD } from "./budget.ts";
 import { type CollectResult, collectFromGnews } from "./collect.ts";
 
-/** 파이프라인 일일 예산(USD; 스펙 "개발 중 결정 항목" 토큰 계량). 시도가 실제로 도는 KST 날짜의 모든 실행이 나눠 쓴다. */
-export const DAILY_PIPELINE_BUDGET_USD = 1.2;
-/** 토큰 상한은 USD 상한의 보조다(gpt-5-mini 출력 단가 기준 $1.20 ≈ 60만 출력 토큰). */
-export const DAILY_PIPELINE_BUDGET_TOKENS = 2_000_000;
 /** 활성 잡 만료 = DB 리스 90분(스펙 "배포와 운영" 스케줄러). */
 export const BATCH_LEASE_MS = 90 * 60 * 1000;
 /** 배치 기한: 시작 70분 뒤에는 모델 호출을 시작하지 않는다(잡 만료보다 짧게, #55 Ruling). */
@@ -95,6 +93,8 @@ export interface RunBatchSlotDeps {
   /** 구조화 JSON 로그 한 줄. 기본은 stdout. */
   readonly log?: (event: Record<string, unknown>) => void;
   readonly concurrency?: number;
+  /** 파이프라인 일일 예산(`pipelineDailyBudget`). 기본 스펙 값 $1.20. */
+  readonly dailyBudget?: Budget;
   readonly sleep?: (ms: number) => Promise<void>;
 }
 
@@ -116,6 +116,10 @@ export async function runBatchSlot(
   if (slotAt === undefined) throw new UnknownSlotError(`슬롯 키가 아니다: ${input.slotKey}`);
   const log = deps.log ?? ((event) => console.log(JSON.stringify(event)));
   const startedAt = deps.clock();
+  const budget = deps.dailyBudget ?? {
+    spend: DAILY_PIPELINE_BUDGET_USD,
+    tokens: DAILY_PIPELINE_BUDGET_TOKENS,
+  };
   const base = { slotKey: input.slotKey, slotAt: slotAt.toISOString() };
 
   const start = await startBatchRun(deps.db, {
@@ -188,14 +192,14 @@ export async function runBatchSlot(
     // 3. 예산 잔액: 이 시도가 도는 KST 날짜에 시작한 모든 실행의 지출(이 슬롯의 이전 시도·이번 임베딩 포함)을 뺀다.
     const spentTodayUsd = await loadSpendBetween(deps.db, kstDayRange(startedAt));
     const previousTodayUsd = Math.max(0, spentTodayUsd - embeddingUsd);
-    const remainingUsd = Math.max(0, DAILY_PIPELINE_BUDGET_USD - spentTodayUsd);
+    const remainingUsd = Math.max(0, budget.spend - spentTodayUsd);
     const { stories, sources } = await loadBatchStories(deps.db);
     const batchStartedAt = deps.clock();
     const result = await runBatch(
       {
         articles: stories.flatMap((s) => s.articles),
         now: batchStartedAt,
-        dailyBudget: { tokens: DAILY_PIPELINE_BUDGET_TOKENS, spend: remainingUsd },
+        dailyBudget: { tokens: budget.tokens, spend: remainingUsd },
         sources,
         existingStories: stories.map(({ story, latestRevision, deferredSince }) => ({
           story,
@@ -287,7 +291,7 @@ export async function runBatchSlot(
       failed: result.report.failed + publishFailures.length,
       publishFailures,
       spend: {
-        budgetUsd: DAILY_PIPELINE_BUDGET_USD,
+        budgetUsd: budget.spend,
         previousTodayUsd,
         embeddingUsd,
         modelUsd,
