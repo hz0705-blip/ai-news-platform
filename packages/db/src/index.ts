@@ -16,6 +16,7 @@ export {
   finishBatchRun,
   loadBatchRunsSince,
   loadBatchStories,
+  loadDueBatchRun,
   loadLastCompletedSlot,
   loadSpendBetween,
   markStoriesDeferred,
