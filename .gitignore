@@ -17,3 +17,6 @@ test-results/
 
 # SDD 계획 파일은 미추적이며 티켓 머지 뒤 삭제한다
 docs/superpowers/plans/
+
+# Vercel CLI 링크 메타데이터(로컬 전용)
+.vercel/
