@@ -43,6 +43,13 @@
       "when": 1790512547343,
       "tag": "0005_batch_schedule",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790601412387,
+      "tag": "0006_source_registry",
+      "breakpoints": true
     }
   ]
 }

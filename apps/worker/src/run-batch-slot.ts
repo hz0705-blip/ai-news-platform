@@ -48,6 +48,7 @@ export interface BatchSlotReport {
         readonly from: string;
         readonly to: string;
         readonly requestCount: number;
+        readonly excludedArticles: number;
         readonly newArticles: number;
         readonly mergedArticles: number;
         readonly savedVersions: number;
@@ -162,6 +163,7 @@ export async function runBatchSlot(
         from: previousTo.toISOString(),
         to: slotAt.toISOString(),
         requestCount: collected.requestCount,
+        excludedArticles: collected.excludedArticles,
         newArticles: collected.newArticles,
         mergedArticles: collected.mergedArticles,
         savedVersions: collected.savedVersions.length,
