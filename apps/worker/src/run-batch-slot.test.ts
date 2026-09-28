@@ -158,6 +158,65 @@ maybe("슬롯 배치(수집 건너뜀, 기록된 응답)", () => {
     }
   });
 
+  it("today tag expires after the ledger row is completed, and on failure", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      // 발행 0건이어도 오늘 태그를 만료하고, 만료 시점에 원장은 이미 completed다.
+      const seen: (string | undefined)[] = [];
+      const tags: string[] = [];
+      await runBatchSlot(
+        { slotKey: SLOT_05 },
+        {
+          ...deps(db, tags),
+          invalidateCache: async (sent: readonly string[]) => {
+            tags.push(...sent);
+            const [row] = await db.select().from(batchRuns);
+            seen.push(row?.status);
+          },
+        },
+      );
+      expect(tags).toEqual(["today:ko"]);
+      expect(seen).toEqual(["completed"]);
+
+      // 완료 뒤 무효화가 실패해도(웹 장애) 슬롯은 completed로 남는다.
+      const done = await runBatchSlot(
+        { slotKey: SLOT_17 },
+        {
+          ...deps(db, []),
+          invalidateCache: async () => {
+            throw new Error("web down");
+          },
+        },
+      );
+      expect(done).toMatchObject({ kind: "completed", report: { cacheInvalidated: false } });
+      const rows = await db.select().from(batchRuns);
+      expect(rows.find((r) => r.slot_key === SLOT_17)?.status).toBe("completed");
+
+      // 단계가 실패하면 원장 failed 뒤 오늘 태그를 만료한다(배정 단계 로그가 던지게 해 실패를 만든다).
+      const failSeen: (string | undefined)[] = [];
+      await expect(
+        runBatchSlot(
+          { slotKey: "2026-09-26T17:00+09:00" },
+          {
+            ...deps(db, []),
+            invalidateCache: async () => {
+              const row = (await db.select().from(batchRuns)).find(
+                (r) => r.slot_key === "2026-09-26T17:00+09:00",
+              );
+              failSeen.push(row?.status);
+            },
+            log: (event: Record<string, unknown>) => {
+              if (event.stage === "assign") throw new Error("stage down");
+            },
+          },
+        ),
+      ).rejects.toThrow("stage down");
+      expect(failSeen).toEqual(["failed"]);
+    } finally {
+      await cleanup();
+    }
+  });
+
   it("missed slot is recovered on worker start", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {

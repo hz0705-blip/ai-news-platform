@@ -6,7 +6,7 @@ import {
   slotAtOf,
   slotKeyOf,
   slotsBetween,
-} from "./slot.ts";
+} from "./batch-slot.ts";
 
 describe("배치 슬롯(KST 05:00·17:00)", () => {
   it("배치 키는 의도한 KST 슬롯이고 시각은 UTC다", () => {

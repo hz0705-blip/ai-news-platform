@@ -5,6 +5,7 @@ import {
   finishBatchRun,
   loadBatchRunsSince,
   loadBatchStories,
+  loadDueBatchRun,
   loadLastCompletedSlot,
   loadSpendBetween,
   markStoriesDeferred,
@@ -219,6 +220,47 @@ maybe("배치 대상 사건", () => {
       expect((await loadBatchStories(db)).stories).toEqual([]);
       await db.update(stories).set({ last_processed_at: new Date(later.getTime() + 1) });
       expect((await loadBatchStories(db)).stories.map((s) => s.story.id)).toEqual(["story-live"]);
+    } finally {
+      await cleanup();
+    }
+  });
+});
+
+maybe("loadDueBatchRun", () => {
+  it("latest batch status query returns running/cap-reached/failed/delayed inputs", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      expect(await loadDueBatchRun(db, { dueSlotKey: SLOT_17 })).toBeUndefined();
+      await startBatchRun(db, slot(SLOT_05, at05));
+      await finishBatchRun(db, {
+        slotKey: SLOT_05,
+        status: "completed",
+        finishedAt: now,
+        report: { deferred: 4, spend: { budgetReached: true } },
+      });
+      // 기한 슬롯(17시) 행이 없으면 가장 최근 행(05시)이 온다 — 지연 판정의 입력.
+      expect(await loadDueBatchRun(db, { dueSlotKey: SLOT_17 })).toEqual({
+        slotKey: SLOT_05,
+        status: "completed",
+        leaseExpiresAt: null,
+        budgetReached: true,
+        deferred: 4,
+      });
+      await startBatchRun(db, slot(SLOT_17, now));
+      expect(await loadDueBatchRun(db, { dueSlotKey: SLOT_17 })).toEqual({
+        slotKey: SLOT_17,
+        status: "running",
+        leaseExpiresAt: new Date(now.getTime() + LEASE_MS),
+        budgetReached: false,
+        deferred: 0,
+      });
+      // 기한 슬롯보다 늦은 행은 보지 않는다.
+      expect((await loadDueBatchRun(db, { dueSlotKey: SLOT_05 }))?.slotKey).toBe(SLOT_05);
+      await finishBatchRun(db, { slotKey: SLOT_17, status: "failed", finishedAt: now, error: "x" });
+      expect(await loadDueBatchRun(db, { dueSlotKey: SLOT_17 })).toMatchObject({
+        slotKey: SLOT_17,
+        status: "failed",
+      });
     } finally {
       await cleanup();
     }

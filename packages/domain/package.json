@@ -5,6 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./batch-slot": "./src/batch-slot.ts",
+    "./batch-status": "./src/batch-status.ts",
     "./relative-time": "./src/relative-time.ts",
     "./topic": "./src/topic.ts"
   },
