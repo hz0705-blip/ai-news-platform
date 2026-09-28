@@ -1,4 +1,4 @@
-import type { Article, Revision, Source, Story } from "@newsplatform/domain";
+import type { Article, Revision, RevisionSource, Source, Story } from "@newsplatform/domain";
 import type { z } from "zod";
 
 /**
@@ -23,6 +23,11 @@ export interface StoryState {
   readonly latestRevision?: Revision;
   /** 이전 배치가 한도 도달로 미룬 시각("수집됨, 분석 대기"). 있으면 이번 배치에서 우선 처리한다. */
   readonly deferredSince?: Date;
+  /**
+   * 사건에 붙은 링크만 기사(GDELT, #77)의 출처 구획 줄. 본문이 없어 배치 입력 기사에는 없지만 개정판 출처에는
+   * 들어가야 한다 — 빠지면 출처 추가 개정판 뒤의 같은 내용 재처리가 매번 새 개정판이 된다(개정판 생성 조건).
+   */
+  readonly linkOnlySources?: readonly RevisionSource[];
 }
 
 /** 가드 ①로 이번 개정판에서 빠진 주장 하나(#22 Ruling 22-4). */

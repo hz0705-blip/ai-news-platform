@@ -86,7 +86,7 @@ export async function loadAssignmentArticles(
  * 1. `articles.embedding`의 HNSW 코사인 인덱스로 새 기사 임베딩에 가장 가까운 기사 `K×4`건을 찾고
  *    그 기사들의 사건을 후보로 모은다(사건 하나가 여러 기사로 잡혀도 한 후보).
  * 2. 후보 중 라이브·미종료·마지막 신규 보도가 72시간 안인 사건에 대해 중심 유사도(`stories.centroid`)와
- *    대표 기사 유사도(사건의 첫 기사 = 발행 시각·식별자 순 첫 기사)를 계산해 중심 유사도 내림차순 `K`건을 돌려준다.
+ *    대표 기사 유사도(사건의 첫 기사 = 링크만이 아닌 기사 중 발행 시각·식별자 순 첫 기사, #77)를 계산해 중심 유사도 내림차순 `K`건을 돌려준다.
  * 활성 판정의 권위는 도메인(`decideAssignment`)에 있고 여기의 72시간 조건은 후보 슬롯을 휴면 사건에
  * 낭비하지 않기 위한 선별이다.
  */
@@ -106,7 +106,7 @@ export async function findCandidateStories(
   if (storyIds.length === 0) return [];
 
   const centroidSimilarity = sql<number>`1 - (${cosineDistance(stories.centroid, vec)})`;
-  const representative = sql`(select ${articles.embedding} from ${articles} where ${articles.story_id} = ${stories.id} order by ${articles.published_at}, ${articles.id} limit 1)`;
+  const representative = sql`(select ${articles.embedding} from ${articles} where ${articles.story_id} = ${stories.id} and not ${articles.is_link_only} order by ${articles.published_at}, ${articles.id} limit 1)`;
   const representativeSimilarity = sql<number>`1 - (${cosineDistance(representative, vec)})`;
   const cutoff = new Date(options.now.getTime() - ACTIVE_WINDOW_MS);
   const rows = await db

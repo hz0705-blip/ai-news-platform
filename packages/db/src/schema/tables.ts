@@ -95,6 +95,11 @@ export const articles = pgTable(
     published_at: timestamptz("published_at").notNull(),
     topics: text({ enum: TOPICS }).array().notNull(),
     embedding: vector({ dimensions: EMBEDDING_DIMENSIONS }),
+    // GDELT(#77). `observed_at`은 GDELT가 이 기사를 처음 본 시각(`seendate`)이다 — 기존 기사가 GDELT 결과에
+    // 나오면 이 열만 채운다(관측). `is_link_only`는 GDELT가 만든 링크만 기사로, 기사 버전(본문)이 없고
+    // 발행 시각을 모르므로 `published_at`은 `observed_at`의 복사본(정렬 키)이며 임베딩도 두지 않는다.
+    observed_at: timestamptz("observed_at"),
+    is_link_only: boolean("is_link_only").notNull().default(false),
   },
   (t) => [
     index("articles_story_id_idx").on(t.story_id),

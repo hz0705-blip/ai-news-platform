@@ -260,6 +260,8 @@ export function toArticleRow(article: Article, storyId: string): ArticleRow {
     published_at: article.publishedAt,
     topics: [...article.topics],
     embedding: null,
+    observed_at: null,
+    is_link_only: false,
   };
 }
 

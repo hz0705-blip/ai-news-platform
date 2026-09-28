@@ -102,7 +102,10 @@ export function decideAssignment(input: AssignmentInput): AssignmentDecision {
   return { kind: "assign", storyId: best.storyId };
 }
 
-/** 임베딩 입력: 영어 제목 + 설명, 설명이 없으면 본문 첫 500자(스펙 "임베딩 모델·차원"). */
+/**
+ * 임베딩 입력: 영어 제목 + 설명, 설명이 없으면 본문 첫 500자(스펙 "임베딩 모델·차원").
+ * 둘 다 없는 링크만 기사(GDELT, #77)는 제목만이다(스펙 "GDELT 수집": 임베딩 입력 = 제목).
+ */
 export function embeddingInputFor(article: {
   readonly title: string;
   readonly description: string | undefined;
@@ -112,7 +115,8 @@ export function embeddingInputFor(article: {
     article.description !== undefined && article.description.trim() !== ""
       ? article.description.trim()
       : [...article.body.trim()].slice(0, 500).join("");
-  return `${article.title.trim()}\n${lead}`;
+  const title = article.title.trim();
+  return lead === "" ? title : `${title}\n${lead}`;
 }
 
 /** 코사인 유사도. 영벡터가 있으면 0이다. */

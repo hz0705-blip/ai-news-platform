@@ -50,6 +50,13 @@
       "when": 1790601412387,
       "tag": "0006_source_registry",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790611099615,
+      "tag": "0007_gdelt_link_only",
+      "breakpoints": true
     }
   ]
 }
