@@ -9,7 +9,8 @@
     "batch:run": "node --env-file-if-exists=../../.env scripts/run-batch.ts",
     "demo:load": "node --env-file-if-exists=../../.env scripts/load-demo-story.ts",
     "collect:gnews": "node --env-file-if-exists=../../.env scripts/collect-gnews.ts",
-    "assign:stories": "node --env-file-if-exists=../../.env scripts/assign-stories.ts"
+    "assign:stories": "node --env-file-if-exists=../../.env scripts/assign-stories.ts",
+    "gdelt:run": "node --env-file-if-exists=../../.env scripts/gdelt-run.ts"
   },
   "dependencies": {
     "@newsplatform/db": "workspace:*",

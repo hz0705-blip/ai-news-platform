@@ -15,6 +15,7 @@ import { kstDayRange, slotAtOf } from "@newsplatform/domain/batch-slot";
 import {
   type BatchReport,
   type Budget,
+  type CollectGdeltDeps,
   type CollectGnewsDeps,
   type EmbeddingClient,
   type ModelClient,
@@ -23,6 +24,7 @@ import {
 import { assignStories } from "./assign.ts";
 import { DAILY_PIPELINE_BUDGET_TOKENS, DAILY_PIPELINE_BUDGET_USD } from "./budget.ts";
 import { type CollectResult, collectFromGnews } from "./collect.ts";
+import { type GdeltStageReport, runGdeltStage } from "./gdelt.ts";
 
 /** 활성 잡 만료 = DB 리스 90분(스펙 "배포와 운영" 스케줄러). */
 export const BATCH_LEASE_MS = 90 * 60 * 1000;
@@ -67,6 +69,8 @@ export interface BatchSlotReport {
   readonly deferred: number;
   readonly failed: number;
   readonly publishFailures: readonly { readonly storyId: string; readonly reason: string }[];
+  /** GDELT 단계(#77). 단계 자체가 던지면 `error`만 남기고 배치는 완료한다. */
+  readonly gdelt: { readonly skipped: true } | { readonly error: string } | GdeltStageReport;
   readonly spend: {
     readonly budgetUsd: number;
     readonly previousTodayUsd: number;
@@ -86,6 +90,8 @@ export interface RunBatchSlotDeps {
   readonly db: RuntimeDb["db"];
   /** 없으면 수집을 건너뛴다(테스트, 수동 실행 `--skip-collect`). */
   readonly gnews?: CollectGnewsDeps;
+  /** 없으면 GDELT 단계를 건너뛴다(테스트, 로컬). */
+  readonly gdelt?: CollectGdeltDeps;
   readonly embeddingClient: EmbeddingClient;
   readonly modelClient: ModelClient;
   readonly clock: () => Date;
@@ -105,7 +111,7 @@ class UnknownSlotError extends Error {
 
 /**
  * 슬롯 하나의 배치(#55): 원장·리스 → 수집(#52) → 배정(#53) → 입력이 바뀐 사건만 `runBatch`(#54) → 발행 →
- * 캐시 무효화 → 리포트. 예산은 같은 KST 날짜의 앞선 지출(임베딩 포함)을 뺀 잔액이다.
+ * GDELT 링크(#77) → 캐시 무효화 → 리포트. 예산은 같은 KST 날짜의 앞선 지출(임베딩 포함)을 뺀 잔액이다.
  * 같은 슬롯이 이미 완료됐거나 다른 배치의 리스가 살아 있으면 아무것도 하지 않는다.
  * 단계가 던지면 원장에 실패로 적고 다시 던진다(pg-boss가 재시도한다). OpenAI 호출 중에는 DB 트랜잭션이 없다.
  */
@@ -276,6 +282,27 @@ export async function runBatchSlot(
       at: batchStartedAt,
     });
 
+    // 5. GDELT(#77): 이번 배치에서 발행된 사건에 링크만 기사를 붙이고 출처 추가 개정판을 낸다(모델 호출 없음).
+    // 429·오류는 그 사건만 건너뛰고, 단계가 통째로 던져도 이미 발행한 배치를 실패로 만들지 않는다.
+    let gdelt: BatchSlotReport["gdelt"] = { skipped: true };
+    const revisedStoryIds: string[] = [];
+    if (deps.gdelt !== undefined) {
+      try {
+        const linked = await runGdeltStage(
+          { storyIds: publishedStoryIds, batchStartedAt: startedAt, now: deps.clock() },
+          { db: deps.db, gdelt: deps.gdelt, embeddingClient: deps.embeddingClient },
+        );
+        embeddingUsd += linked.usage.spend;
+        await addBatchRunSpend(deps.db, { slotKey: input.slotKey, spendUsd: linked.usage.spend });
+        revisedStoryIds.push(...linked.revisedStoryIds);
+        gdelt = linked;
+        stageLog("gdelt", { result: "ok", ...linked });
+      } catch (gdeltError) {
+        gdelt = { error: gdeltError instanceof Error ? gdeltError.message : String(gdeltError) };
+        stageLog("gdelt", { result: "failed", ...gdelt });
+      }
+    }
+
     const finishedAt = deps.clock();
     const totalUsd = embeddingUsd + modelUsd;
     const report: BatchSlotReport = {
@@ -292,6 +319,7 @@ export async function runBatchSlot(
       deferred: result.report.deferred,
       failed: result.report.failed + publishFailures.length,
       publishFailures,
+      gdelt,
       spend: {
         budgetUsd: budget.spend,
         previousTodayUsd,
@@ -309,7 +337,7 @@ export async function runBatchSlot(
       report,
     });
 
-    // 5. 웹 캐시 무효화(오늘 + 발행된 사건의 최신 포인터). 원장이 `completed`로 커밋된 뒤에 만료해야 그 사이의
+    // 6. 웹 캐시 무효화(오늘 + 발행된 사건의 최신 포인터). 원장이 `completed`로 커밋된 뒤에 만료해야 그 사이의
     // 요청이 `running` 행을 다시 캐시하지 않는다. 오늘 화면은 배치 상태도 보이므로 발행이 없어도 오늘 태그를
     // 만료한다(#56). 이미 완료한 슬롯이므로 무효화·기록 실패는 배치를 실패로 만들지 않고 로그만 남긴다.
     let finalReport = report;
@@ -317,7 +345,9 @@ export async function runBatchSlot(
       try {
         await deps.invalidateCache([
           TODAY_CACHE_TAG,
-          ...publishedStoryIds.map((id) => `story:${id}:latest`),
+          ...[...new Set([...publishedStoryIds, ...revisedStoryIds])].map(
+            (id) => `story:${id}:latest`,
+          ),
         ]);
         finalReport = { ...report, cacheInvalidated: true };
         await finishBatchRun(deps.db, {

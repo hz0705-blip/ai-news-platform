@@ -48,6 +48,7 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 - 마이그레이션 `pnpm db:migrate`, pgvector 게이트 `pnpm db:gate`.
 - 출처 표(#76): `pnpm --filter @newsplatform/db sources:sync`(`packages/db/sources/sources.json` → `sources` upsert + 옛 `gnews:*` 기사 재지정, `DATABASE_MIGRATION_URL`, 마이그레이션 뒤), `pnpm --filter @newsplatform/db sources:wikidata <도메인…>`(Wikidata 초안과 파일의 차이만 출력, 파일 불변).
 - 배치(#55): 수동 슬롯 실행 `pnpm --filter @newsplatform/worker batch:run <슬롯 키> [--skip-collect]`(예 `2026-09-27T17:00+09:00`, `DATABASE_MIGRATION_URL`·`OPENAI_API_KEY`·수집 시 `GNEWS_API_KEY`), 워커 데몬 `pnpm --filter @newsplatform/worker start`(`WORKER_DATABASE_URL` 세션 풀러 5432, pg-boss 스키마 `pgboss`는 시작 시 만든다). 발행 뒤 캐시 무효화는 `WEB_REVALIDATE_URL`·`REVALIDATE_SECRET`이 있을 때만(웹 `POST /api/revalidate`, 웹 환경변수 `REVALIDATE_SECRET`).
+- GDELT(#77): 배치가 발행 뒤 단계로 돈다(키 없음). 수동 실행 `pnpm --filter @newsplatform/worker gdelt:run [N]`(최근 발행 사건 N개, 기본 5, `DATABASE_MIGRATION_URL`·`OPENAI_API_KEY`, DB에 쓴다). GDELT는 5초에 1회를 넘기면 429이고, 간격을 30초 넘게 두어도 결과가 많은 쿼리나 혼잡한 시간에는 429·연결 시간 초과가 이어질 수 있다(2026-09-29 실측) — 단계는 그 사건을 실패로 리포트에 남긴다. 픽스처 기록은 `packages/pipeline/scripts/record-gdelt.ts`.
 - CI(`.github/workflows/ci.yml`)는 위 명령을 그대로 실행하므로 명령을 바꾸면 워크플로도 함께 고친다. `packages/db/scripts/ci-workflow.test.ts`에는 보안 계약(SHA 고정·권한·시크릿) 단언만 있다.
 
 ## 컨벤션

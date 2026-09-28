@@ -60,6 +60,11 @@ export async function saveCollectedArticles(
           .update(articles)
           .set({ topics: [...item.topics] })
           .where(eq(articles.id, item.id));
+        // GDELT가 먼저 만든 링크만 기사(#77)에 본문이 오면 보통 기사가 된다: 발행 시각을 관측 시각 복사본에서 바꾼다.
+        await tx
+          .update(articles)
+          .set({ is_link_only: false, published_at: item.publishedAt })
+          .where(and(eq(articles.id, item.id), eq(articles.is_link_only, true)));
       }
       for (const version of item.newVersions) {
         // 마지막 버전과만 비교하므로 이전에 있던 본문이 다시 오면(A→B→A) 같은 (article_id, body_hash)가

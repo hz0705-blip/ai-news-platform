@@ -41,6 +41,7 @@ export {
   type GateStage1Result,
 } from "./gate-stage1.ts";
 export { sha256Hex } from "./hash.ts";
+export { properNounsOf } from "./proper-nouns.ts";
 export { formatRelativeTime } from "./relative-time.ts";
 export {
   countReportingOrigins,
@@ -49,6 +50,7 @@ export {
 } from "./reporting-origin.ts";
 export type { Revision, RevisionSource } from "./revision.ts";
 export { isSameRevisionContent } from "./revision-equality.ts";
+export { revisionWithSources } from "./revision-sources.ts";
 export { RIGHTS_TIERS, type RightsTier } from "./rights.ts";
 export { splitSentences } from "./sentence.ts";
 export {
