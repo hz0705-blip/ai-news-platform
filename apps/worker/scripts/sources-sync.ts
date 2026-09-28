@@ -1,7 +1,7 @@
 import { createRuntimeDb } from "@newsplatform/db";
 import { SOURCES_FILE_PATH } from "@newsplatform/db/sources-file";
 import { createCacheInvalidator } from "../src/revalidate.ts";
-import { syncSourcesFile } from "../src/source-tier.ts";
+import { exitCodeOf, syncSourcesFile } from "../src/source-tier.ts";
 
 /**
  * 출처 표 파일 → DB `sources` upsert(#76) + 옛 `gnews:*` 기사 재지정. 권리 등급이 바뀐 출처가 있으면 영향받는
@@ -18,6 +18,12 @@ const { db, sql } = createRuntimeDb({ DATABASE_URL: url });
 try {
   const result = await syncSourcesFile(db, SOURCES_FILE_PATH, createCacheInvalidator(process.env));
   console.log(JSON.stringify(result));
+  if (exitCodeOf(result) !== 0) {
+    console.error(
+      "등급이 바뀐 출처의 사건 캐시를 만료하지 못했다(WEB_REVALIDATE_URL·REVALIDATE_SECRET 없음). 설정한 뒤 출처마다 source:set-tier <출처> <현재 등급>으로 다시 만료한다.",
+    );
+    process.exitCode = 1;
+  }
 } catch (error) {
   console.error(JSON.stringify({ sync: "sources", error: String(error) }));
   process.exitCode = 1;

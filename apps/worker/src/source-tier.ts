@@ -35,27 +35,29 @@ export interface TierExpiry {
 }
 
 /**
- * 등급이 바뀐 출처의 기사가 붙은 사건의 최신·과거 개정판 캐시를 즉시 만료한다(스펙 "렌더링·캐시": 등급 하향은
+ * 출처들의 기사가 붙은 사건의 최신·과거 개정판 캐시를 즉시 만료한다(스펙 "렌더링·캐시": 등급 하향은
  * stale-while-revalidate 없이 즉시 만료하고 과거 개정판 표현까지 무효화). 상향도 표시가 바뀌므로 같이 만료한다.
  */
-export async function expireTierChanges(
+async function expireSourceStories(
   db: RuntimeDb["db"],
-  tierChanges: readonly SourceTierChange[],
+  sourceIds: readonly string[],
   invalidate: CacheInvalidator | undefined,
-): Promise<TierExpiry> {
-  const tags = storyCacheTags(
-    await loadStoryRevisionsForSources(
-      db,
-      tierChanges.map((c) => c.id),
-    ),
-  );
-  if (tags.length === 0) return { tierChanges, expiredTags: 0, cacheInvalidated: true };
-  if (invalidate === undefined)
-    return { tierChanges, expiredTags: tags.length, cacheInvalidated: false };
+): Promise<Pick<TierExpiry, "expiredTags" | "cacheInvalidated">> {
+  const tags = storyCacheTags(await loadStoryRevisionsForSources(db, sourceIds));
+  if (tags.length === 0) return { expiredTags: 0, cacheInvalidated: true };
+  if (invalidate === undefined) return { expiredTags: tags.length, cacheInvalidated: false };
   for (let i = 0; i < tags.length; i += MAX_TAGS_PER_REQUEST) {
     await invalidate(tags.slice(i, i + MAX_TAGS_PER_REQUEST), { immediate: true });
   }
-  return { tierChanges, expiredTags: tags.length, cacheInvalidated: true };
+  return { expiredTags: tags.length, cacheInvalidated: true };
+}
+
+/**
+ * 명령의 종료 코드. 만료해야 할 태그가 있었는데 무효화 경로가 없어 못 했으면 1이다 — 운영자가 무효화 경로를
+ * 설정하고 `source:set-tier <출처> <현재 등급>`으로 다시 만료해야 한다.
+ */
+export function exitCodeOf(result: Pick<TierExpiry, "cacheInvalidated">): 0 | 1 {
+  return result.cacheInvalidated ? 0 : 1;
 }
 
 /** 출처 표 파일 → DB 동기화(`sources:sync`) 뒤 등급이 바뀐 출처의 사건 캐시를 만료한다. */
@@ -66,7 +68,12 @@ export async function syncSourcesFile(
 ): Promise<TierExpiry & { readonly synced: number; readonly repointedArticles: number }> {
   const registry = parseSourceRegistry(JSON.parse(readFileSync(path, "utf8"))).map(toSource);
   const { synced, repointedArticles, tierChanges } = await syncSourceRegistry(db, registry);
-  return { synced, repointedArticles, ...(await expireTierChanges(db, tierChanges, invalidate)) };
+  const expiry = await expireSourceStories(
+    db,
+    tierChanges.map((c) => c.id),
+    invalidate,
+  );
+  return { synced, repointedArticles, tierChanges, ...expiry };
 }
 
 /**
@@ -92,7 +99,8 @@ export function setTierInRegistryText(text: string, sourceId: string, tier: Righ
  * 운영자 권리 등급 변경(`source:set-tier`, #78). 출처 표 파일이 정본이다: 표에 있는 출처는 파일의 등급을 고친 뒤
  * `sources:sync`와 같은 동기화를 돌린다(그래서 파일을 손으로 고치고 `sources:sync`를 돌려도 결과가 같다).
  * 표에 없는 출처(`gnews:*`·`gdelt:*`)는 DB 행만 고친다 — 동기화는 표의 행만 upsert하므로 되돌리지 않는다.
- * 등급·출처를 모르면 아무것도 쓰지 않고 거부한다.
+ * 등급·출처를 모르거나 무효화 경로가 없으면 아무것도 쓰지 않고 거부한다. 등급이 이미 같아도 그 출처의 사건 캐시를
+ * 만료한다 — 만료가 중간에 실패했을 때 같은 명령을 다시 돌리면 끝까지 만료된다(멱등 재시도).
  */
 export async function setSourceTier(
   db: RuntimeDb["db"],
@@ -103,21 +111,28 @@ export async function setSourceTier(
   if (tier === undefined) {
     throw new Error(`알 수 없는 권리 등급: ${input.tier} (${RIGHTS_TIERS.join(" | ")})`);
   }
+  if (invalidate === undefined) {
+    throw new Error(
+      "캐시 무효화 경로가 설정되지 않았다(WEB_REVALIDATE_URL·REVALIDATE_SECRET). 등급을 바꾸지 않았다.",
+    );
+  }
   const text = readFileSync(input.registryPath, "utf8");
   const row = parseSourceRegistry(JSON.parse(text)).find((r) => r.id === input.sourceId);
   if (row !== undefined) {
     if (row.rightsTier !== tier) {
       writeFileSync(input.registryPath, setTierInRegistryText(text, input.sourceId, tier));
     }
-    const { tierChanges, expiredTags, cacheInvalidated } = await syncSourcesFile(
-      db,
-      input.registryPath,
-      invalidate,
-    );
-    return { registry: "file", tierChanges, expiredTags, cacheInvalidated };
+    const registry = parseSourceRegistry(JSON.parse(readFileSync(input.registryPath, "utf8")));
+    const { tierChanges } = await syncSourceRegistry(db, registry.map(toSource));
+    const ids = [...new Set([input.sourceId, ...tierChanges.map((c) => c.id)])];
+    return { registry: "file", tierChanges, ...(await expireSourceStories(db, ids, invalidate)) };
   }
   const from = await updateUnregisteredSourceTier(db, input.sourceId, tier);
   if (from === undefined) throw new Error(`알 수 없는 출처: ${input.sourceId}`);
-  const changes = from === tier ? [] : [{ id: input.sourceId, from, to: tier }];
-  return { registry: "db", ...(await expireTierChanges(db, changes, invalidate)) };
+  const tierChanges = from === tier ? [] : [{ id: input.sourceId, from, to: tier }];
+  return {
+    registry: "db",
+    tierChanges,
+    ...(await expireSourceStories(db, [input.sourceId], invalidate)),
+  };
 }

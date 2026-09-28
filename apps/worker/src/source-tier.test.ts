@@ -5,7 +5,12 @@ import { parseSourceRegistry, SOURCES_FILE_PATH } from "@newsplatform/db/sources
 import { createMigrationDb, readTestDbUrl, sources } from "@newsplatform/db/testing";
 import { describe, expect, it } from "vitest";
 import type { CacheInvalidator } from "./revalidate.ts";
-import { setSourceTier, setTierInRegistryText, syncSourcesFile } from "./source-tier.ts";
+import {
+  exitCodeOf,
+  setSourceTier,
+  setTierInRegistryText,
+  syncSourcesFile,
+} from "./source-tier.ts";
 
 const url = readTestDbUrl();
 const maybe = url === undefined ? describe.skip : describe;
@@ -124,7 +129,7 @@ maybe("source:set-tier", () => {
       await syncSourcesFile(db, path, invalidate);
       expect(await tierOf(UNREGISTERED)).toBe("본문 처리 + 발췌 표시");
 
-      // 같은 등급이면 아무것도 만료하지 않는다.
+      // 같은 등급으로 다시 돌려도 등급은 그대로 두고 영향받는 사건 캐시를 다시 만료한다(재시도 경로).
       calls.length = 0;
       expect(
         await setSourceTier(
@@ -132,8 +137,17 @@ maybe("source:set-tier", () => {
           { sourceId: UNREGISTERED, tier: "본문 처리 + 발췌 표시", registryPath: path },
           invalidate,
         ),
-      ).toMatchObject({ tierChanges: [], expiredTags: 0 });
-      expect(calls).toEqual([]);
+      ).toMatchObject({ tierChanges: [], expiredTags: 3, cacheInvalidated: true });
+      expect(calls).toEqual([[S1_TAGS, { immediate: true }]]);
+      calls.length = 0;
+      expect(
+        await setSourceTier(
+          db,
+          { sourceId: REGISTERED, tier: "본문 처리 + 발췌 표시", registryPath: path },
+          invalidate,
+        ),
+      ).toMatchObject({ registry: "file", tierChanges: [], expiredTags: 3 });
+      expect(calls).toEqual([[S1_TAGS, { immediate: true }]]);
     } finally {
       await cleanup();
     }
@@ -156,6 +170,19 @@ maybe("source:set-tier", () => {
           invalidate,
         ),
       ).rejects.toThrow("알 수 없는 출처");
+      // 무효화 경로가 없으면 파일·DB 어디에도 쓰지 않고 거부한다.
+      for (const sourceId of [REGISTERED, UNREGISTERED]) {
+        await expect(
+          setSourceTier(
+            db,
+            { sourceId, tier: "본문 처리 + 발췌 표시", registryPath: path },
+            undefined,
+          ),
+        ).rejects.toThrow("캐시 무효화 경로");
+      }
+      await expect(
+        setSourceTier(db, { sourceId: REGISTERED, tier: "링크만", registryPath: path }, undefined),
+      ).rejects.toThrow("캐시 무효화 경로");
       expect(readFileSync(path, "utf8")).toBe(original);
       expect(calls).toEqual([]);
       expect((await db.select().from(sources)).map((s) => [s.id, s.rights_tier]).sort()).toEqual(
@@ -165,6 +192,50 @@ maybe("source:set-tier", () => {
           [REGISTERED, "본문 처리 + 발췌 표시"],
         ].sort(),
       );
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("만료가 중간에 실패해도 같은 명령을 다시 돌리면 모든 태그가 만료된다", async () => {
+    const { db, sql, cleanup } = await createMigrationDb(url as string);
+    try {
+      await seed(sql);
+      const path = registryCopy();
+      const failing: CacheInvalidator = async () => {
+        throw new Error("캐시 무효화 실패: HTTP 502");
+      };
+      await expect(
+        setSourceTier(db, { sourceId: REGISTERED, tier: "링크만", registryPath: path }, failing),
+      ).rejects.toThrow("HTTP 502");
+      // 등급은 이미 바뀌었다. 재시도는 변화가 없어도 만료한다.
+      const { invalidate, calls } = recorder();
+      expect(
+        await setSourceTier(
+          db,
+          { sourceId: REGISTERED, tier: "링크만", registryPath: path },
+          invalidate,
+        ),
+      ).toMatchObject({ tierChanges: [], expiredTags: 3, cacheInvalidated: true });
+      expect(calls).toEqual([[S1_TAGS, { immediate: true }]]);
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("sources:sync는 무효화 경로 없이 등급이 바뀌면 만료를 못 했다고 알리고 종료 코드 1이다", async () => {
+    const { db, sql, cleanup } = await createMigrationDb(url as string);
+    try {
+      await seed(sql);
+      const path = registryCopy();
+      writeFileSync(path, setTierInRegistryText(readFileSync(path, "utf8"), REGISTERED, "링크만"));
+      const result = await syncSourcesFile(db, path, undefined);
+      expect(result).toMatchObject({ expiredTags: 3, cacheInvalidated: false });
+      expect(exitCodeOf(result)).toBe(1);
+      // 바뀐 등급이 없으면 만료할 것도 없어 0이다.
+      const again = await syncSourcesFile(db, path, undefined);
+      expect(again).toMatchObject({ tierChanges: [], cacheInvalidated: true });
+      expect(exitCodeOf(again)).toBe(0);
     } finally {
       await cleanup();
     }

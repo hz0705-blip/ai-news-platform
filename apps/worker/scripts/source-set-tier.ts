@@ -9,8 +9,8 @@ import { setSourceTier } from "../src/source-tier.ts";
  * 최신·과거 개정판 캐시를 즉시 만료한다.
  *
  * 실행: pnpm --filter @newsplatform/worker source:set-tier <출처 식별자> <"본문 처리 + 발췌 표시" | 링크만>
- * (DATABASE_MIGRATION_URL 필요. 캐시 만료는 WEB_REVALIDATE_URL·REVALIDATE_SECRET이 있을 때만 하고, 없으면
- * 결과 줄의 cacheInvalidated가 false다.)
+ * (DATABASE_MIGRATION_URL·WEB_REVALIDATE_URL·REVALIDATE_SECRET 필요. 무효화 경로가 없으면 아무것도 쓰지 않고 거부한다.
+ * 만료가 중간에 실패하면 같은 명령을 다시 돌린다 — 등급이 같아도 영향받는 사건 캐시를 다시 만료한다.)
  */
 const [sourceId, tier] = process.argv.slice(2);
 const url = process.env.DATABASE_MIGRATION_URL;
@@ -30,12 +30,6 @@ try {
     createCacheInvalidator(process.env),
   );
   console.log(JSON.stringify({ sourceId, tier, ...result }));
-  if (!result.cacheInvalidated) {
-    console.error(
-      "캐시 무효화 경로가 설정되지 않아 사건 캐시를 만료하지 못했다(WEB_REVALIDATE_URL·REVALIDATE_SECRET).",
-    );
-    process.exitCode = 1;
-  }
 } catch (error) {
   console.error(JSON.stringify({ sourceTier: "failed", error: String(error) }));
   process.exitCode = 1;
