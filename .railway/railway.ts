@@ -29,13 +29,11 @@ export default defineRailway(() =>
           ],
         },
         // 싱가포르 1개, 슬립 끔(스펙: 상시 서비스). SIGTERM 뒤 진행 중 배치를 잡 만료(90분)까지 기다린다.
+        // 리전은 replicas가 정한다(deploy.region은 저장되지 않는다). 재시작 실패 시 10회·슬립 끔은 Railway 기본값이라
+        // 적지 않는다 — 기본값과 같은 필드는 Railway가 저장하지 않아 plan에 영구 차이로 남는다.
         replicas: { "asia-southeast1-eqsg3a": 1 },
         deploy: {
           startCommand: "node apps/worker/src/index.ts",
-          region: "asia-southeast1-eqsg3a",
-          sleepApplication: false,
-          restartPolicyType: "ON_FAILURE",
-          restartPolicyMaxRetries: 10,
           drainingSeconds: 5400,
         },
       }),
