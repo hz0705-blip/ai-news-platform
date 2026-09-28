@@ -52,18 +52,28 @@ export interface StatusCountView {
   readonly claimOrders: readonly number[];
 }
 
-export interface SourceView {
+interface SourceViewBase {
   readonly id: string;
+  /** 출처 표의 이름. 표에 없는 GDELT 출처는 도메인이다(#77이 출처를 만들 때 이름 = 도메인). */
   readonly name: string;
   readonly isFictional: boolean;
   readonly rightsTier: RightsTier;
+  /** 출처의 현재 권리 등급으로 근거 발췌를 보일 수 있는지(`canDisplayExcerpt`). 거짓이면 행이 그 사실을 글로 밝힌다. */
+  readonly excerptAvailable: boolean;
   readonly region: string;
   readonly ownership: string;
   readonly language: string;
   readonly articleTitle: string;
   readonly articleUrl: string;
-  readonly publishedAt: Date;
 }
+
+/**
+ * 출처 구획의 행 하나. 링크만 기사(GDELT, #77)는 발행 시각을 모르므로 관측 시각(`seendate`)만 가진다
+ * (스펙 "데이터 소스와 권리" GDELT).
+ */
+export type SourceView =
+  | (SourceViewBase & { readonly isLinkOnly: false; readonly publishedAt: Date })
+  | (SourceViewBase & { readonly isLinkOnly: true; readonly observedAt: Date });
 
 export interface StoryView {
   readonly header: {
@@ -137,18 +147,24 @@ export function buildStoryView(data: StoryPageData): StoryView {
               a.sourceName.localeCompare(b.sourceName, "ko"),
           ),
       })),
-    sources: data.sources.map((s) => ({
-      id: s.id,
-      name: s.name,
-      isFictional: s.isFictional,
-      rightsTier: s.rightsTier,
-      region: s.region,
-      ownership: s.ownership,
-      language: s.language,
-      articleTitle: s.articleTitle,
-      articleUrl: s.articleUrl,
-      publishedAt: s.publishedAt,
-    })),
+    sources: data.sources.map((s): SourceView => {
+      const base: SourceViewBase = {
+        id: s.id,
+        name: s.name,
+        isFictional: s.isFictional,
+        rightsTier: s.rightsTier,
+        excerptAvailable: canDisplayExcerpt(s.rightsTier),
+        region: s.region,
+        ownership: s.ownership,
+        language: s.language,
+        articleTitle: s.articleTitle,
+        articleUrl: s.articleUrl,
+      };
+      // 링크만 기사의 `publishedAt`은 관측 시각의 복사본이다(#77) — 관측 시각이 비어 있을 때만 그것을 쓴다.
+      return s.isLinkOnly
+        ? { ...base, isLinkOnly: true, observedAt: s.observedAt ?? s.publishedAt }
+        : { ...base, isLinkOnly: false, publishedAt: s.publishedAt };
+    }),
     changes: [],
   };
 }

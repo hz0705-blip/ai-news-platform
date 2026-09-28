@@ -56,6 +56,8 @@ const data: StoryPageData = {
       articleTitle: "Three governments sign port framework",
       articleUrl: "https://meridian.invalid/ports",
       publishedAt: new Date("2026-09-16T22:00:00.000Z"),
+      isLinkOnly: false,
+      observedAt: null,
     },
     {
       id: "src-atlas",
@@ -68,6 +70,8 @@ const data: StoryPageData = {
       articleTitle: "Port deal reached",
       articleUrl: "https://atlas.invalid/ports",
       publishedAt: new Date("2026-09-16T23:00:00.000Z"),
+      isLinkOnly: false,
+      observedAt: null,
     },
   ],
 };
@@ -121,6 +125,8 @@ function dataWith(options: {
       articleTitle: `Article ${j}`,
       articleUrl: `https://src-${j}.invalid/article`,
       publishedAt: timeAt(j),
+      isLinkOnly: false,
+      observedAt: null,
     })),
   };
 }
@@ -251,5 +257,49 @@ describe("buildStoryView", () => {
       ],
     });
     expect(view.claims[0]?.evidence.map((r) => r.display)).toEqual(["발췌 불가", "발췌"]);
+  });
+
+  it("downgraded tier hides excerpts in view model", () => {
+    // 같은 개정판 데이터에서 출처 등급만 링크만으로 내리면 발췌·출처 행 표시가 함께 바뀐다(ADR-0002 하향 즉시 반영).
+    const before = buildStoryView(data);
+    expect(before.claims[0]?.evidence[0]?.display).toBe("발췌");
+    expect(before.sources[0]?.excerptAvailable).toBe(true);
+    const downgraded = buildStoryView({
+      ...data,
+      sources: data.sources.map((s) =>
+        s.id === "src-meridian" ? { ...s, rightsTier: "링크만" as const } : s,
+      ),
+    });
+    expect(downgraded.claims[0]?.evidence[0]?.display).toBe("발췌 불가");
+    expect(downgraded.sources[0]?.excerptAvailable).toBe(false);
+    expect(JSON.stringify(downgraded)).not.toContain("agreed on the framework");
+  });
+
+  it("링크만 기사 출처 행은 발행 시각 대신 관측 시각을 가진다", () => {
+    const observedAt = new Date("2026-09-17T01:15:00.000Z");
+    const view = buildStoryView({
+      ...data,
+      sources: [
+        ...data.sources,
+        {
+          id: "gdelt:harbor-news.example",
+          name: "harbor-news.example",
+          isFictional: false,
+          rightsTier: "링크만",
+          region: "미확인",
+          ownership: "unknown",
+          language: "en",
+          articleTitle: "Port pact signed",
+          articleUrl: "https://harbor-news.example/pact",
+          publishedAt: observedAt,
+          isLinkOnly: true,
+          observedAt,
+        },
+      ],
+    });
+    const row = view.sources[2];
+    expect(row).toMatchObject({ isLinkOnly: true, observedAt, excerptAvailable: false });
+    expect(row).not.toHaveProperty("publishedAt");
+    expect(view.sources[0]).toMatchObject({ isLinkOnly: false, excerptAvailable: true });
   });
 });

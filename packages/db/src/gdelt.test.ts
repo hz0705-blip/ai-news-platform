@@ -100,7 +100,12 @@ maybe("GDELT 링크만 기사 저장", () => {
       const page = await loadPublishedStory(db, { slug: fixture.story.slug });
       expect(page?.revision.revisionNumber).toBe(2);
       expect(page?.claims.map((c) => c.text)).toEqual(fixture.revision.claims.map((c) => c.text));
-      expect(page?.sources.find((s) => s.articleUrl === link.url)?.rightsTier).toBe("링크만");
+      expect(page?.sources.find((s) => s.articleUrl === link.url)).toMatchObject({
+        rightsTier: "링크만",
+        isLinkOnly: true,
+        observedAt: link.observedAt,
+      });
+      expect(page?.sources.find((s) => s.id === "src-meridian")?.isLinkOnly).toBe(false);
 
       // 모델 재처리를 기다리는 사건(입력 변경)은 출처 추가 개정판을 내지 않는다.
       await db

@@ -22,6 +22,8 @@ const source = (
   articleTitle: `${name} article`,
   articleUrl,
   publishedAt: t("2026-09-16T22:00:00.000Z"),
+  isLinkOnly: false,
+  observedAt: null,
 });
 
 // highlightInExcerpt는 excerpt 안의 코드 포인트 반개구간이다([...excerpt]로 확인한 값).
@@ -106,5 +108,39 @@ export const stateFixture: StoryPageData = {
       "https://meridianwire.example/berth",
     ),
     source("src-tidewater", "Tidewater Gazette", "링크만", LONG_URL),
+  ],
+};
+
+/**
+ * GNews(본문 처리) 기사 하나와 GDELT 링크만 기사 둘(출처 표 등록 이름 하나, 미등록 도메인 하나)이 붙은 사건(#78).
+ * 출처 구획이 두 등급을 다르게 보이는지 검사한다.
+ */
+export const linkOnlyFixture: StoryPageData = {
+  ...stateFixture,
+  story: { ...stateFixture.story, id: "story-link-only", slug: "link-only-sources" },
+  claims: [stateFixture.claims[0] as StoryPageData["claims"][number]],
+  sources: [
+    source(
+      "src-meridian",
+      "Meridian Wire",
+      "본문 처리 + 발췌 표시",
+      "https://meridianwire.example/berth",
+    ),
+    source("src-tidewater", "Tidewater Gazette", "링크만", LONG_URL),
+    {
+      ...source(
+        "gdelt:harbor-ledger.example",
+        "harbor-ledger.example",
+        "링크만",
+        "https://harbor-ledger.example/berth",
+      ),
+      isFictional: false,
+      region: "미확인",
+      ownership: "unknown",
+      articleTitle: "Harbor ledger berth report",
+      publishedAt: t("2026-09-17T01:15:00.000Z"),
+      isLinkOnly: true,
+      observedAt: t("2026-09-17T01:15:00.000Z"),
+    },
   ],
 };

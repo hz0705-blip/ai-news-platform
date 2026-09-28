@@ -45,6 +45,7 @@ maybe("출처 표 동기화", () => {
       expect(await syncSourceRegistry(db, [yonhap, reuters])).toEqual({
         synced: 2,
         repointedArticles: 0,
+        tierChanges: [],
       });
       const first = await db.select().from(sources).orderBy(sources.id);
       expect(await syncSourceRegistry(db, [yonhap, reuters])).toMatchObject({ synced: 2 });
@@ -122,6 +123,7 @@ maybe("출처 표 동기화", () => {
       expect(await syncSourceRegistry(db, [koreaTimes, reuters])).toEqual({
         synced: 2,
         repointedArticles: 2,
+        tierChanges: [],
       });
       const bySource = Object.fromEntries(
         (await db.select({ id: articles.id, s: articles.source_id }).from(articles)).map((r) => [
@@ -141,6 +143,7 @@ maybe("출처 표 동기화", () => {
       expect(await syncSourceRegistry(db, [koreaTimes, reuters])).toEqual({
         synced: 2,
         repointedArticles: 0,
+        tierChanges: [],
       });
     } finally {
       await cleanup();
