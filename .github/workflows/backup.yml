@@ -4,12 +4,15 @@
 # 절차·함정(정본. 계정 사실은 docs/agents/project.md "운영 환경"):
 # - 매일 UTC 18:30(KST 03:30) + 수동 + workflow_call. ubuntu-24.04 러너는 PostgreSQL 16 클라이언트가 선설치돼
 #   /usr/bin/pg_dump(pg_wrapper)가 16을 고르므로 /usr/lib/postgresql/17/bin을 GITHUB_PATH에 넣고 덤프 전 메이저를 확인한다.
-# - pg_dump --format=custom --no-owner --no-privileges --schema=public --schema=drizzle → NPBK1(AES-256-GCM,
+# - pg_dump --format=custom --schema=public --schema=drizzle → NPBK1(AES-256-GCM,
 #   packages/db/scripts/backup-crypto.ts, 스트리밍이라 크기 상한 없음)
 #   → 아티팩트 db-backup-<YYYYMMDD>T<HHMMSS>Z-<run_id>(newsplatform.dump.enc·.sha256·manifest.json, 보관 90일 = 공개 저장소 최대, v4+ 불변).
 # - 검증 잡: sha256sum -c → backup-decrypt.ts → pg_restore --list.
-# - 덤프는 --schema 한정이라 확장 정의를 담지 않는다. 복원 전 마이그레이션 또는 create extension vector. --no-owner --no-privileges로
-#   ACL이 빠지므로 역할 권한은 복원 뒤 다시 부여한다(복구 훈련은 M2a, 덤프 옵션 재검토는 이슈 #32).
+# - 덤프는 소유자·ACL(anon·authenticated·service_role 권한)을 담는다. 버리는 쪽은 복원이다: 격리 DB에는
+#   pg_restore --no-owner --no-privileges. 덤프에 --no-owner --no-privileges를 주면 ACL이 아카이브에서 영구히 빠진다(이슈 #32).
+# - 덤프는 --schema 한정이라 CREATE EXTENSION을 담지 않고 --extension도 붙이지 않는다: 확장의 소유·스키마(Supabase는 extensions
+#   스키마에 두기도 함)가 대상 DB마다 달라 복원 쪽에서 만든다. 격리 DB 복원 전 create extension vector(마이그레이션 0000이
+#   확장을 public에 두므로 덤프는 public.vector를 참조한다).
 name: backup
 
 on:
@@ -69,7 +72,7 @@ jobs:
           mkdir -p work
           set +e
           pg_dump --dbname "$DATABASE_MIGRATION_URL" \
-            --format=custom --no-owner --no-privileges \
+            --format=custom \
             --schema=public --schema=drizzle \
             --file work/newsplatform.dump 2>work/pg_dump.err
           status=$?

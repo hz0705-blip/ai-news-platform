@@ -64,4 +64,19 @@ describe("backup.yml 보안 계약", () => {
     // 스펙 "시크릿": 실패 원인은 sed로 마스킹한 사본만 출력
     expect(dumpRun).toContain("sed -E");
   });
+
+  it("덤프는 소유자·ACL을 담고 확장은 담지 않는다(no-owner/no-privileges는 복원 몫)", () => {
+    const dumpCommand = dumpRun.slice(
+      dumpRun.indexOf("pg_dump --dbname"),
+      dumpRun.indexOf("--file"),
+    );
+    // 이슈 #32: 덤프에 --no-owner --no-privileges를 주면 anon·authenticated·service_role ACL이 아카이브에서 영구히 빠진다
+    expect(dumpCommand).not.toContain("--no-owner");
+    expect(dumpCommand).not.toContain("--no-privileges");
+    expect(dumpCommand).toContain("--format=custom");
+    expect(dumpCommand).toContain("--schema=public");
+    expect(dumpCommand).toContain("--schema=drizzle");
+    // 이슈 #32: 확장은 대상 DB마다 소유·스키마가 달라 복원 쪽에서 만든다
+    expect(dumpCommand).not.toContain("--extension");
+  });
 });
