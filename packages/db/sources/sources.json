@@ -133,7 +133,7 @@
     "ownership": "private",
     "isWire": false,
     "language": "en",
-    "isExcluded": true,
+    "isExcluded": false,
     "rightsTier": "본문 처리 + 발췌 표시",
     "basisUrl": "https://www.invenglobal.com",
     "checkedOn": "2026-09-28",
