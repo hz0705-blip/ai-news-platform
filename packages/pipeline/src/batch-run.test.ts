@@ -5,6 +5,7 @@ import { DEMO_REFERENCE_TIME, LIVE_REFERENCE_TIME, loadDemoStoryFixture } from "
 import { MODEL_ID } from "./openai/client.ts";
 import { createRecordedModelClient, type RecordedModelClientOptions } from "./recorded.ts";
 import { BatchReportSchema } from "./schemas.ts";
+import { ModelTransportError } from "./types.ts";
 
 const fixture = loadDemoStoryFixture("demo-1-agreement");
 
@@ -398,5 +399,160 @@ describe("실제 모델로 기록한 사건(live-hormuz-proposal, #54)", () => {
     expect(result.revisions[0]?.modelId).toBe("gpt-5-mini-2025-08-07");
     // 기록 때 게이트 2단계가 부분 뒷받침으로 뺀 주장은 리플레이에서도 빠진다.
     expect(result.report.droppedClaims.map((d) => d.claimKey)).toEqual(["c-2", "c-3"]);
+  });
+});
+
+describe("예산·기한·재시도(#55)", () => {
+  const one = loadDemoStoryFixture("demo-1-agreement");
+  const two = loadDemoStoryFixture("demo-2-conflict");
+  /** 데모 ①의 모델 호출 수: 근거 추출 2 + 주장 생성 1 + 게이트 2단계 4 + 상충 라벨 4. */
+  const ONE_CALLS = 11;
+  const PER_CALL = 0.01;
+  /** ①의 호출은 다 되고 ②의 첫 예약은 안 되는 예산(경계에 두면 부동소수 합이 흔들린다). */
+  const BUDGET_FOR_ONE = (ONE_CALLS + 0.5) * PER_CALL;
+
+  /** 기록된 응답을 돌려주되 호출마다 고정 사용량을 보고하고, 지정한 호출 순번에 오류를 던진다. */
+  function spendingClient(failures: Readonly<Record<number, () => Error>> = {}) {
+    const inner = createRecordedModelClient(["demo-1-agreement", "demo-2-conflict"]);
+    let calls = 0;
+    const client = {
+      modelId: inner.modelId,
+      get calls() {
+        return calls;
+      },
+      async complete(request: Parameters<typeof inner.complete>[0]) {
+        calls++;
+        const fail = failures[calls];
+        if (fail !== undefined) throw fail();
+        const response = await inner.complete(request);
+        return { output: response.output, usage: { tokens: 100, spend: PER_CALL } };
+      },
+    };
+    return client;
+  }
+  const both = (spend: number, extra: Partial<Parameters<typeof runBatch>[0]> = {}) => ({
+    articles: [...one.articles, ...two.articles].map((a) => ({ ...a.meta, rawBody: a.rawBody })),
+    now: DEMO_REFERENCE_TIME,
+    dailyBudget: { tokens: 1_000_000, spend },
+    sources: dedupeById([...one.sources, ...two.sources]),
+    existingStories: [{ story: one.story }, { story: two.story }],
+    concurrency: 1,
+    ...extra,
+  });
+  const budgetDeps = (modelClient: ReturnType<typeof spendingClient>) => ({
+    modelClient,
+    embeddingClient: { embed: async () => ({ vectors: [], usage: { tokens: 0, spend: 0 } }) },
+    clock: () => DEMO_REFERENCE_TIME,
+    sleep: async () => {},
+    reservation: () => PER_CALL,
+  });
+
+  it("budget cap defers lower-priority incidents in priority order", async () => {
+    // 데모 ①(기사 3)이 데모 ②(기사 2)보다 먼저다. 예산은 ①의 호출만큼만.
+    const result = await runBatch(both(BUDGET_FOR_ONE), budgetDeps(spendingClient()));
+    expect(result.revisions).toEqual([one.golden]);
+    expect(result.report.deferredStories).toEqual([two.story.id]);
+    expect(result.report).toMatchObject({
+      processed: 1,
+      deferred: 1,
+      failed: 0,
+      budgetReached: true,
+      deadlineReached: false,
+    });
+    expect(result.report.usage.reduce((sum, u) => sum + u.spend, 0)).toBeCloseTo(
+      ONE_CALLS * PER_CALL,
+      10,
+    );
+  });
+
+  it("deferred incidents are prioritized in the next batch", async () => {
+    const result = await runBatch(
+      both(BUDGET_FOR_ONE, {
+        existingStories: [
+          { story: one.story },
+          { story: two.story, deferredSince: new Date("2026-09-16T20:00:00Z") },
+        ],
+      }),
+      budgetDeps(spendingClient()),
+    );
+    expect(result.revisions).toEqual([two.golden]);
+    expect(result.report.deferredStories).toEqual([one.story.id]);
+  });
+
+  it("timed-out attempt is charged its reservation, not retried, and does not affect other incidents", async () => {
+    const client = spendingClient({
+      // 데모 ①의 세 번째 호출(주장 생성)이 제한 시간을 넘긴다.
+      3: () =>
+        new ModelTransportError("claim-generate", "k", "제한 시간 초과", {
+          retryable: false,
+          billable: true,
+        }),
+    });
+    const result = await runBatch(both(10), budgetDeps(client));
+    expect(result.revisions).toEqual([two.golden]);
+    expect(result.report.failures).toEqual([
+      { storyId: one.story.id, reason: expect.stringMatching(/제한 시간 초과/) },
+    ]);
+    // ① 근거 추출 2회 + 실패한 시도의 예약액 + ② 호출 전부. 재시도는 없다.
+    const twoCalls = client.calls - 3;
+    expect(result.report.usage.reduce((sum, u) => sum + u.spend, 0)).toBeCloseTo(
+      (2 + 1 + twoCalls) * PER_CALL,
+      10,
+    );
+  });
+
+  it("reserves per attempt so retries cannot exceed the daily cap", async () => {
+    const retryable = () =>
+      new ModelTransportError("evidence-extract", "k", "HTTP 429", {
+        retryable: true,
+        billable: false,
+      });
+    // 첫 호출이 두 번 429를 받고 세 번째 시도에 성공한다. 예산은 ①의 호출만큼.
+    const client = spendingClient({ 1: retryable, 2: retryable });
+    const result = await runBatch(both(BUDGET_FOR_ONE), budgetDeps(client));
+    expect(result.revisions).toEqual([one.golden]);
+    expect(client.calls).toBe(ONE_CALLS + 2);
+    expect(result.report.deferredStories).toEqual([two.story.id]);
+
+    // 재시도 횟수를 소진하면 그 사건은 실패한다.
+    const exhausted = spendingClient({ 1: retryable, 2: retryable, 3: retryable });
+    const failed = await runBatch(both(10), budgetDeps(exhausted));
+    expect(failed.report.failures).toEqual([
+      { storyId: one.story.id, reason: expect.stringMatching(/HTTP 429/) },
+    ]);
+    expect(failed.revisions).toEqual([two.golden]);
+  });
+
+  it("batch deadline defers incidents not yet started and marks the report", async () => {
+    let tick = 0;
+    const deadline = new Date(DEMO_REFERENCE_TIME.getTime() + 5 * 60_000);
+    const result = await runBatch(both(10, { deadline }), {
+      ...budgetDeps(spendingClient()),
+      // 호출마다 1분이 흐른다: ①의 여섯 번째 호출 전에 기한이 지난다.
+      clock: () => new Date(DEMO_REFERENCE_TIME.getTime() + tick++ * 60_000),
+    });
+    expect(result.revisions).toEqual([]);
+    expect(result.report.deferredStories).toEqual([one.story.id, two.story.id]);
+    expect(result.report.deadlineReached).toBe(true);
+    expect(result.report.budgetReached).toBe(false);
+  });
+
+  it("reports usage deltas after each story so spend can be ledgered incrementally", async () => {
+    const deltas: { tokens: number; spend: number }[] = [];
+    const result = await runBatch(both(10), {
+      ...budgetDeps(spendingClient()),
+      onUsage: async (delta) => {
+        deltas.push(delta);
+      },
+    });
+    expect(deltas.length).toBe(2);
+    const total = result.report.usage.reduce((sum, u) => sum + u.spend, 0);
+    expect(deltas.reduce((sum, d) => sum + d.spend, 0)).toBeCloseTo(total, 10);
+    expect(deltas[0]?.spend).toBeCloseTo(ONE_CALLS * PER_CALL, 10);
+  });
+
+  it("batch report passes the schema with deferred stories and deadline flag", async () => {
+    const result = await runBatch(both(BUDGET_FOR_ONE), budgetDeps(spendingClient()));
+    expect(BatchReportSchema.safeParse(result.report).success).toBe(true);
   });
 });

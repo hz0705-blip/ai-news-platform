@@ -6,12 +6,13 @@ import { createMigrationSql } from "../scripts/migration-connection.ts";
  * 실 DB 테스트용 연결(DATABASE_MIGRATION_URL). 테스트 전용이며 `@newsplatform/db/testing`으로만 나간다.
  *
  * 여러 테스트 파일(packages/db·apps/worker)이 같은 DB의 같은 테이블을 비우므로, 연결마다
- * 세션 advisory lock을 잡아 한 번에 하나만 돌게 한다. 잡은 뒤 테이블 여덟을 비우고 시작하며,
- * `cleanup()`이 다시 비우고 잠금을 풀고 연결을 닫는다. 비우는 대상은 #21의 테이블 여덟뿐이다.
+ * 세션 advisory lock을 잡아 한 번에 하나만 돌게 한다. 잡은 뒤 테이블(#21의 여덟 + 슬롯 원장)을 비우고 시작하며,
+ * `cleanup()`이 다시 비우고 잠금을 풀고 연결을 닫는다. 비우는 대상은 #21의 테이블 여덟과 `batch_runs`다.
  */
 const LOCK_KEY = 2106;
 
 const TABLES = [
+  "batch_runs",
   "evidence",
   "claim_revisions",
   "claims",
@@ -25,6 +26,10 @@ const TABLES = [
 async function truncate(sql: Sql): Promise<void> {
   await sql.unsafe(`truncate table ${TABLES.map((t) => `"${t}"`).join(", ")}`);
 }
+
+// 워커의 실 DB 테스트가 행을 직접 심을 수 있게 테이블과 행 매퍼를 같이 내보낸다.
+export { toSourceRow, toStoryRow } from "./mappers.ts";
+export * from "./schema/index.ts";
 
 export interface MigrationDb {
   readonly db: PostgresJsDatabase;

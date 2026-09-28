@@ -42,8 +42,9 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 - 설치: `pnpm install --frozen-lockfile`. npm·yarn은 쓰지 않는다. pnpm 12는 의존성 빌드 스크립트를 승인 없이 막는다(`ERR_PNPM_IGNORED_BUILDS`) — `pnpm approve-builds`로 승인하고 `pnpm-workspace.yaml`의 `allowBuilds`를 커밋한다.
 - 개발 서버 `pnpm dev`. 린트·포맷 `pnpm lint`, `pnpm format`(Biome). 타입 `pnpm typecheck`.
 - 테스트 `pnpm test`(Vitest). 패키지 하나는 `pnpm test --project <domain|db|pipeline|worker|web>`(**`--`를 넣으면 pnpm 12가 필터를 버리고 전체가 돈다**). E2E `pnpm --filter @newsplatform/web test:e2e`(Playwright).
-- 실 DB 테스트 `pnpm test:db` — `db`·`worker` 프로젝트만, dev DB를 truncate하므로 끝나면 `pnpm --filter @newsplatform/worker demo:load`(데모 사건 재적재, 멱등). 테스트 전용 컨테이너 분리는 이슈 #42.
+- 실 DB 테스트 `pnpm test:db` — `db`·`worker` 프로젝트만(파일들이 advisory lock으로 직렬화되므로 두 프로젝트의 `testTimeout`은 60초), dev DB를 truncate하므로 끝나면 `pnpm --filter @newsplatform/worker demo:load`(데모 사건 재적재, 멱등). 테스트 전용 컨테이너 분리는 이슈 #42.
 - 마이그레이션 `pnpm db:migrate`, pgvector 게이트 `pnpm db:gate`.
+- 배치(#55): 수동 슬롯 실행 `pnpm --filter @newsplatform/worker batch:run <슬롯 키> [--skip-collect]`(예 `2026-09-27T17:00+09:00`, `DATABASE_MIGRATION_URL`·`OPENAI_API_KEY`·수집 시 `GNEWS_API_KEY`), 워커 데몬 `pnpm --filter @newsplatform/worker start`(`WORKER_DATABASE_URL` 세션 풀러 5432, pg-boss 스키마 `pgboss`는 시작 시 만든다). 발행 뒤 캐시 무효화는 `WEB_REVALIDATE_URL`·`REVALIDATE_SECRET`이 있을 때만(웹 `POST /api/revalidate`, 웹 환경변수 `REVALIDATE_SECRET`).
 - CI(`.github/workflows/ci.yml`)는 위 명령을 그대로 실행하므로 명령을 바꾸면 워크플로도 함께 고친다. `packages/db/scripts/ci-workflow.test.ts`에는 보안 계약(SHA 고정·권한·시크릿) 단언만 있다.
 
 ## 컨벤션

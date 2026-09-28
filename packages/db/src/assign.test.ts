@@ -103,8 +103,10 @@ maybe("사건 배정 저장소", () => {
       });
 
       const query = vec({ 0: 0.9, 1: 0.1 });
-      // 순차 스캔을 끄면 최근접 질의는 HNSW 인덱스만으로 답해야 한다.
+      // 순차 스캔과 정렬을 끄면 최근접 질의는 HNSW 인덱스만으로 답해야 한다(정렬을 두면 통계에 따라
+      // 다른 인덱스 + 정렬을 고를 수 있어 플래너 통계에 흔들린다).
       await raw`set enable_seqscan = off`;
+      await raw`set enable_sort = off`;
       const plan = await raw<{ "QUERY PLAN": string }[]>`
         explain select story_id from articles
         where embedding is not null and story_id is not null

@@ -1,1 +1,59 @@
-export {};
+import { createRuntimeDb } from "@newsplatform/db";
+import { createOpenAiEmbeddingClient, createOpenAiModelClient } from "@newsplatform/pipeline";
+import { createCacheInvalidator } from "./revalidate.ts";
+import { runBatchSlot } from "./run-batch-slot.ts";
+import { startScheduler } from "./schedule.ts";
+
+/**
+ * 워커 데몬(#55): pg-boss 스케줄(KST 05:00·17:00)로 배치를 돈다.
+ * 실행: pnpm --filter @newsplatform/worker start
+ * WORKER_DATABASE_URL(세션 풀러)·OPENAI_API_KEY·GNEWS_API_KEY 필수, WEB_REVALIDATE_URL·REVALIDATE_SECRET 선택.
+ */
+const log = (event: Record<string, unknown>) =>
+  console.log(JSON.stringify({ at: new Date().toISOString(), ...event }));
+
+function required(name: string): string {
+  const value = process.env[name];
+  if (value === undefined || value === "") {
+    console.error(`${name}이(가) 설정되지 않았다. .env.example을 참고해 설정한다.`);
+    process.exit(1);
+  }
+  return value;
+}
+
+const connectionString = required("WORKER_DATABASE_URL");
+const openAiKey = required("OPENAI_API_KEY");
+const gnewsKey = required("GNEWS_API_KEY");
+
+const { db, sql } = createRuntimeDb({ DATABASE_URL: connectionString });
+const invalidateCache = createCacheInvalidator(process.env);
+const boss = await startScheduler({
+  connectionString,
+  db,
+  clock: () => new Date(),
+  log,
+  run: (slotKey) =>
+    runBatchSlot(
+      { slotKey },
+      {
+        db,
+        gnews: { fetch, apiKey: gnewsKey },
+        embeddingClient: createOpenAiEmbeddingClient({ apiKey: openAiKey }),
+        modelClient: createOpenAiModelClient({ apiKey: openAiKey }),
+        clock: () => new Date(),
+        ...(invalidateCache === undefined ? {} : { invalidateCache }),
+        log,
+      },
+    ),
+});
+log({ stage: "worker", result: "started" });
+
+// 배치 중 SIGTERM은 잡을 죽이지 않는다(스펙 "배포 흐름"): 진행 중 잡이 끝날 때까지 기다린 뒤 닫는다.
+for (const signal of ["SIGTERM", "SIGINT"] as const) {
+  process.once(signal, async () => {
+    log({ stage: "worker", result: "stopping", signal });
+    await boss.stop({ graceful: true, timeout: 95 * 60 * 1000, close: true });
+    await sql.end();
+    log({ stage: "worker", result: "stopped" });
+  });
+}
