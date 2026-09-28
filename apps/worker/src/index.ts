@@ -4,10 +4,12 @@ import { pipelineDailyBudget } from "./budget.ts";
 import { createCacheInvalidator } from "./revalidate.ts";
 import { runBatchSlot } from "./run-batch-slot.ts";
 import { startScheduler } from "./schedule.ts";
+import { createShutdown } from "./shutdown.ts";
 
 /**
  * 워커 데몬(#55): pg-boss 스케줄(KST 05:00·17:00)로 배치를 돈다.
- * 실행: pnpm --filter @newsplatform/worker start
+ * 실행: 배포(Railway)는 저장소 루트에서 `node apps/worker/src/index.ts`(pnpm 래퍼는 SIGTERM 종료를 실패로 보고한다, #66),
+ * 로컬은 pnpm --filter @newsplatform/worker start(.env 로드).
  * WORKER_DATABASE_URL(세션 풀러)·OPENAI_API_KEY·GNEWS_API_KEY 필수, WEB_REVALIDATE_URL·REVALIDATE_SECRET·
  * PIPELINE_DAILY_BUDGET_USD(일일 예산 덮어쓰기, 잘못된 값이면 시작 실패) 선택.
  */
@@ -58,12 +60,6 @@ const boss = await startScheduler({
 });
 log({ stage: "worker", result: "started", dailyBudgetUsd: dailyBudget.spend });
 
-// 배치 중 SIGTERM은 잡을 죽이지 않는다(스펙 "배포 흐름"): 진행 중 잡이 끝날 때까지 기다린 뒤 닫는다.
-for (const signal of ["SIGTERM", "SIGINT"] as const) {
-  process.once(signal, async () => {
-    log({ stage: "worker", result: "stopping", signal });
-    await boss.stop({ graceful: true, timeout: 95 * 60 * 1000, close: true });
-    await sql.end();
-    log({ stage: "worker", result: "stopped" });
-  });
-}
+const shutdown = createShutdown({ boss, sql, log, exit: (code) => process.exit(code) });
+for (const signal of ["SIGTERM", "SIGINT"] as const)
+  process.on(signal, () => void shutdown(signal));

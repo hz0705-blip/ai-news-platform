@@ -31,7 +31,7 @@ export default defineRailway(() =>
         // 싱가포르 1개, 슬립 끔(스펙: 상시 서비스). SIGTERM 뒤 진행 중 배치를 잡 만료(90분)까지 기다린다.
         replicas: { "asia-southeast1-eqsg3a": 1 },
         deploy: {
-          startCommand: "pnpm --filter @newsplatform/worker start",
+          startCommand: "node apps/worker/src/index.ts",
           region: "asia-southeast1-eqsg3a",
           sleepApplication: false,
           restartPolicyType: "ON_FAILURE",
