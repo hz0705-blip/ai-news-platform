@@ -94,6 +94,13 @@ export {
 export { createRuntimeDb, type RuntimeDb } from "./runtime.ts";
 export { type BatchRunRow, batchRuns } from "./schema/index.ts";
 export {
+  loadSearchEmbeddingsByText,
+  loadSearchEmbeddingTargets,
+  type SearchEmbeddingRow,
+  type SearchEmbeddingTarget,
+  saveSearchEmbeddings,
+} from "./search-embedding.ts";
+export {
   loadSourceRegistry,
   loadStoryRevisionsForSources,
   loadStoryRevisionsForStories,

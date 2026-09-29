@@ -21,6 +21,8 @@ const TABLES = [
   "article_rechecks",
   "batch_runs",
   "revision_changes",
+  "claim_embeddings",
+  "story_embeddings",
   "evidence",
   "claim_revisions",
   "claims",
