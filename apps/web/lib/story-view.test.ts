@@ -24,6 +24,10 @@ const data: StoryPageData = {
     checkedAt: new Date("2026-09-17T00:30:00.000Z"),
     contradictionStatus: "복수 출처 일치",
   },
+  coverageArticles: [
+    { publishedAt: new Date("2026-09-16T22:00:00.000Z"), isLinkOnly: false, observedAt: null },
+    { publishedAt: new Date("2026-09-16T23:00:00.000Z"), isLinkOnly: false, observedAt: null },
+  ],
   changes: [],
   revisions: [
     {

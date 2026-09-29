@@ -225,7 +225,7 @@ const KST_OFFSET = 9 * HOUR;
 const SIX_HOUR_LIMIT = 72 * HOUR;
 
 /**
- * 보도량 추이. 기사마다 발행 시각으로 세고, 발행 시각을 모르는 링크만 기사는 관측 시각으로 센다.
+ * 보도량 추이. 개정판의 출처 집합에 든 기사만 받는다. 기사마다 발행 시각으로 세고, 발행 시각을 모르는 링크만 기사는 관측 시각으로 센다.
  * 기간은 첫 기사부터 max(마지막 기사, 개정판 발행)까지, 구간 경계는 KST 자정·6시간이며 빈 구간은 0이다.
  */
 export function buildCoverage(
@@ -386,7 +386,7 @@ export function buildStoryView(data: StoryPageData): StoryView {
       counts: CHANGE_KINDS.map((kind) => ({ kind, count: r.changeCounts[kind] })),
     })),
     coverage: buildCoverage(
-      data.sources.map((s) => ({
+      data.coverageArticles.map((s) => ({
         at: s.isLinkOnly ? (s.observedAt ?? s.publishedAt) : s.publishedAt,
         observed: s.isLinkOnly,
       })),

@@ -68,6 +68,15 @@ export interface StoryPageData {
     /** GDELT가 기사를 본 시각(`seendate`). GDELT에 나온 적 없는 기사는 null. */
     readonly observedAt: Date | null;
   })[];
+  /**
+   * 보도량 추이가 세는 기사: 이 개정판의 출처 집합(`source_article_ids`)에 든 기사뿐이다. 발행 뒤 사건에 배정된
+   * 기사는 넣지 않는다 — 개정판 화면(차트 포함)은 그 개정판에 고정된다(스펙 "렌더링·캐시").
+   */
+  readonly coverageArticles: readonly {
+    readonly publishedAt: Date;
+    readonly isLinkOnly: boolean;
+    readonly observedAt: Date | null;
+  }[];
   /** 이 개정판과 직전 개정판 사이 변화(#85, 저장 순서). 첫 개정판은 비어 있다. */
   readonly changes: readonly RevisionChange[];
   /**
@@ -173,6 +182,19 @@ export async function loadPublishedStory(
 
   const changes = await loadRevisionChanges(db, { revisionId: revision.id });
 
+  const coverageArticles =
+    revision.source_article_ids.length === 0
+      ? []
+      : await db
+          .select({
+            publishedAt: articles.published_at,
+            isLinkOnly: articles.is_link_only,
+            observedAt: articles.observed_at,
+          })
+          .from(articles)
+          .where(inArray(articles.id, revision.source_article_ids))
+          .orderBy(articles.published_at, articles.id);
+
   const revisionListRows = await db
     .select({
       id: storyRevisions.id,
@@ -259,6 +281,7 @@ export async function loadPublishedStory(
       isLinkOnly: r.isLinkOnly,
       observedAt: r.observedAt,
     })),
+    coverageArticles,
     changes,
     revisions: revisionListRows.map((r) => ({
       ...r,

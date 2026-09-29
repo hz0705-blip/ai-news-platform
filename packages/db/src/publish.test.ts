@@ -271,6 +271,31 @@ maybe("변화 저장(#85)", () => {
     }
   });
 
+  it("옛 개정판의 보도량 추이는 발행 뒤 배정된 기사를 세지 않는다", async () => {
+    const { db, sql, cleanup } = await createMigrationDb(url as string);
+    try {
+      await publishRevision(db, fixture);
+      // 발행 뒤 같은 사건에 배정된 링크만 기사(GDELT 관측 등). 이 개정판의 출처 집합에는 없다.
+      await sql`insert into articles (id, source_id, story_id, url, normalized_url, title, published_at, topics, is_link_only, observed_at)
+        values ('a-late', 'src-meridian', ${fixture.story.id}, 'https://late.invalid/1', 'https://late.invalid/1', 'Late',
+          '2026-09-20T00:00:00Z', '{}', true, '2026-09-20T00:00:00Z')`;
+      const page = await loadPublishedStory(db, {
+        slug: fixture.story.slug,
+        revisionId: fixture.revision.id,
+      });
+      expect(page?.coverageArticles.map((a) => a.publishedAt)).toEqual(
+        fixture.revision.sources
+          .map((s) => s.publishedAt)
+          .sort((a, b) => a.getTime() - b.getTime()),
+      );
+      expect(page?.coverageArticles.some((a) => a.isLinkOnly)).toBe(false);
+      // 출처 구획의 기존 동작(사건의 기사 전부)은 그대로다.
+      expect(page?.sources.map((s) => s.articleId)).toContain("a-late");
+    } finally {
+      await cleanup();
+    }
+  });
+
   it("migration keeps existing revisions with no changes", async () => {
     const { db, sql, cleanup } = await createMigrationDb(url as string);
     try {

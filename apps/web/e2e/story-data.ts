@@ -44,6 +44,9 @@ export const stateFixture: StoryPageData = {
     checkedAt: t("2026-09-17T00:30:00.000Z"),
     contradictionStatus: "보도 상충",
   },
+  coverageArticles: [
+    { publishedAt: t("2026-09-16T22:00:00.000Z"), isLinkOnly: false, observedAt: null },
+  ],
   changes: [],
   revisions: [
     {
@@ -180,6 +183,54 @@ export const MULTI_PREVIOUS_TEXT =
 export const MULTI_CURRENT_TEXT =
   "가상 항만청이 선석 배정을 다음 주까지 중단했다고 두 출처가 보도했다.";
 
+const multiSources: StoryPageData["sources"] = [
+  source(
+    "src-meridian",
+    "Meridian Wire",
+    "본문 처리 + 발췌 표시",
+    "https://meridianwire.example/berth",
+  ),
+  {
+    ...source(
+      "src-tidewater",
+      "Tidewater Gazette",
+      "본문 처리 + 발췌 표시",
+      "https://tidewater.example/berth",
+    ),
+    publishedAt: t("2026-09-16T23:00:00.000Z"),
+  },
+  {
+    ...source(
+      "src-harbor",
+      "Harbor Ledger",
+      "본문 처리 + 발췌 표시",
+      "https://harborledger.example/berth",
+    ),
+    publishedAt: t("2026-09-17T20:00:00.000Z"),
+  },
+  {
+    ...source(
+      "gdelt:quay-news.example",
+      "quay-news.example",
+      "링크만",
+      "https://quay-news.example/berth",
+    ),
+    isFictional: false,
+    region: "미확인",
+    ownership: "unknown",
+    publishedAt: t("2026-09-17T21:15:00.000Z"),
+    isLinkOnly: true,
+    observedAt: t("2026-09-17T21:15:00.000Z"),
+  },
+];
+/** 출처 행에서 보도량 추이가 세는 기사 시각만 고른다(픽스처는 출처 집합 = 출처 구획). */
+const coverageOf = (rows: StoryPageData["sources"]): StoryPageData["coverageArticles"] =>
+  rows.map((r) => ({
+    publishedAt: r.publishedAt,
+    isLinkOnly: r.isLinkOnly,
+    observedAt: r.observedAt,
+  }));
+
 /**
  * 개정판 2개인 사건의 두 번째 개정판(#87). 변화 종류 넷이 모두 있고, 출처 넷 중 하나는 링크만 기사(관측 시각)다.
  * 보도량: 첫 기사 2026-09-17 07:00 KST ~ 개정판 발행 09-18 09:30 KST(72시간 이하 → 6시간 구간 5개, 가운데 둘은 0).
@@ -216,46 +267,8 @@ export const multiRevisionFixture: StoryPageData = {
       evidence: [multiEvidence("src-meridian", "https://meridianwire.example/berth")],
     },
   ],
-  sources: [
-    source(
-      "src-meridian",
-      "Meridian Wire",
-      "본문 처리 + 발췌 표시",
-      "https://meridianwire.example/berth",
-    ),
-    {
-      ...source(
-        "src-tidewater",
-        "Tidewater Gazette",
-        "본문 처리 + 발췌 표시",
-        "https://tidewater.example/berth",
-      ),
-      publishedAt: t("2026-09-16T23:00:00.000Z"),
-    },
-    {
-      ...source(
-        "src-harbor",
-        "Harbor Ledger",
-        "본문 처리 + 발췌 표시",
-        "https://harborledger.example/berth",
-      ),
-      publishedAt: t("2026-09-17T20:00:00.000Z"),
-    },
-    {
-      ...source(
-        "gdelt:quay-news.example",
-        "quay-news.example",
-        "링크만",
-        "https://quay-news.example/berth",
-      ),
-      isFictional: false,
-      region: "미확인",
-      ownership: "unknown",
-      publishedAt: t("2026-09-17T21:15:00.000Z"),
-      isLinkOnly: true,
-      observedAt: t("2026-09-17T21:15:00.000Z"),
-    },
-  ],
+  sources: multiSources,
+  coverageArticles: coverageOf(multiSources),
   changes: [
     {
       kind: "주장 추가·삭제·수정",
@@ -330,7 +343,8 @@ export const multiRevisionFirstFixture: StoryPageData = {
       evidence: [multiEvidence("src-meridian", "https://meridianwire.example/berth")],
     },
   ],
-  sources: multiRevisionFixture.sources.slice(0, 2),
+  sources: multiSources.slice(0, 2),
+  coverageArticles: coverageOf(multiSources.slice(0, 2)),
   changes: [],
   revisions: [multiRevisionFixture.revisions[0] as StoryPageData["revisions"][number]],
 };
