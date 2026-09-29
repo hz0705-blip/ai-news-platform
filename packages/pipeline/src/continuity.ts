@@ -7,6 +7,7 @@ import {
   createSpanAligner,
   isSameRevisionContent,
   matchClaims,
+  openEpisodeClaims,
   type Revision,
   type RevisionChange,
   type RevisionSource,
@@ -81,8 +82,8 @@ export interface Continuity {
   readonly lineage: ReadonlyMap<string, string>;
   /** 새 기사 버전 좌표로 옮긴 마지막 개정판 주장. */
   readonly alignedPrevious: readonly Claim[];
-  /** 열린 상충 에피소드의 주장 식별자. */
-  readonly episodeClaimIds: readonly string[];
+  /** 마지막 개정판 밖의 열린 상충 에피소드 주장(좌표 정렬 뒤). */
+  readonly openEpisodeClaims: readonly Claim[];
   /** 원문 변경을 셀 기사 버전(정정 후보 제외). */
   readonly changedArticleVersions: readonly {
     readonly articleId: string;
@@ -117,11 +118,6 @@ export function prepareContinuity(input: PrepareContinuityInput): Continuity {
     input,
     counter,
   );
-  const episodeClaimIds = [
-    ...(latest?.claims ?? []).filter((c) => c.contradictionStatus === "보도 상충").map((c) => c.id),
-    ...absentEpisodes.map((c) => c.id),
-  ];
-
   const matches = matchClaims(
     [...alignedPrevious, ...absentEpisodes],
     input.drafts.map(({ claimType, evidence }) => ({ claimType, evidence })),
@@ -164,7 +160,7 @@ export function prepareContinuity(input: PrepareContinuityInput): Continuity {
     spanRealignment: counter,
     lineage,
     alignedPrevious,
-    episodeClaimIds,
+    openEpisodeClaims: absentEpisodes,
     // 정정 후보 버전은 원문 변경으로 세지 않는다(스펙 "정정 vs 원문 변경": 정정은 상충 상태 변화로 드러난다).
     changedArticleVersions: input.articleVersions
       .filter((v) => v.correctionCandidate !== true)
@@ -217,11 +213,13 @@ export function finalizeRevision(input: FinalizeRevisionInput): FinalizeRevision
     return decide(latest, next, computeChanges(latest, next));
   }
   const { continuity } = input;
-  const publishedClaimIds = new Set(input.claims.map((c) => c.id));
   const draft = runRevision({
     story: input.story,
     revisionNumber: continuity.revisionNumber,
-    openEpisodes: continuity.episodeClaimIds.filter((id) => !publishedClaimIds.has(id)).length,
+    openEpisodes: openEpisodeClaims(
+      [continuity.openEpisodeClaims, continuity.latest?.claims ?? []],
+      input.claims.map((c) => c.id),
+    ).length,
     title: input.title,
     publishedAt: input.publishedAt,
     promptVersions: input.promptVersions,

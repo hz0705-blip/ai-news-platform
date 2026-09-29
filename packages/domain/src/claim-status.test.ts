@@ -9,7 +9,6 @@ const base: ClaimStatusInput = {
   undeterminable: false,
   supportingOrigins: 1,
   conflictingOrigins: 0,
-  openEpisode: false,
   explicitCorrection: false,
   explicitResolution: false,
 };
@@ -120,22 +119,10 @@ describe("deriveClaimStatus 가드 ②~⑥ — 이전 상태 5개 × 가드 표"
       2,
     ],
     [
-      "② 열린 에피소드가 정리되지 않았으면 보도 상충",
-      { supportingOrigins: 2, openEpisode: true },
-      "보도 상충",
-      2,
-    ],
-    [
       "③ 활성 상충 없이 명시 정정이면 정정됨",
       { supportingOrigins: 1, explicitCorrection: true },
       "정정됨",
       3,
-    ],
-    [
-      "④ 열린 에피소드가 명시 해소되면 상충 해소",
-      { supportingOrigins: 2, openEpisode: true, explicitResolution: true },
-      "상충 해소",
-      4,
     ],
   ];
   const settledRows: readonly Row[] = [
@@ -228,7 +215,7 @@ describe("deriveClaimStatus 재개·우선순위", () => {
     expect(
       deriveClaimStatus({
         ...base,
-        openEpisode: true,
+        previous: "보도 상충",
         explicitCorrection: true,
         explicitResolution: true,
       }),
@@ -256,7 +243,6 @@ describe("deriveClaimStatus 재개·우선순위", () => {
         previous: "보도 상충",
         supportingOrigins: 1,
         conflictingOrigins: 0,
-        openEpisode: true,
       }),
     ).toMatchObject({ status: "보도 상충", guard: 2 });
   });

@@ -46,6 +46,7 @@ export {
   type RelationLabel,
 } from "./claim-status.ts";
 export type { CollectedArticle } from "./collected-article.ts";
+export { openEpisodeClaims } from "./contradiction-episode.ts";
 export { CONTRADICTION_STATUSES, type ContradictionStatus } from "./contradiction-status.ts";
 export {
   CORRECTION_MARKERS,
@@ -96,6 +97,13 @@ export {
   type OriginEvidence,
   reportingOrigins,
 } from "./reporting-origin.ts";
+export {
+  type ArticleVersionRecord,
+  deriveReprocessContext,
+  type ReprocessArticleVersion,
+  type ReprocessContext,
+  type ReprocessContextInput,
+} from "./reprocess-context.ts";
 export type { Revision, RevisionSource } from "./revision.ts";
 export {
   CHANGE_KINDS,

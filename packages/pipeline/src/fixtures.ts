@@ -2,8 +2,10 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
   type Article,
+  type ArticleVersionRecord,
   type Claim,
   createArticleVersion,
+  deriveReprocessContext,
   type Evidence,
   judgeRecheckedBody,
   type Revision,
@@ -299,8 +301,10 @@ export function createDemoStepModelClient(step: DemoStoryStep): ModelClient {
 }
 
 /**
- * 단계 하나의 배치 입력(#88). 직전 단계와 기사 버전이 다른 기사는 재수집이 찾은 새 버전처럼 다룬다: 정정 표지 판별
- * (`judgeRecheckedBody`)로 정정 후보와 첫 재처리(#94)를 표시하고, 이전 본문을 좌표 정렬용으로 넘긴다(#86과 같은 입력).
+ * 단계 하나의 배치 입력(#88). 단계 파일을 재처리 컨텍스트의 원자료로 바꿔 라이브와 같은 규칙(`deriveReprocessContext`)을
+ * 탄다. 기사 버전 원자료: 1단계부터 이 단계까지 기사마다 버전이 처음 나온 단계의 시각을 수집 시각으로, 직전 버전과의
+ * 정정 표지 판별(`judgeRecheckedBody`)이 정정 후보면 정정 후보로 둔다. 주장 개정판 이력: `latestRevision` 앞 번호 단계의
+ * 정답 개정판과 `latestRevision`. 최신 확인 시각은 `latestRevision`의 발행 시각이다.
  * `latestRevision`은 직전 개정판(적재는 DB에서, 리플레이는 직전 단계 정답), `now`는 기본 단계 시각이다.
  */
 export function demoStepBatchInput(
@@ -310,26 +314,66 @@ export function demoStepBatchInput(
 ): BatchInput {
   const step = demo.steps[index];
   if (step === undefined) throw new Error(`데모 사건 단계 없음: ${demo.story.slug} ${index + 1}`);
-  const before = new Map((demo.steps[index - 1]?.articles ?? []).map((a) => [a.meta.id, a]));
-  const previousVersionBodies: { articleVersionId: string; body: string }[] = [];
-  const articles = step.articles.map(({ meta, rawBody }) => {
-    const previous = before.get(meta.id);
-    if (previous === undefined || previous.meta.articleVersionId === meta.articleVersionId) {
-      return { ...meta, rawBody };
+  const versions: ArticleVersionRecord[] = [];
+  const lastRaw = new Map<
+    string,
+    { readonly articleVersionId: string; readonly rawBody: string }
+  >();
+  for (const earlier of demo.steps.slice(0, index + 1)) {
+    for (const { meta, rawBody } of earlier.articles) {
+      const previous = lastRaw.get(meta.id);
+      if (previous?.articleVersionId === meta.articleVersionId) continue;
+      lastRaw.set(meta.id, { articleVersionId: meta.articleVersionId, rawBody });
+      const version = createArticleVersion({
+        id: meta.articleVersionId,
+        articleId: meta.id,
+        rawBody,
+        capturedAt: earlier.at,
+      });
+      const judged =
+        previous === undefined
+          ? undefined
+          : judgeRecheckedBody(
+              createArticleVersion({
+                id: previous.articleVersionId,
+                articleId: meta.id,
+                rawBody: previous.rawBody,
+                capturedAt: earlier.at,
+              }),
+              rawBody,
+            );
+      versions.push({
+        articleId: meta.id,
+        articleVersionId: version.id,
+        body: version.body,
+        capturedAt: earlier.at,
+        correctionCandidate: judged?.kind === "새 버전" && judged.change === "정정 후보",
+      });
     }
-    const version = createArticleVersion({
-      id: previous.meta.articleVersionId,
-      articleId: meta.id,
-      rawBody: previous.rawBody,
-      capturedAt: demo.steps[index - 1]?.at ?? step.at,
-    });
-    previousVersionBodies.push({ articleVersionId: version.id, body: version.body });
-    const judged = judgeRecheckedBody(version, rawBody);
-    const correction = judged.kind === "새 버전" && judged.change === "정정 후보";
+  }
+  const { latestRevision } = options;
+  const claimHistory =
+    latestRevision === undefined
+      ? []
+      : [
+          ...demo.steps
+            .filter((s) => s.number < latestRevision.revisionNumber)
+            .map((s) => loadDemoStepGolden(demo.story.slug, s.number).revision.claims),
+          latestRevision.claims,
+        ];
+  const context = deriveReprocessContext({
+    latestRevision,
+    latestCheckedAt: latestRevision?.publishedAt,
+    claimHistory,
+    articleVersions: versions,
+  });
+  const articles = step.articles.map(({ meta, rawBody }) => {
+    const current = context.currentVersions.get(meta.id);
     return {
       ...meta,
       rawBody,
-      ...(correction ? { correctionCandidate: true, correctionFirstReprocess: true } : {}),
+      ...(current?.correctionCandidate ? { correctionCandidate: true } : {}),
+      ...(current?.correctionFirstReprocess ? { correctionFirstReprocess: true } : {}),
     };
   });
   return {
@@ -340,8 +384,11 @@ export function demoStepBatchInput(
     existingStories: [
       {
         story: demo.story,
-        ...(options.latestRevision ? { latestRevision: options.latestRevision } : {}),
-        ...(previousVersionBodies.length > 0 ? { previousVersionBodies } : {}),
+        ...(context.latestRevision ? { latestRevision: context.latestRevision } : {}),
+        ...(context.previousVersionBodies
+          ? { previousVersionBodies: context.previousVersionBodies }
+          : {}),
+        ...(context.openEpisodeClaims ? { openEpisodeClaims: context.openEpisodeClaims } : {}),
       },
     ],
   };
