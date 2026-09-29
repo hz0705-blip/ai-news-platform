@@ -1,14 +1,20 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import type {
-  Article,
-  Claim,
-  Evidence,
-  Revision,
-  RevisionSource,
-  Source,
-  Story,
+import {
+  type Article,
+  type Claim,
+  createArticleVersion,
+  type Evidence,
+  judgeRecheckedBody,
+  type Revision,
+  type RevisionChange,
+  type RevisionSource,
+  type Source,
+  type Story,
 } from "@newsplatform/domain";
+import { MODEL_ID } from "./openai/client.ts";
+import { createRecordedModelClient } from "./recorded.ts";
+import type { BatchInput, ModelClient } from "./types.ts";
 
 /**
  * 데모 사건 픽스처가 고정하는 기준 시각(#21 Ruling: 데모 기준 시각).
@@ -205,4 +211,134 @@ export function loadDemoStoryInputs(slug: string): Omit<DemoStoryFixture, "golde
 export function loadDemoStoryFixture(slug: string): DemoStoryFixture {
   const golden = toRevision(readJson<RawRevision>(`${fixtureDir(slug)}golden/revision.json`));
   return { ...loadDemoStoryInputs(slug), golden };
+}
+
+/** 여러 개정판 데모 사건(#88)의 단계 하나: 그 단계 배치에 들어가는 기사 전체와 그 단계의 기록 응답 위치. */
+export interface DemoStoryStep {
+  /** 1부터. 이 단계가 만드는 개정판 번호와 같다. */
+  readonly number: number;
+  /** 이 단계 배치의 시각(개정판 발행 시각·근거 검증 시각). 마지막 단계는 데모 기준 시각이다. */
+  readonly at: Date;
+  readonly articles: readonly { readonly meta: DemoArticleMeta; readonly rawBody: string }[];
+  /** `createRecordedModelClient`에 넘길 기록 위치(`<slug>` 또는 `<slug>/steps/<n>`). */
+  readonly recordedSlug: string;
+  /** 기록 응답을 만든 모델. 단계 픽스처는 실제 모델 응답을 기록한다(#88). */
+  readonly modelId: string;
+}
+
+/** 데모 사건 하나를 단계 목록으로 읽은 것. 단계가 없는 픽스처(①②)는 단계 하나다. */
+export interface DemoStorySteps {
+  readonly story: Story;
+  readonly sources: readonly Source[];
+  readonly steps: readonly DemoStoryStep[];
+}
+
+/** `steps/<n>/step.json`의 모양. 기사 원문 경로는 픽스처 루트 기준이다. */
+interface StepFile {
+  readonly at: string;
+  readonly articles: readonly RawArticleMeta[];
+}
+
+/**
+ * 데모 사건을 단계 목록으로 읽는다(#88 Ruling "단계 형식"). `fixtures/<slug>/steps/<n>/`가 있으면 단계 픽스처다:
+ * `story.json`(사건·출처), `steps/<n>/step.json`(시각·그 단계 배치의 기사 전체), `steps/<n>/recorded/`,
+ * `steps/<n>/golden/revision.json`·`changes.json`. 없으면(①②) 기존 형식을 데모 기준 시각의 단계 하나로 읽는다.
+ */
+export function loadDemoStorySteps(slug: string): DemoStorySteps {
+  const dir = fixtureDir(slug);
+  if (!existsSync(`${dir}steps/1/step.json`)) {
+    const inputs = loadDemoStoryInputs(slug);
+    return {
+      story: inputs.story,
+      sources: inputs.sources,
+      steps: [
+        {
+          number: 1,
+          at: DEMO_REFERENCE_TIME,
+          articles: inputs.articles,
+          recordedSlug: slug,
+          modelId: "recorded",
+        },
+      ],
+    };
+  }
+  const storyFile = readJson<Omit<StoryFile, "articles">>(`${dir}story.json`);
+  const steps: DemoStoryStep[] = [];
+  for (let number = 1; existsSync(`${dir}steps/${number}/step.json`); number++) {
+    const stepFile = readJson<StepFile>(`${dir}steps/${number}/step.json`);
+    steps.push({
+      number,
+      at: new Date(stepFile.at),
+      articles: stepFile.articles.map((raw) => ({
+        meta: toArticleMeta(raw),
+        rawBody: readFileSync(`${dir}${raw.file}`, "utf8"),
+      })),
+      recordedSlug: `${slug}/steps/${number}`,
+      modelId: MODEL_ID,
+    });
+  }
+  return { story: storyFile.story, sources: storyFile.sources, steps };
+}
+
+/** 단계의 정답: 그 단계가 만드는 개정판과 직전 개정판과의 변화. 단계가 없는 픽스처는 `golden/revision.json`과 빈 변화다. */
+export function loadDemoStepGolden(
+  slug: string,
+  number: number,
+): { readonly revision: Revision; readonly changes: readonly RevisionChange[] } {
+  const dir = fixtureDir(slug);
+  const base = existsSync(`${dir}steps/1/step.json`) ? `${dir}steps/${number}/` : dir;
+  const revision = toRevision(readJson<RawRevision>(`${base}golden/revision.json`));
+  const changesPath = `${base}golden/changes.json`;
+  const changes = existsSync(changesPath) ? readJson<RevisionChange[]>(changesPath) : [];
+  return { revision, changes };
+}
+
+/** 단계의 기록 응답으로 답하는 모델 클라이언트. */
+export function createDemoStepModelClient(step: DemoStoryStep): ModelClient {
+  return createRecordedModelClient(step.recordedSlug, { modelId: step.modelId });
+}
+
+/**
+ * 단계 하나의 배치 입력(#88). 직전 단계와 기사 버전이 다른 기사는 재수집이 찾은 새 버전처럼 다룬다: 정정 표지 판별
+ * (`judgeRecheckedBody`)로 정정 후보를 표시하고, 이전 본문을 좌표 정렬용으로 넘긴다(#86과 같은 입력).
+ * `latestRevision`은 직전 개정판(적재는 DB에서, 리플레이는 직전 단계 정답), `now`는 기본 단계 시각이다.
+ */
+export function demoStepBatchInput(
+  demo: DemoStorySteps,
+  index: number,
+  options: { readonly latestRevision?: Revision; readonly now?: Date } = {},
+): BatchInput {
+  const step = demo.steps[index];
+  if (step === undefined) throw new Error(`데모 사건 단계 없음: ${demo.story.slug} ${index + 1}`);
+  const before = new Map((demo.steps[index - 1]?.articles ?? []).map((a) => [a.meta.id, a]));
+  const previousVersionBodies: { articleVersionId: string; body: string }[] = [];
+  const articles = step.articles.map(({ meta, rawBody }) => {
+    const previous = before.get(meta.id);
+    if (previous === undefined || previous.meta.articleVersionId === meta.articleVersionId) {
+      return { ...meta, rawBody };
+    }
+    const version = createArticleVersion({
+      id: previous.meta.articleVersionId,
+      articleId: meta.id,
+      rawBody: previous.rawBody,
+      capturedAt: demo.steps[index - 1]?.at ?? step.at,
+    });
+    previousVersionBodies.push({ articleVersionId: version.id, body: version.body });
+    const judged = judgeRecheckedBody(version, rawBody);
+    const correction = judged.kind === "새 버전" && judged.change === "정정 후보";
+    return { ...meta, rawBody, ...(correction ? { correctionCandidate: true } : {}) };
+  });
+  return {
+    articles,
+    now: options.now ?? step.at,
+    dailyBudget: { tokens: 1_000_000, spend: 10 },
+    sources: demo.sources,
+    existingStories: [
+      {
+        story: demo.story,
+        ...(options.latestRevision ? { latestRevision: options.latestRevision } : {}),
+        ...(previousVersionBodies.length > 0 ? { previousVersionBodies } : {}),
+      },
+    ],
+  };
 }

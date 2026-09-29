@@ -1,0 +1,55 @@
+{
+  "story-demo-4-figures:6a6aa63100c0": {
+    "title": "태풍 리스, 손홀트 항구 운영 중단과 크레인 피해",
+    "claims": [
+      {
+        "claimKey": "c-1",
+        "text": "태풍 리스가 월요일 손홀트 인근에 상륙해 항구의 모든 컨테이너 운영이 중단됐다고 보도됐다.",
+        "claimType": "보도된 사실",
+        "modality": "단정",
+        "quoteIds": [
+          "q-ad0d04-1",
+          "q-1a07e7-1"
+        ]
+      },
+      {
+        "claimKey": "c-2",
+        "text": "손홀트 항만청은 월요일 저녁 항만 시설 피해액을 4,200만 달러로 추산했다고 밝혔다.",
+        "claimType": "귀속 입장",
+        "modality": "단정",
+        "quoteIds": [
+          "q-ad0d04-2",
+          "q-1a07e7-2"
+        ]
+      },
+      {
+        "claimKey": "c-3",
+        "text": "항만청은 폭풍으로 인해 세 대의 선박-육상 크레인이 레일에서 탈선했다고 말했다.",
+        "claimType": "귀속 입장",
+        "modality": "단정",
+        "quoteIds": [
+          "q-ad0d04-3",
+          "q-1a07e7-3"
+        ]
+      },
+      {
+        "claimKey": "c-4",
+        "text": "항만청은 항구 노동자 중 부상자는 없었다고 밝혔다.",
+        "claimType": "귀속 입장",
+        "modality": "단정",
+        "quoteIds": [
+          "q-ad0d04-4"
+        ]
+      },
+      {
+        "claimKey": "c-5",
+        "text": "터미널이 닫힌 동안 선사들은 배를 밴티지와 인근 다른 항구로 우회시키기 시작했다고 보도됐다.",
+        "claimType": "보도된 사실",
+        "modality": "단정",
+        "quoteIds": [
+          "q-1a07e7-4"
+        ]
+      }
+    ]
+  }
+}

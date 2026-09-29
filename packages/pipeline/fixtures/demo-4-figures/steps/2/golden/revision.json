@@ -1,0 +1,229 @@
+{
+  "id": "demo-4-figures:rev-2",
+  "storyId": "story-demo-4-figures",
+  "revisionNumber": 2,
+  "title": "태풍 리스 상륙으로 손홀트 항만 작업 중단과 피해 발생",
+  "publishedAt": "2026-09-17T00:30:00.000Z",
+  "contradictionStatus": "단일 출처",
+  "promptVersions": {
+    "evidenceExtract": "evidence-extract@1",
+    "claimGenerate": "claim-generate@1",
+    "gate": "gate@1",
+    "contradictionLabel": "contradiction-label@1"
+  },
+  "modelId": "gpt-5-mini-2025-08-07",
+  "claims": [
+    {
+      "id": "demo-4-figures:c-1",
+      "text": "태풍 리스는 월요일 손홀트 인근에 상륙해 항구가 모든 컨테이너 작업을 중단했다고 보도됐다.",
+      "claimType": "보도된 사실",
+      "modality": "단정",
+      "order": 0,
+      "contradictionStatus": "복수 출처 일치",
+      "evidence": [
+        {
+          "id": "demo-4-figures:rev-2/demo-4-figures:c-1:q-ad0d04-1",
+          "claimId": "demo-4-figures:c-1",
+          "articleId": "article-meridian-liss",
+          "articleVersionId": "av-meridian-liss-1",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 0,
+            "end": 104
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Typhoon Liss made landfall near Sonholt on Monday, forcing the port to suspend all container operations.",
+          "spanHash": "a53dd2f4448958de94a56e37d17c8a76738df9a92c55246931dba688cc6df537",
+          "excerpt": "Typhoon Liss made landfall near Sonholt on Monday, forcing the port to suspend all container operations.",
+          "excerptSpan": {
+            "start": 0,
+            "end": 104
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 104
+          },
+          "sourceUrl": "https://meridianwire.example/typhoon-liss-sonholt",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        },
+        {
+          "id": "demo-4-figures:rev-2/demo-4-figures:c-1:q-1a07e7-1",
+          "claimId": "demo-4-figures:c-1",
+          "articleId": "article-harbor-liss",
+          "articleVersionId": "av-harbor-liss-1",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 0,
+            "end": 104
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Typhoon Liss made landfall near Sonholt on Monday, forcing the port to suspend all container operations.",
+          "spanHash": "a53dd2f4448958de94a56e37d17c8a76738df9a92c55246931dba688cc6df537",
+          "excerpt": "Typhoon Liss made landfall near Sonholt on Monday, forcing the port to suspend all container operations.",
+          "excerptSpan": {
+            "start": 0,
+            "end": 104
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 104
+          },
+          "sourceUrl": "https://harborledger.example/sonholt-typhoon-cranes",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "demo-4-figures:c-2@rev-2",
+      "text": "손홀트 항만청은 월요일 저녁 항만 시설 피해를 4,200만 달러로 추정한다고 말했다.",
+      "claimType": "귀속 입장",
+      "modality": "단정",
+      "order": 1,
+      "contradictionStatus": "복수 출처 일치",
+      "evidence": [
+        {
+          "id": "demo-4-figures:rev-2/demo-4-figures:c-2@rev-2:q-ad0d04-2",
+          "claimId": "demo-4-figures:c-2@rev-2",
+          "articleId": "article-meridian-liss",
+          "articleVersionId": "av-meridian-liss-1",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 106,
+            "end": 222
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The Sonholt Port Authority said on Monday evening that it estimated damage to port facilities at 42 million dollars.",
+          "spanHash": "d0158fe4eda517717880474458e4a846bc0bdc88cd1ba30ec518adc0e98ef30c",
+          "excerpt": "The Sonholt Port Authority said on Monday evening that it estimated damage to port facilities at 42 million dollars.",
+          "excerptSpan": {
+            "start": 106,
+            "end": 222
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 116
+          },
+          "sourceUrl": "https://meridianwire.example/typhoon-liss-sonholt",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        },
+        {
+          "id": "demo-4-figures:rev-2/demo-4-figures:c-2@rev-2:q-1a07e7-2",
+          "claimId": "demo-4-figures:c-2@rev-2",
+          "articleId": "article-harbor-liss",
+          "articleVersionId": "av-harbor-liss-1",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 106,
+            "end": 222
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The Sonholt Port Authority said on Monday evening that it estimated damage to port facilities at 42 million dollars.",
+          "spanHash": "d0158fe4eda517717880474458e4a846bc0bdc88cd1ba30ec518adc0e98ef30c",
+          "excerpt": "The Sonholt Port Authority said on Monday evening that it estimated damage to port facilities at 42 million dollars.",
+          "excerptSpan": {
+            "start": 106,
+            "end": 222
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 116
+          },
+          "sourceUrl": "https://harborledger.example/sonholt-typhoon-cranes",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        },
+        {
+          "id": "demo-4-figures:rev-2/demo-4-figures:c-2@rev-2:q-dff2f3-2",
+          "claimId": "demo-4-figures:c-2@rev-2",
+          "articleId": "article-meridian-liss-followup",
+          "articleVersionId": "av-meridian-liss-followup-1",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 155,
+            "end": 271
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The Sonholt Port Authority said on Monday evening that it estimated damage to port facilities at 42 million dollars.",
+          "spanHash": "d0158fe4eda517717880474458e4a846bc0bdc88cd1ba30ec518adc0e98ef30c",
+          "excerpt": "The Sonholt Port Authority said on Monday evening that it estimated damage to port facilities at 42 million dollars.",
+          "excerptSpan": {
+            "start": 155,
+            "end": 271
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 116
+          },
+          "sourceUrl": "https://meridianwire.example/sonholt-damage-estimate-raised",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "demo-4-figures:c-5@rev-2",
+      "text": "손홀트 항만청은 화요일 점검에서 네 번째 선박-육상 크레인이 손상된 것으로 발견되었다고 말했다.",
+      "claimType": "귀속 입장",
+      "modality": "단정",
+      "order": 2,
+      "contradictionStatus": "단일 출처",
+      "evidence": [
+        {
+          "id": "demo-4-figures:rev-2/demo-4-figures:c-5@rev-2:q-dff2f3-3",
+          "claimId": "demo-4-figures:c-5@rev-2",
+          "articleId": "article-meridian-liss-followup",
+          "articleVersionId": "av-meridian-liss-followup-1",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 273,
+            "end": 367
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The authority said a fourth ship-to-shore crane was found damaged during Tuesday's inspection.",
+          "spanHash": "7f163846548c83c7b06c42743d05fdbee47b4b7ec092eb493cf783dde7e53783",
+          "excerpt": "The authority said a fourth ship-to-shore crane was found damaged during Tuesday's inspection.",
+          "excerptSpan": {
+            "start": 273,
+            "end": 367
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 94
+          },
+          "sourceUrl": "https://meridianwire.example/sonholt-damage-estimate-raised",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "sourceId": "source-meridian-wire",
+      "articleId": "article-meridian-liss",
+      "articleTitle": "Typhoon Liss shuts Sonholt port",
+      "articleUrl": "https://meridianwire.example/typhoon-liss-sonholt",
+      "publishedAt": "2026-09-16T02:40:00.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    },
+    {
+      "sourceId": "source-harbor-ledger",
+      "articleId": "article-harbor-liss",
+      "articleTitle": "Typhoon Liss halts Sonholt port as cranes topple",
+      "articleUrl": "https://harborledger.example/sonholt-typhoon-cranes",
+      "publishedAt": "2026-09-16T03:55:00.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    },
+    {
+      "sourceId": "source-meridian-wire",
+      "articleId": "article-meridian-liss-followup",
+      "articleTitle": "Sonholt typhoon damage estimate rises to $95 million",
+      "articleUrl": "https://meridianwire.example/sonholt-damage-estimate-raised",
+      "publishedAt": "2026-09-16T22:05:00.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    }
+  ]
+}

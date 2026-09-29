@@ -1,0 +1,62 @@
+{
+  "av-meridian-liss-1": {
+    "quotes": [
+      {
+        "quoteId": "q-ad0d04-1",
+        "quote": "Typhoon Liss made landfall near Sonholt on Monday, forcing the port to suspend all container operations."
+      },
+      {
+        "quoteId": "q-ad0d04-2",
+        "quote": "The Sonholt Port Authority said on Monday evening that it estimated damage to port facilities at 42 million dollars."
+      },
+      {
+        "quoteId": "q-ad0d04-3",
+        "quote": "The authority said three ship-to-shore cranes were knocked off their rails by the storm."
+      },
+      {
+        "quoteId": "q-ad0d04-4",
+        "quote": "No port workers were injured, the authority said."
+      },
+      {
+        "quoteId": "q-ad0d04-5",
+        "quote": "Engineers will inspect the quays before the port reopens."
+      }
+    ]
+  },
+  "av-harbor-liss-1": {
+    "quotes": [
+      {
+        "quoteId": "q-1a07e7-1",
+        "quote": "Typhoon Liss made landfall near Sonholt on Monday, forcing the port to suspend all container operations."
+      },
+      {
+        "quoteId": "q-1a07e7-2",
+        "quote": "The Sonholt Port Authority said on Monday evening that it estimated damage to port facilities at 42 million dollars."
+      },
+      {
+        "quoteId": "q-1a07e7-3",
+        "quote": "The authority said three ship-to-shore cranes were knocked off their rails by the storm."
+      },
+      {
+        "quoteId": "q-1a07e7-4",
+        "quote": "Shipping lines have begun diverting vessels to Vantage and other nearby ports while the terminal is closed."
+      }
+    ]
+  },
+  "av-meridian-liss-followup-1": {
+    "quotes": [
+      {
+        "quoteId": "q-dff2f3-1",
+        "quote": "The Sonholt Port Authority said on Tuesday that it estimated damage to port facilities at 95 million dollars, after inspectors found cracks in two quays."
+      },
+      {
+        "quoteId": "q-dff2f3-2",
+        "quote": "The Sonholt Port Authority said on Monday evening that it estimated damage to port facilities at 42 million dollars."
+      },
+      {
+        "quoteId": "q-dff2f3-3",
+        "quote": "The authority said a fourth ship-to-shore crane was found damaged during Tuesday's inspection."
+      }
+    ]
+  }
+}
