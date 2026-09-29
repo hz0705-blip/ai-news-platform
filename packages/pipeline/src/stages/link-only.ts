@@ -3,9 +3,12 @@ import {
   type AssignmentCandidate,
   type AssignmentThresholds,
   articleIdFor,
+  computeChanges,
   decideAssignment,
   embeddingInputFor,
   type Revision,
+  type RevisionChange,
+  type RevisionSource,
   revisionWithSources,
   type Source,
 } from "@newsplatform/domain";
@@ -32,11 +35,12 @@ export interface LinkOnlyStore {
     readonly link: GdeltLink;
   }): Promise<void>;
   /**
-   * 출처 추가 개정판의 바탕이 될 최신 개정판(출처 구획은 방금 붙은 링크를 포함한 현재 기사들).
+   * 출처 추가 개정판의 바탕이 될 최신 개정판(출처 구획은 그 개정판이 발행될 때의 것 — 방금 붙은 링크는 없다).
    * 개정판이 없거나 모델 재처리를 기다리는 사건(미룸·입력 변경)이면 undefined — 그 사건의 다음 개정판이 링크를 담는다.
    */
   loadRevisionToExtend(storyId: string): Promise<Revision | undefined>;
-  publishRevision(revision: Revision): Promise<void>;
+  /** 새 개정판과 그 변화(#85)를 한 트랜잭션으로 발행한다. */
+  publishRevision(revision: Revision, changes: readonly RevisionChange[]): Promise<void>;
 }
 
 export type LinkOutcome =
@@ -108,7 +112,7 @@ export async function attachLinkOnlyArticles(
     throw new Error(`임베딩 수 불일치: 요청 ${fresh.length}, 응답 ${embedded.vectors.length}`);
   }
 
-  const attachedStories: string[] = [];
+  const attachedByStory = new Map<string, RevisionSource[]>();
   for (const [i, link] of fresh.entries()) {
     const embedding = embedded.vectors[i];
     if (embedding === undefined) throw new Error(`임베딩 없음: ${link.url}`);
@@ -130,19 +134,33 @@ export async function attachLinkOnlyArticles(
       link,
     });
     outcomes.push({ url: link.url, kind: "attached", storyId: decision.storyId });
-    if (!attachedStories.includes(decision.storyId)) attachedStories.push(decision.storyId);
+    const added = attachedByStory.get(decision.storyId) ?? [];
+    added.push({
+      sourceId: source.id,
+      articleId: articleIdFor(link.normalizedUrl),
+      articleTitle: link.title,
+      articleUrl: link.url,
+      // 링크만 기사는 발행 시각을 모르므로 관측 시각이 정렬 키다(`saveLinkOnlyArticle`과 같다).
+      publishedAt: link.observedAt,
+      rightsTier: source.rightsTier,
+    });
+    attachedByStory.set(decision.storyId, added);
   }
 
   const revisedStoryIds: string[] = [];
-  for (const storyId of attachedStories) {
+  for (const [storyId, added] of attachedByStory) {
     const previous = await deps.store.loadRevisionToExtend(storyId);
     if (previous === undefined) continue;
-    await deps.store.publishRevision(
-      revisionWithSources(previous, previous.sources, {
-        revisionNumber: previous.revisionNumber + 1,
-        publishedAt: input.now,
-      }),
+    const known = new Set(previous.sources.map((s) => s.articleId));
+    const next = revisionWithSources(
+      previous,
+      [...previous.sources, ...added.filter((s) => !known.has(s.articleId))],
+      { revisionNumber: previous.revisionNumber + 1, publishedAt: input.now },
     );
+    // 변화는 "출처 추가"뿐이다. 새로 붙은 기사가 이미 출처 구획에 있으면(변화 없음) 개정판을 내지 않는다.
+    const changes = computeChanges(previous, next);
+    if (changes.length === 0) continue;
+    await deps.store.publishRevision(next, changes);
     revisedStoryIds.push(storyId);
   }
   return { outcomes, revisedStoryIds, usage: embedded.usage };

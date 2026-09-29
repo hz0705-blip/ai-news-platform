@@ -1,6 +1,20 @@
-import type { Article, ArticleVersion, Revision, Source, Story } from "@newsplatform/domain";
+import type {
+  Article,
+  ArticleVersion,
+  Revision,
+  RevisionChange,
+  Source,
+  Story,
+} from "@newsplatform/domain";
 import { and, eq } from "drizzle-orm";
-import { toArticleRow, toArticleVersionRow, toRows, toSourceRow, toStoryRow } from "./mappers.ts";
+import {
+  toArticleRow,
+  toArticleVersionRow,
+  toChangeRows,
+  toRows,
+  toSourceRow,
+  toStoryRow,
+} from "./mappers.ts";
 import type { RuntimeDb } from "./runtime.ts";
 import {
   articles,
@@ -8,6 +22,7 @@ import {
   claimRevisions,
   claims,
   evidence,
+  revisionChanges,
   sources,
   stories,
   storyRevisions,
@@ -19,6 +34,8 @@ export interface PublishRevisionInput {
   readonly articles: readonly Article[];
   readonly articleVersions: readonly ArticleVersion[];
   readonly sources: readonly Source[];
+  /** 직전 개정판과의 변화(#85, `computeChanges`). 첫 개정판·데모 시드는 없다. */
+  readonly changes?: readonly RevisionChange[];
 }
 
 /**
@@ -26,7 +43,7 @@ export interface PublishRevisionInput {
  *
  * - 사건은 `stories.slug`로 찾거나 만든다.
  * - 그 사건에 같은 `revision_number`가 이미 있으면 아무것도 쓰지 않고 `inserted: false`(멱등).
- * - 없으면 출처·기사·기사 버전(이미 있으면 기존 식별자를 그대로 쓴다)·개정판·주장·주장 개정판·근거를
+ * - 없으면 출처·기사·기사 버전(이미 있으면 기존 식별자를 그대로 쓴다)·개정판·주장·주장 개정판·근거·변화를
  *   전부 넣는다. 어느 삽입이든 실패하면 트랜잭션 전체가 롤백된다.
  */
 export async function publishRevision(
@@ -89,6 +106,10 @@ export async function publishRevision(
     }
     if (rows.evidence.length > 0) {
       await tx.insert(evidence).values([...rows.evidence]);
+    }
+    const changeRows = toChangeRows(rows.revision.id, input.changes ?? []);
+    if (changeRows.length > 0) {
+      await tx.insert(revisionChanges).values(changeRows);
     }
 
     return { inserted: true, revisionId: rows.revision.id };

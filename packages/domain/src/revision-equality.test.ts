@@ -137,8 +137,11 @@ describe("isSameRevisionContent (스펙 134행: 출처·주장·상태 모두 �
       }),
     ).toBe(false);
   });
-  it("주장 문장이 바뀌면 false", () => {
-    expect(isSameRevisionContent(base, withClaims([{ ...claim0, text: "주장 둘" }]))).toBe(false);
+  it("같은 식별자의 문장만 바뀌면 true(표현만 변경은 개정판을 만들지 않는다)", () => {
+    expect(isSameRevisionContent(base, withClaims([{ ...claim0, text: "주장 둘" }]))).toBe(true);
+  });
+  it("주장 식별자가 다르면 false", () => {
+    expect(isSameRevisionContent(base, withClaims([{ ...claim0, id: "s:c-9" }]))).toBe(false);
   });
   it("주장 상태가 바뀌면 false", () => {
     expect(

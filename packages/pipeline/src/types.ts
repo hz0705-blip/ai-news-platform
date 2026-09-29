@@ -1,4 +1,11 @@
-import type { Article, Revision, RevisionSource, Source, Story } from "@newsplatform/domain";
+import type {
+  Article,
+  Revision,
+  RevisionChange,
+  RevisionSource,
+  Source,
+  Story,
+} from "@newsplatform/domain";
 import type { z } from "zod";
 
 /**
@@ -44,22 +51,11 @@ export interface ConfirmedRevision {
   readonly checkedAt: Date;
 }
 
-/** 변화 종류 넷(docs/spec/v1.md 사용자 이야기 19, CONTEXT.md "변화"). */
-export const CHANGE_KINDS = [
-  "주장 추가·삭제·수정",
-  "상충 상태 변화",
-  "원문 변경",
-  "출처 추가",
-] as const;
-
-export type ChangeKind = (typeof CHANGE_KINDS)[number];
-
-/**
- * 두 개정판 사이의 변화 하나. 변화 계산은 M3가 채우므로 배치의 `changes`는 아직 늘 비어 있다.
- */
-export interface Change {
+/** 새 개정판 하나에 붙는 변화(#85, `computeChanges`). 첫 개정판은 빈 목록이다. */
+export interface RevisionChanges {
   readonly storyId: string;
-  readonly kind: ChangeKind;
+  readonly revisionId: string;
+  readonly changes: readonly RevisionChange[];
 }
 
 /** 모델 호출 한 번의 사용량: 토큰(입력 + 출력)과 USD. */
@@ -161,7 +157,8 @@ export interface BatchReport {
 export interface BatchResult {
   readonly revisions: readonly Revision[];
   readonly confirmed: readonly ConfirmedRevision[];
-  readonly changes: readonly Change[];
+  /** `revisions`와 같은 순서로, 개정판마다 하나. */
+  readonly changes: readonly RevisionChanges[];
   readonly report: BatchReport;
 }
 

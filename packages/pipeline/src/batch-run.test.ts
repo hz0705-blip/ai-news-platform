@@ -61,7 +61,82 @@ describe("배치 실행", () => {
 
   it("첫 개정판이므로 변화는 없다", async () => {
     const result = await runBatch(input(), deps());
-    expect(result.changes).toEqual([]);
+    expect(result.changes).toEqual([
+      { storyId: fixture.story.id, revisionId: "demo-1-agreement:rev-1", changes: [] },
+    ]);
+  });
+
+  /** c-1 문장만 다르게 쓴 주장 생성 기록(표현만 변경). */
+  function rewordedClaims() {
+    const [key, recorded] = Object.entries(fixture.recorded.claimGenerate)[0] ?? [];
+    if (key === undefined || recorded === undefined) throw new Error("주장 생성 기록이 없다");
+    return {
+      [key]: {
+        ...recorded,
+        claims: recorded.claims.map((c) =>
+          c.claimKey === "c-1" ? { ...c, text: `${c.text.slice(0, -1)}고 전해졌다.` } : c,
+        ),
+      },
+    };
+  }
+
+  it("표현만 바뀐 재처리는 개정판을 만들지 않는다(#85)", async () => {
+    const latest = await publishFirst();
+    const again = await runBatch(
+      { ...input(), existingStories: [{ story: fixture.story, latestRevision: latest }] },
+      {
+        ...deps(),
+        modelClient: createRecordedModelClient("demo-1-agreement", {
+          override: { "claim-generate": rewordedClaims() },
+        }),
+      },
+    );
+    expect(again.revisions).toEqual([]);
+    expect(again.confirmed.map((c) => c.revisionId)).toEqual([latest.id]);
+  });
+
+  it("second batch keeps claim ids and stores changes", async () => {
+    const latest = await publishFirst();
+    // 이전 개정판에는 링크만 기사(Atlas)가 없었던 것으로 둔다 → 이번 개정판에서 출처 추가.
+    const atlas = fixture.sources.find((s) => s.rightsTier === "링크만");
+    const previous = { ...latest, sources: latest.sources.filter((s) => s.sourceId !== atlas?.id) };
+    const result = await runBatch(
+      { ...input(), existingStories: [{ story: fixture.story, latestRevision: previous }] },
+      {
+        ...deps(),
+        modelClient: createRecordedModelClient("demo-1-agreement", {
+          override: {
+            "claim-generate": rewordedClaims(),
+            // c-2의 Harbor 인용을 버린다 → 근거 교체(실질 변경).
+            gate: {
+              "story-demo-1-agreement:gate:c-2": {
+                judgments: [
+                  { quoteId: "q-m-2", label: "뒷받침", reason: "같다." },
+                  { quoteId: "q-h-2", label: "뒷받침 안 됨", reason: "다르다." },
+                ],
+              },
+            },
+          },
+        }),
+      },
+    );
+    const [revision] = result.revisions;
+    expect(revision?.id).toBe("demo-1-agreement:rev-2");
+    expect(revision?.claims.map((c) => c.id)).toEqual(latest.claims.map((c) => c.id));
+
+    const changes = result.changes[0]?.changes ?? [];
+    expect(result.changes[0]?.revisionId).toBe("demo-1-agreement:rev-2");
+    expect(changes).toContainEqual({
+      kind: "주장 추가·삭제·수정",
+      claimChange: "수정",
+      claimId: "demo-1-agreement:c-2",
+      previousText: latest.claims[1]?.text,
+      currentText: latest.claims[1]?.text,
+    });
+    const atlasArticle = latest.sources.find((s) => s.sourceId === atlas?.id)?.articleId;
+    expect(changes).toContainEqual({ kind: "출처 추가", articleId: atlasArticle });
+    // c-1은 표현만 변경이므로 변화가 아니다.
+    expect(changes.some((c) => "claimId" in c && c.claimId === "demo-1-agreement:c-1")).toBe(false);
   });
 
   it("근거가 게이트 1단계를 통과하지 못하면 그 사건을 발행하지 않는다", async () => {

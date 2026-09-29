@@ -1,6 +1,8 @@
+import { readFileSync } from "node:fs";
+import { type RevisionChange, revisionWithSources } from "@newsplatform/domain";
 import { describe, expect, it } from "vitest";
 import { confirmRevision, publishRevision } from "./publish.ts";
-import { loadLatestRevision } from "./queries/revision.ts";
+import { loadLatestRevision, loadRevisionChanges } from "./queries/revision.ts";
 import { loadPublishedStory } from "./queries/story.ts";
 import { createMigrationDb, readTestDbUrl } from "./test-db.ts"; // DATABASE_TEST_URL로 연결하고 테스트 끝에 truncate
 // revision·story·articles·articleVersions·sources 픽스처는 mappers.test.ts와 같은 값을 공유한다.
@@ -148,6 +150,88 @@ maybe("confirmRevision", () => {
       expect(await confirmRevision(db, { revisionId: "없는-개정판", checkedAt })).toEqual({
         updated: false,
       });
+    } finally {
+      await cleanup();
+    }
+  });
+});
+
+maybe("변화 저장(#85)", () => {
+  it("changes persist and load", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      await publishRevision(db, fixture);
+      // 이번 개정판은 c-2가 빠지고 출처 구획에서 Atlas가 빠진 것으로 둔다(출처 구획은 개정판마다 저장된다).
+      const withoutAtlas = fixture.revision.sources.filter((s) => s.articleId !== "a-atlas");
+      const second = revisionWithSources(fixture.revision, withoutAtlas, {
+        revisionNumber: 2,
+        publishedAt: new Date("2026-09-18T00:30:00.000Z"),
+      });
+      const next = { ...second, claims: second.claims.slice(0, 1) };
+      const changes: RevisionChange[] = [
+        {
+          kind: "주장 추가·삭제·수정",
+          claimChange: "수정",
+          claimId: "demo-1-agreement:c-1",
+          previousText: "이전 문장",
+          currentText: "현재 문장",
+        },
+        {
+          kind: "주장 추가·삭제·수정",
+          claimChange: "추가",
+          claimId: "demo-1-agreement:c-1",
+          currentText: "현재 문장",
+          lineageClaimId: "demo-1-agreement:c-2",
+        },
+        {
+          kind: "주장 추가·삭제·수정",
+          claimChange: "삭제",
+          claimId: "demo-1-agreement:c-2",
+          previousText: "빠진 문장",
+        },
+        {
+          kind: "상충 상태 변화",
+          claimId: "demo-1-agreement:c-1",
+          previousStatus: "보도 상충",
+          currentStatus: "상충 해소",
+        },
+        { kind: "상충 상태 변화", previousStatus: "보도 상충", currentStatus: "복수 출처 일치" },
+        { kind: "원문 변경", articleId: "a-meridian", articleVersionId: "av-meridian" },
+        { kind: "출처 추가", articleId: "a-harbor" },
+      ];
+      await publishRevision(db, { ...fixture, revision: next, changes });
+
+      expect(await loadRevisionChanges(db, { revisionId: next.id })).toEqual(changes);
+      expect(await loadRevisionChanges(db, { revisionId: fixture.revision.id })).toEqual([]);
+      const latest = await loadLatestRevision(db, { slug: fixture.story.slug });
+      expect(latest?.id).toBe(next.id);
+      expect(latest?.sources).toEqual(withoutAtlas);
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("migration keeps existing revisions with no changes", async () => {
+    const { db, sql, cleanup } = await createMigrationDb(url as string);
+    try {
+      const migration = readFileSync(
+        new URL("../drizzle/0008_claim_matching_changes.sql", import.meta.url),
+        "utf8",
+      );
+      expect(migration).not.toMatch(/\bDELETE\s+FROM\b|\bDROP\b/i);
+      await publishRevision(db, fixture);
+      // 마이그레이션 전 모양(출처 목록 없음)으로 되돌린 뒤 마이그레이션의 UPDATE를 다시 적용한다.
+      await sql`update story_revisions set source_article_ids = '{}'`;
+      const updates = migration
+        .split("--> statement-breakpoint")
+        .map((s) => s.replace(/^\s*--.*$/gm, "").trim())
+        .filter((s) => s.startsWith("UPDATE"));
+      expect(updates).toHaveLength(1);
+      for (const statement of updates) await sql.unsafe(statement);
+
+      const latest = await loadLatestRevision(db, { slug: fixture.story.slug });
+      expect(latest).toEqual(fixture.revision);
+      expect(await loadRevisionChanges(db, { revisionId: fixture.revision.id })).toEqual([]);
     } finally {
       await cleanup();
     }
