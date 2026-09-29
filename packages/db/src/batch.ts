@@ -219,6 +219,8 @@ export type BatchArticle = Article & {
   readonly rawBody: string;
   /** 마지막 버전이 재수집의 정정 후보(#86)면 참. 아니면 없다. */
   readonly correctionCandidate?: boolean;
+  /** 정정 후보 버전이 그 사건의 마지막 개정판 확인 시각 뒤에 들어왔으면(첫 재처리, #94) 참. 아니면 없다. */
+  readonly correctionFirstReprocess?: boolean;
 };
 
 export interface BatchStory {
@@ -280,6 +282,9 @@ export async function loadBatchStories(
             article_id: articleVersions.article_id,
             body: articleVersions.body,
             correction_candidate: articleVersions.correction_candidate,
+            // 정정 후보 버전이 생긴 뒤 첫 재처리(#94): 그 사건의 마지막 개정판 확인(발행·확인) 시각보다 늦게 수집됐다.
+            // 사건이 미뤄지거나 실패하면 확인 시각이 그대로라 다음 배치가 여전히 첫 재처리다.
+            unprocessed: sql<boolean>`"article_versions"."captured_at" > coalesce((select max(sr.checked_at) from story_revisions sr join articles a on a.story_id = sr.story_id where a.id = "article_versions"."article_id"), '-infinity'::timestamptz)`,
           })
           .from(articleVersions)
           .where(
@@ -329,6 +334,9 @@ export async function loadBatchStories(
         articleVersionId: version.id,
         rawBody: version.body,
         ...(version.correction_candidate ? { correctionCandidate: true } : {}),
+        ...(version.correction_candidate && version.unprocessed
+          ? { correctionFirstReprocess: true }
+          : {}),
       });
     }
     if (batchArticles.length === 0) continue;

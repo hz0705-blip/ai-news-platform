@@ -38,12 +38,6 @@
   },
   {
     "kind": "상충 상태 변화",
-    "claimId": "demo-3-correction:c-4",
-    "previousStatus": "복수 출처 일치",
-    "currentStatus": "정정됨"
-  },
-  {
-    "kind": "상충 상태 변화",
     "previousStatus": "보도 상충",
     "currentStatus": "정정됨"
   },

@@ -1,5 +1,6 @@
 import {
   type Claim,
+  classifyMatch,
   computeChanges,
   createArticleVersion,
   createSpanAligner,
@@ -448,6 +449,13 @@ async function processStory(
     supported.map(({ claim, evidence }) => ({ claimType: claim.claimType, evidence })),
   );
   const lineage = new Map<string, string>();
+  const correctedArticles = new Set(
+    versions
+      .filter(({ article }) => article.correctionCandidate && article.correctionFirstReprocess)
+      .map(({ article }) => article.id),
+  );
+  const previousById = new Map([...alignedPrevious, ...absentEpisodes].map((c) => [c.id, c]));
+  const currentVersionOf = new Map(versions.map((v) => [v.article.id, v.version.id]));
 
   // 4. 상충 판정
   const claims: revisionStage.RevisionInput["claims"] = [];
@@ -465,8 +473,12 @@ async function processStory(
         claimText: claim.text,
         previous: [...(latest?.claims ?? []), ...absentEpisodes].find((c) => c.id === claimId)
           ?.contradictionStatus,
-        // 정정 후보 기사 버전(#86)을 근거로 쓰는 주장은 명시 정정 입력을 받는다(상태 규칙 ③).
-        ...(evidence.some((item) => item.origin.article.correctionCandidate === true)
+        // 명시 정정 입력(상태 규칙 ③, #94): 정정 후보 버전의 첫 재처리에서 그 버전의 근거가 바뀐 이어진 주장만 받는다.
+        ...(match.previousId !== undefined &&
+        isCorrected(previousById.get(match.previousId), claim, evidence, {
+          correctedArticles,
+          currentVersionOf,
+        })
           ? { explicitCorrection: true }
           : {}),
         evidence: evidence.map((item) => ({
@@ -556,6 +568,36 @@ async function processStory(
     };
   }
   return { kind: "revision", revision: draft, changes };
+}
+
+/**
+ * 이어진 주장이 정정 후보 버전에서 바뀌었는가(#94). 이전 주장(좌표 정렬 뒤)이 정정 후보 기사(첫 재처리)의 근거를
+ * 가졌고, 그 근거의 좌표 정렬이 실패했거나(옛 버전에 남음) 매칭 분류가 실질 변경(주장 수정)이면 참이다.
+ * 구간이 그대로 옮겨졌고 문장만 다르거나(표현만 변경) 같으면(불변) 거짓이다.
+ */
+function isCorrected(
+  previous: Claim | undefined,
+  next: {
+    readonly text: string;
+    readonly claimType: Claim["claimType"];
+    readonly modality: Claim["modality"];
+  },
+  evidence: readonly {
+    readonly articleVersionId: string;
+    readonly span: Claim["evidence"][number]["span"];
+  }[],
+  context: {
+    readonly correctedArticles: ReadonlySet<string>;
+    readonly currentVersionOf: ReadonlyMap<string, string>;
+  },
+): boolean {
+  if (previous === undefined) return false;
+  const touched = previous.evidence.filter((e) => context.correctedArticles.has(e.articleId));
+  if (touched.length === 0) return false;
+  if (touched.some((e) => e.articleVersionId !== context.currentVersionOf.get(e.articleId))) {
+    return true;
+  }
+  return classifyMatch(previous, { ...next, evidence }) === "실질 변경";
 }
 
 /**

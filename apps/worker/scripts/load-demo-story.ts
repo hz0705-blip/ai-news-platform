@@ -6,11 +6,12 @@ import {
   loadPublishedStory,
   publishRevision,
 } from "@newsplatform/db";
-import { createArticleVersion } from "@newsplatform/domain";
+import { createArticleVersion, isSameRevisionContent } from "@newsplatform/domain";
 import {
   createDemoStepModelClient,
   demoStepBatchInput,
   listGoldenSetSlugs,
+  loadDemoStepGolden,
   loadDemoStorySteps,
   runBatch,
 } from "@newsplatform/pipeline";
@@ -44,14 +45,20 @@ export async function loadDemoStory(params: {
     // 다시 돌려 같은 내용이면 확인 시각만 갱신한다. `now`는 마지막 단계의 시각을 덮어쓴다(기본은 단계 시각).
     let latestRevision = await loadLatestRevision(db, { slug: params.slug });
     const start = Math.min(latestRevision?.revisionNumber ?? 0, steps.length - 1);
+    // 모두 적재된 뒤 다단계 사건의 재실행은 마지막 단계를 그 단계의 기준(앞 단계 정답)으로 다시 돌려 적재된 마지막
+    // 개정판과 비교한다. 명시 정정은 정정 후보 버전의 첫 재처리에만 들어가므로(#94) 마지막 개정판 위에서 다시 돌리면
+    // 같은 입력이 아니다. 내용이 다르면 적재된 개정판을 덮어쓰지 않는다(`publishRevision` 멱등).
+    const loaded = latestRevision;
+    const rerun = loaded !== undefined && loaded.revisionNumber >= steps.length && steps.length > 1;
     let inserted = false;
     let confirmed = false;
     for (let index = start; index < steps.length; index++) {
       const step = steps[index] as (typeof steps)[number];
       const last = index === steps.length - 1;
       const now = last && params.now !== undefined ? params.now : step.at;
+      const base = rerun ? loadDemoStepGolden(params.slug, index).revision : latestRevision;
       const result = await runBatch(
-        demoStepBatchInput(demo, index, { ...(latestRevision ? { latestRevision } : {}), now }),
+        demoStepBatchInput(demo, index, { ...(base ? { latestRevision: base } : {}), now }),
         {
           modelClient: createDemoStepModelClient(step),
           embeddingClient: { embed: async () => ({ vectors: [], usage: { tokens: 0, spend: 0 } }) },
@@ -64,7 +71,10 @@ export async function loadDemoStory(params: {
         throw new Error(`데모 사건을 발행하지 못했다: ${JSON.stringify(result.report.failures)}`);
       }
 
-      if (revision !== undefined) {
+      if (rerun && revision !== undefined && isSameRevisionContent(loaded, revision)) {
+        await confirmRevision(db, { revisionId: loaded.id, checkedAt: now });
+        confirmed = true;
+      } else if (revision !== undefined) {
         // 본문을 처리할 수 있는 출처의 기사만 기사 버전을 저장한다. 링크만 기사는 메타데이터만 남긴다(Ruling 15).
         const rightsOf = new Map(sources.map((s) => [s.id, s.rightsTier]));
         const articleVersions = step.articles

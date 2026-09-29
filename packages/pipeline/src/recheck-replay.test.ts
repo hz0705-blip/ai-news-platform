@@ -76,7 +76,9 @@ async function reprocess(judged: Awaited<ReturnType<typeof recheck>>) {
             ...article.meta,
             articleVersionId: versionId,
             rawBody: judged.body,
-            ...(judged.change === "정정 후보" ? { correctionCandidate: true } : {}),
+            ...(judged.change === "정정 후보"
+              ? { correctionCandidate: true, correctionFirstReprocess: true }
+              : {}),
           },
         ],
         now: recheckAt,
@@ -138,7 +140,7 @@ describe("원문 재수집 리플레이(#86)", () => {
     ]);
   });
 
-  it("정정 표지 버전 → 정정 후보가 상충 판정 입력", async () => {
+  it("근거 구간이 그대로 옮겨진 주장은 상태가 바뀌지 않는다", async () => {
     const judged = await recheck(
       withContent(
         (content) =>
@@ -147,19 +149,13 @@ describe("원문 재수집 리플레이(#86)", () => {
     );
     expect(judged).toMatchObject({ kind: "새 버전", change: "정정 후보" });
 
+    // 정정 표지 문단만 붙어 모든 근거가 새 좌표로 그대로 옮겨지고 문장도 같다 → 명시 정정 입력 없음(#94).
     const { result } = await reprocess(judged);
-    const [revision] = result.revisions;
-    // 명시 정정(상태 규칙 ③): 정정 후보 버전을 근거로 쓰는 주장은 정정됨, 사건도 정정됨.
-    expect(revision?.claims.map((c) => c.contradictionStatus)).toEqual(
-      live.golden.claims.map(() => "정정됨"),
-    );
-    expect(revision?.contradictionStatus).toBe("정정됨");
-    const changes = result.changes[0]?.changes ?? [];
-    expect(changes.filter((c) => c.kind === "원문 변경")).toEqual([]);
-    expect(changes).toContainEqual({
-      kind: "상충 상태 변화",
-      previousStatus: "단일 출처",
-      currentStatus: "정정됨",
-    });
+    expect(result.report.spanRealignment).toEqual({ attempted: 3, aligned: 3 });
+    // 상태가 그대로이고 정정 후보 버전은 원문 변경이 아니므로 변화 0건 → 새 개정판 없이 확인만 한다.
+    expect(result.revisions).toEqual([]);
+    expect(result.confirmed).toEqual([
+      { storyId: live.story.id, revisionId: live.golden.id, checkedAt: recheckAt },
+    ]);
   });
 });

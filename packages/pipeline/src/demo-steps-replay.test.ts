@@ -101,6 +101,42 @@ describe("데모 사건 ③④ 시나리오", () => {
     expect(changes.some((c) => c.kind === "출처 추가")).toBe(false);
   });
 
+  it("정정 표지 버전에서 근거가 바뀐 주장만 명시 정정을 받는다", async () => {
+    const [, second] = await replay("demo-3-correction");
+    const status = (id: string) =>
+      second?.revision?.claims.find((c) => c.id === id)?.contradictionStatus;
+    // c-1: 정정 후보 기사(하버)의 근거 구간이 정정 문단으로 바뀌어 좌표 정렬 실패 → 명시 정정.
+    expect(status("demo-3-correction:c-1")).toBe("정정됨");
+    // c-4: 하버 근거가 새 좌표로 그대로 옮겨졌고 문장만 다르다(표현만 변경) → 상태 유지.
+    expect(status("demo-3-correction:c-4")).toBe("복수 출처 일치");
+    // c-5@rev-2: 정정 후보 버전에서 새로 생긴 주장은 명시 정정을 받지 않는다.
+    expect(status("demo-3-correction:c-5@rev-2")).toBeDefined();
+    expect(status("demo-3-correction:c-5@rev-2")).not.toBe("정정됨");
+  });
+
+  it("정정 후보 버전은 다음 배치 재처리에서 다시 명시 정정을 주지 않는다", async () => {
+    // 같은 정정 후보 버전이 최신인 채 다시 재처리되는 배치(첫 재처리 아님): 적재는 correctionFirstReprocess를 싣지 않는다.
+    const demo = loadDemoStorySteps("demo-3-correction");
+    const step = demo.steps[1];
+    if (step === undefined) throw new Error("단계 없음");
+    const input = demoStepBatchInput(demo, 1, {
+      latestRevision: loadDemoStepGolden("demo-3-correction", 1).revision,
+    });
+    const later = {
+      ...input,
+      articles: input.articles.map(({ correctionFirstReprocess: _, ...article }) => article),
+    };
+    expect(later.articles.some((a) => a.correctionCandidate)).toBe(true);
+    const result = await runBatch(later, {
+      modelClient: createDemoStepModelClient(step),
+      embeddingClient: { embed: async () => ({ vectors: [], usage: { tokens: 0, spend: 0 } }) },
+      clock: () => step.at,
+    });
+    const claims = result.revisions[0]?.claims ?? [];
+    expect(claims.length).toBeGreaterThan(0);
+    expect(claims.some((c) => c.contradictionStatus === "정정됨")).toBe(false);
+  });
+
   it("데모 ④ 2단계: 시점이 다른 수치는 상충이 아니고 주장 변화·출처 추가만 기록된다", async () => {
     const [first, second] = await replay("demo-4-figures");
     const revision = second?.revision;

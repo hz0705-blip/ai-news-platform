@@ -300,7 +300,7 @@ export function createDemoStepModelClient(step: DemoStoryStep): ModelClient {
 
 /**
  * 단계 하나의 배치 입력(#88). 직전 단계와 기사 버전이 다른 기사는 재수집이 찾은 새 버전처럼 다룬다: 정정 표지 판별
- * (`judgeRecheckedBody`)로 정정 후보를 표시하고, 이전 본문을 좌표 정렬용으로 넘긴다(#86과 같은 입력).
+ * (`judgeRecheckedBody`)로 정정 후보와 첫 재처리(#94)를 표시하고, 이전 본문을 좌표 정렬용으로 넘긴다(#86과 같은 입력).
  * `latestRevision`은 직전 개정판(적재는 DB에서, 리플레이는 직전 단계 정답), `now`는 기본 단계 시각이다.
  */
 export function demoStepBatchInput(
@@ -326,7 +326,11 @@ export function demoStepBatchInput(
     previousVersionBodies.push({ articleVersionId: version.id, body: version.body });
     const judged = judgeRecheckedBody(version, rawBody);
     const correction = judged.kind === "새 버전" && judged.change === "정정 후보";
-    return { ...meta, rawBody, ...(correction ? { correctionCandidate: true } : {}) };
+    return {
+      ...meta,
+      rawBody,
+      ...(correction ? { correctionCandidate: true, correctionFirstReprocess: true } : {}),
+    };
   });
   return {
     articles,

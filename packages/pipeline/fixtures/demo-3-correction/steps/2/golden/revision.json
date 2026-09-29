@@ -153,7 +153,7 @@
       "claimType": "보도된 사실",
       "modality": "단정",
       "order": 3,
-      "contradictionStatus": "정정됨",
+      "contradictionStatus": "복수 출처 일치",
       "evidence": [
         {
           "id": "demo-3-correction:rev-2/demo-3-correction:c-4:q-395b22-4",
@@ -215,7 +215,7 @@
       "claimType": "귀속 입장",
       "modality": "단정",
       "order": 4,
-      "contradictionStatus": "정정됨",
+      "contradictionStatus": "단일 출처",
       "evidence": [
         {
           "id": "demo-3-correction:rev-2/demo-3-correction:c-5@rev-2:q-af6e5b-4",
