@@ -54,7 +54,7 @@ export const sources = pgTable("sources", {
   domains: text().array().notNull().default([]),
   is_wire: boolean("is_wire").notNull().default(false),
   is_excluded: boolean("is_excluded").notNull().default(false),
-});
+}).enableRLS();
 
 /**
  * 사건(CONTEXT.md "사건"). 사건 URL은 `slug`로 찾는다. 사건의 상충 상태는 여기 두지 않는다(ADR-0009).
@@ -75,7 +75,7 @@ export const stories = pgTable("stories", {
   last_processed_at: timestamptz("last_processed_at"),
   // 배치가 한도·기한 도달로 미룬 시각("수집됨, 분석 대기", #55). 처리되면 null로 돌아간다.
   deferred_at: timestamptz("deferred_at"),
-});
+}).enableRLS();
 
 /**
  * 기사(CONTEXT.md "기사"). 본문은 기사 버전이 갖는다.
@@ -111,7 +111,7 @@ export const articles = pgTable(
     index("articles_story_id_idx").on(t.story_id),
     index("articles_embedding_hnsw_idx").using("hnsw", t.embedding.op("vector_cosine_ops")),
   ],
-);
+).enableRLS();
 
 /**
  * 기사 버전: 한 시점에 정규화한 기사 본문. `body`는 보존 기한이 있는 유일한 열이다 —
@@ -135,7 +135,7 @@ export const articleVersions = pgTable(
   },
   // 같은 기사의 같은 본문은 한 버전이다(#52, 스펙 "정확 중복 제거").
   (t) => [unique().on(t.article_id, t.body_hash)],
-);
+).enableRLS();
 
 /** 개정판(CONTEXT.md "개정판"). 사건 하나에서 `revision_number`는 한 번만 쓰인다(발행 멱등). */
 export const storyRevisions = pgTable(
@@ -167,7 +167,7 @@ export const storyRevisions = pgTable(
     unique().on(t.story_id, t.revision_number),
     index("story_revisions_story_id_idx").on(t.story_id),
   ],
-);
+).enableRLS();
 
 /** 주장(CONTEXT.md "주장")의 식별자. 개정판을 넘어 유지되며, 개정판마다의 내용은 `claim_revisions`에 있다. */
 export const claims = pgTable("claims", {
@@ -175,7 +175,7 @@ export const claims = pgTable("claims", {
   story_id: text()
     .notNull()
     .references(() => stories.id),
-});
+}).enableRLS();
 
 /** 한 개정판 안의 주장 하나. 한 개정판에 같은 주장은 한 번만 온다. */
 export const claimRevisions = pgTable(
@@ -195,7 +195,7 @@ export const claimRevisions = pgTable(
     contradiction_status: text({ enum: CONTRADICTION_STATUSES }).notNull(),
   },
   (t) => [unique().on(t.story_revision_id, t.claim_id)],
-);
+).enableRLS();
 
 /**
  * 근거(CONTEXT.md "근거"). 기사 본문이 지워진 뒤에도 화면을 그릴 값을 전부 영구 보존한다:
@@ -236,7 +236,7 @@ export const evidence = pgTable(
     differs_in: text("differs_in"),
   },
   (t) => [index("evidence_claim_revision_id_idx").on(t.claim_revision_id)],
-);
+).enableRLS();
 
 /**
  * 변화(CONTEXT.md "변화", #85): 개정판과 직전 개정판 사이의 차이 한 줄. 종류(`kind`)마다 쓰는 열이 다르다 —
@@ -264,7 +264,7 @@ export const revisionChanges = pgTable(
     article_version_id: text().references(() => articleVersions.id),
   },
   (t) => [index("revision_changes_story_revision_id_idx").on(t.story_revision_id)],
-);
+).enableRLS();
 
 /** 배치 실행 상태(슬롯 원장). */
 export const BATCH_RUN_STATUSES = ["running", "completed", "failed"] as const;
@@ -286,7 +286,7 @@ export const batchRuns = pgTable("batch_runs", {
   spend_usd: doublePrecision("spend_usd").notNull(),
   report: jsonb(),
   error: text(),
-});
+}).enableRLS();
 
 /**
  * GNews 요청 원장(#86, 스펙 "개발 중 결정 항목" GNews 요청 원장). 행 하나 = UTC 날짜 하나(`YYYY-MM-DD`)이고
@@ -296,7 +296,7 @@ export const gnewsRequestLedger = pgTable("gnews_request_ledger", {
   utc_date: text("utc_date").primaryKey(),
   discovery: integer().notNull().default(0),
   recheck: integer().notNull().default(0),
-});
+}).enableRLS();
 
 /** 재수집 결과. 찾음 = 정규화 URL이 같은 결과가 있었다, 미확인 = 없었다(변경 아님). */
 export const RECHECK_OUTCOMES = ["찾음", "미확인"] as const;
@@ -320,7 +320,7 @@ export const articleRechecks = pgTable(
     primaryKey({ columns: [t.article_id, t.slot] }),
     index("article_rechecks_checked_at_idx").on(t.checked_at),
   ],
-);
+).enableRLS();
 
 /**
  * 계정 데이터(스펙 "계정": 계정에 저장하는 것은 팔로우와 마지막으로 본 개정판뿐, #105). 소유자는 인증 사용자 ID(`user_id`,
