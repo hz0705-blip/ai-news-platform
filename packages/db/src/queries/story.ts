@@ -57,7 +57,7 @@ export interface StoryPageData {
     readonly publishedAt: Date;
     /** GDELT가 만든 링크만 기사(#77)면 참. 발행 시각을 모르므로 화면은 `observedAt`을 "관측 시각"으로 보인다. */
     readonly isLinkOnly: boolean;
-    /** GDELT가 기사를 본 시각(`seendate`). GDELT에 나온 적 없는 기사는 null. */
+    /** GDELT가 기사를 본 시각(GKG `DATE`). GDELT에 나온 적 없는 기사는 null. */
     readonly observedAt: Date | null;
   })[];
   /**

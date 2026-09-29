@@ -60,17 +60,15 @@ export {
   RevisionSchema,
 } from "./schemas.ts";
 export {
-  buildGdeltQuery,
   type CollectGdeltDeps,
   type CollectGdeltResult,
   collectGdelt,
+  GDELT_MAX_FILES_PER_BATCH,
   GDELT_MAX_STORIES_PER_BATCH,
-  GDELT_MIN_INTERVAL_MS,
   type GdeltLink,
   type GdeltStoryQuery,
-  mapGdeltArticles,
 } from "./sources/gdelt.ts";
-export { createRecordedGdeltFetch, type RecordedGdeltResponse } from "./sources/gdelt-recorded.ts";
+export { createRecordedGdeltFetch } from "./sources/gdelt-recorded.ts";
 export {
   buildGnewsRequest,
   buildTitleSearchRequest,
