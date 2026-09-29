@@ -1,6 +1,6 @@
 ---
 name: wrap-up
-description: 세션 인계 문서(.scratch/handoff.md)를 쓴다. 작업 단위 완료 뒤 Stop 훅이 지시할 때, 또는 사용자가 세션을 끝내려 할 때.
+description: 세션 인계 문서(.scratch/handoff.md)를 쓴다. 사용자가 세션을 끝낼 때(Stop 훅이 지시한다).
 ---
 
 # wrap-up — 세션 인계 문서
