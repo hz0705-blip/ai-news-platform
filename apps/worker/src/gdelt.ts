@@ -1,15 +1,14 @@
 import {
+  commitRevision,
   findArticleIdsByNormalizedUrl,
   findCandidateStories,
   loadGdeltStories,
   loadRevisionToExtend,
   loadSourceRegistry,
-  publishRevision,
   type RuntimeDb,
   recordArticleObservations,
   saveLinkOnlyArticle,
 } from "@newsplatform/db";
-import type { Story } from "@newsplatform/domain";
 import {
   attachLinkOnlyArticles,
   type CollectGdeltDeps,
@@ -76,7 +75,6 @@ export async function runGdeltStage(
   );
   const collectMs = clock().getTime() - collectStartedAt;
 
-  const storyById = new Map<string, Story>();
   const store: LinkOnlyStore = {
     findArticleIdsByUrl: (urls) => findArticleIdsByNormalizedUrl(db, urls),
     recordObservations: (items) => recordArticleObservations(db, items),
@@ -91,23 +89,9 @@ export async function runGdeltStage(
         title: link.title,
         observedAt: link.observedAt,
       }),
-    loadRevisionToExtend: async (storyId) => {
-      const found = await loadRevisionToExtend(db, storyId);
-      if (found === undefined) return undefined;
-      storyById.set(storyId, found.story);
-      return found.revision;
-    },
+    loadRevisionToExtend: (storyId) => loadRevisionToExtend(db, storyId),
     publishRevision: async (revision, changes) => {
-      const story = storyById.get(revision.storyId);
-      if (story === undefined) throw new Error(`사건 없음: ${revision.storyId}`);
-      await publishRevision(db, {
-        story,
-        revision,
-        articles: [],
-        articleVersions: [],
-        sources: [],
-        changes,
-      });
+      await commitRevision(db, { revision, changes });
     },
   };
   const attached = await attachLinkOnlyArticles(

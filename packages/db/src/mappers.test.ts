@@ -1,12 +1,32 @@
 import type { Revision, Source } from "@newsplatform/domain";
 import { describe, expect, it } from "vitest";
-import { toDomainRevision, toDomainSource, toRows, toSourceRow } from "./mappers.ts";
+import {
+  type RevisionSourceRow,
+  toDomainRevision,
+  toDomainSource,
+  toRows,
+  toSourceRow,
+} from "./mappers.ts";
 // 개정판 픽스처는 publish.test.ts와 공유한다(src/test-fixtures.ts).
 import { revision } from "./test-fixtures.ts";
 
+/** 읽기 질의가 `articles`·`sources`를 이어 만드는 출처 구획 행(쓰기 행에는 없다). */
+function joinedSources(r: Revision): RevisionSourceRow[] {
+  return r.sources.map((s) => ({
+    source_id: s.sourceId,
+    article_id: s.articleId,
+    article_title: s.articleTitle,
+    article_url: s.articleUrl,
+    published_at: s.publishedAt,
+    rights_tier: s.rightsTier,
+  }));
+}
+
 describe("행 ↔ 도메인 매퍼", () => {
   it("개정판을 행으로 바꿨다 되돌리면 같다", () => {
-    expect(toDomainRevision(toRows(revision))).toEqual(revision);
+    expect(toDomainRevision({ ...toRows(revision), sources: joinedSources(revision) })).toEqual(
+      revision,
+    );
   });
 
   it("근거 행은 구간 단위와 정규화 버전을 명시한다", () => {
@@ -33,7 +53,7 @@ describe("행 ↔ 도메인 매퍼", () => {
     const rows = toRows(withDiff);
     expect(rows.evidence[0]?.differs_in).toBe("모두 중단");
     expect(rows.evidence[1]?.differs_in).toBeNull();
-    expect(toDomainRevision(rows)).toEqual(withDiff);
+    expect(toDomainRevision({ ...rows, sources: joinedSources(withDiff) })).toEqual(withDiff);
   });
 
   it("개정판 행 checked_at은 발행 시각으로 시작한다", () => {

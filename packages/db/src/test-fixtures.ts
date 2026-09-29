@@ -4,9 +4,12 @@ import {
   createArticleVersion,
   type Evidence,
   type Revision,
+  type RevisionChange,
   type Source,
   type Story,
 } from "@newsplatform/domain";
+import { commitRevision, saveDemoStoryRecords } from "./publish.ts";
+import type { RuntimeDb } from "./runtime.ts";
 
 /**
  * DB 테스트가 공유하는 픽스처(#21 Task 6). `mappers.test.ts`의 개정판과
@@ -192,3 +195,27 @@ const articleVersions: readonly ArticleVersion[] = (["meridian", "harbor"] as co
 );
 
 export const fixture = { story, revision, articles, articleVersions, sources };
+
+/** 테스트용 발행: 픽스처의 사건·출처·기사·기사 버전을 넣은 뒤 개정판을 커밋한다(데모 적재와 같은 순서). */
+export async function publishFixture(
+  db: RuntimeDb["db"],
+  input: {
+    readonly story: Story;
+    readonly revision: Revision;
+    readonly articles?: readonly Article[];
+    readonly articleVersions?: readonly ArticleVersion[];
+    readonly sources?: readonly Source[];
+    readonly changes?: readonly RevisionChange[];
+  },
+): Promise<{ inserted: boolean; revisionId: string }> {
+  await saveDemoStoryRecords(db, {
+    story: input.story,
+    sources: input.sources ?? [],
+    articles: input.articles ?? [],
+    articleVersions: input.articleVersions ?? [],
+  });
+  return commitRevision(db, {
+    revision: input.revision,
+    ...(input.changes === undefined ? {} : { changes: input.changes }),
+  });
+}

@@ -3,12 +3,11 @@ import { fileURLToPath } from "node:url";
 import type { Source } from "@newsplatform/domain";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { publishRevision } from "./publish.ts";
 import { loadPublishedStory } from "./queries/story.ts";
 import { articles, evidence, sources } from "./schema/index.ts";
 import { loadSourceRegistry, syncSourceRegistry } from "./sources-registry.ts";
 import { createMigrationDb, readTestDbUrl } from "./test-db.ts";
-import { fixture } from "./test-fixtures.ts";
+import { fixture, publishFixture } from "./test-fixtures.ts";
 
 const url = readTestDbUrl();
 const maybe = url === undefined ? describe.skip : describe;
@@ -165,7 +164,7 @@ maybe("출처 표 동기화", () => {
   it("sync moves evidence of remapped articles to the article source, including already-remapped articles", async () => {
     const { db, sql, cleanup } = await createMigrationDb(url as string);
     try {
-      await publishRevision(db, fixture);
+      await publishFixture(db, fixture);
       // 결함 상태 재현: a-harbor는 옛 GNews 출처(재지정 전), a-meridian은 이미 등록 출처로 옮겨졌는데 근거만 옛 출처.
       await sql`insert into sources (id, name, rights_tier, region, ownership, language, is_fictional, external_id, domains) values
         ('gnews:h1', 'Harbor', '본문 처리 + 발췌 표시', 'us', 'unknown', 'en', false, 'h1', '{}'),
