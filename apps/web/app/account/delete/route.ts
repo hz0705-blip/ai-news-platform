@@ -10,6 +10,7 @@ import {
   setStatusCookie,
   signedInRecently,
 } from "../../../lib/account/deletion.ts";
+import { kakaoAuthorizeRedirect, kakaoEnv } from "../../../lib/auth/kakao.ts";
 import { routeAuthClient } from "../../../lib/auth/route.ts";
 import { verifiedSession } from "../../../lib/auth/session.ts";
 import { requestOrigin } from "../../../lib/auth/urls.ts";
@@ -20,7 +21,7 @@ const ALLOWED_FIELDS = new Set(["confirm"]);
 /**
  * 계정 삭제 시작(POST 폼, 계정 화면). 같은 출처 요청만 받고, 현재 사용자 헬퍼로 대상을 정한다.
  * Kakao·Google 계정은 그 제공자로 재로그인을 시작하고(Google은 해제용 토큰을 받도록 `access_type=offline`·`prompt=consent`,
- * Kakao는 `prompt=login`), 삭제는 인증 콜백이 마친다(lib/auth/callback.ts). 제공자 연결이 없는 사용자는 방금 로그인했을 때만
+ * Kakao는 로그인과 같은 직접 OIDC 흐름에 `prompt=login` — lib/auth/kakao.ts), 삭제는 인증 콜백이 마친다(lib/auth/callback.ts). 제공자 연결이 없는 사용자는 방금 로그인했을 때만
  * 여기서 바로 삭제한다. 응답은 모두 `private, no-store`.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -57,17 +58,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return response;
   }
 
-  const { data, error } = await client.auth.signInWithOAuth({
-    provider,
-    options: {
-      redirectTo: new URL("/auth/callback", origin).toString(),
-      skipBrowserRedirect: true,
-      queryParams:
-        provider === "google" ? { access_type: "offline", prompt: "consent" } : { prompt: "login" },
-    },
-  });
-  if (error !== null || !data.url) return to("/account?error=unavailable");
-  const response = respond(NextResponse.redirect(data.url, 303));
+  let redirect: NextResponse | null;
+  if (provider === "kakao") {
+    const kakao = kakaoEnv();
+    redirect = kakao === null ? null : kakaoAuthorizeRedirect(request, kakao, { prompt: "login" });
+  } else {
+    const { data, error } = await client.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: new URL("/auth/callback", origin).toString(),
+        skipBrowserRedirect: true,
+        queryParams: { access_type: "offline", prompt: "consent" },
+      },
+    });
+    redirect = error !== null || !data.url ? null : NextResponse.redirect(data.url, 303);
+  }
+  if (redirect === null) return to("/account?error=unavailable");
+  const response = respond(redirect);
   setIntentCookie(request, response, { userId: user.id, requestKey }, env.secretKey);
   return response;
 }

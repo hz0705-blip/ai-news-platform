@@ -149,12 +149,12 @@ test("KakaoTalk 인앱에서 Google을 고르면 외부 브라우저 안내가 �
   await expectNoAxeViolations(page, testInfo, "in-app-notice");
 });
 
-test("로그인 시작은 PKCE 인가 요청으로 보내고 콜백은 정확히 같은 출처 /auth/callback이다", async ({
+test("Google 로그인 시작은 PKCE 인가 요청으로 보내고 콜백은 정확히 같은 출처 /auth/callback이다", async ({
   page,
   baseURL,
 }) => {
   const response = await page.request.get(
-    `/auth/login/start?provider=kakao&next=${encodeURIComponent(STORY_URL)}`,
+    `/auth/login/start?provider=google&next=${encodeURIComponent(STORY_URL)}`,
     { maxRedirects: 0 },
   );
   expect(response.status()).toBe(303);
@@ -163,7 +163,7 @@ test("로그인 시작은 PKCE 인가 요청으로 보내고 콜백은 정확히
   const authorize = new URL(response.headers().location ?? "");
   expect(authorize.origin).toBe(authEnv()?.url);
   expect(authorize.pathname).toBe("/auth/v1/authorize");
-  expect(authorize.searchParams.get("provider")).toBe("kakao");
+  expect(authorize.searchParams.get("provider")).toBe("google");
   expect(authorize.searchParams.get("redirect_to")).toBe(`${baseURL}/auth/callback`);
   expect(authorize.searchParams.get("code_challenge")).toMatch(/^[A-Za-z0-9_-]{43,}$/);
   expect(authorize.searchParams.get("code_challenge_method")?.toLowerCase()).toBe("s256");
