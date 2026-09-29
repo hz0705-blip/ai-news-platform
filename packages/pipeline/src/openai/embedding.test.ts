@@ -29,4 +29,25 @@ describe("OpenAI 임베딩 클라이언트", () => {
     });
     await expect(client.embed(["unrecorded"])).rejects.toThrow("기록된 임베딩 응답 없음");
   });
+
+  it("gives up after the request timeout without retrying when configured", async () => {
+    let calls = 0;
+    // 응답하지 않는 서버: 중단 신호가 올 때만 끝난다.
+    const hang: typeof fetch = (_input, init) => {
+      calls += 1;
+      return new Promise((_, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(new Error("aborted")));
+      });
+    };
+    const client = createOpenAiEmbeddingClient({
+      apiKey: "test-key",
+      fetch: hang,
+      timeoutMs: 50,
+      maxRetries: 0,
+    });
+    const started = Date.now();
+    await expect(client.embed(["질의"])).rejects.toThrow();
+    expect(Date.now() - started).toBeLessThan(2000);
+    expect(calls).toBe(1);
+  });
 });

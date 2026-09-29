@@ -12,6 +12,9 @@ import postgres, { type Sql } from "postgres";
 const LOCK_KEY = 2106;
 
 const TABLES = [
+  "request_counters",
+  "request_leases",
+  "request_budgets",
   "account_deletion_pending",
   "account_deletions",
   "story_follows",
