@@ -1,0 +1,95 @@
+{
+  "story-demo-3-correction:gate:c-1": {
+    "judgments": [
+      {
+        "quoteId": "q-b815da-1",
+        "label": "뒷받침",
+        "reason": "인용문이 원 주장과 동일하게 ‘수요일에 칼데라 의회가 25년간 민간 위탁으로 항구 케셀 컨테이너 터미널 운영을 넘기는 법안을 가결했다’고 직접 명시함."
+      },
+      {
+        "quoteId": "q-ce872e-1",
+        "label": "상충",
+        "reason": "원 주장(가결)과 반대로 인용문은 같은 수요일에 해당 법안 표결을 연기했다고 명시해 서로 동시에 참일 수 없음."
+      }
+    ]
+  },
+  "story-demo-3-correction:gate:c-2": {
+    "judgments": [
+      {
+        "quoteId": "q-ce872e-1",
+        "label": "부분 뒷받침",
+        "reason": "문장은 의회가 수요일 표결을 연기했고 야당이 수정안 검토를 요청했다고 정확히 적시하지만, 해당 보도가 ‘하버 레저가 보도했다’라는 출처 표기를 포함하지 않는다."
+      },
+      {
+        "quoteId": "q-b815da-1",
+        "label": "상충",
+        "reason": "같은 날짜에 의회가 법안을 '승인했다(approved)'고 하여 '연기했다'는 주장과 직접적으로 모순된다."
+      }
+    ]
+  },
+  "story-demo-3-correction:gate:c-3": {
+    "judgments": [
+      {
+        "quoteId": "q-b815da-3",
+        "label": "뒷받침",
+        "reason": "인용문은 운송부가 3개월 내에 공개 입찰을 시작하겠다고 말했다고 명시하며 위탁(컨세션)이 공개 입찰을 통해 배정될 것이라고 밝히므로 주장을 그대로 뒷받침함."
+      },
+      {
+        "quoteId": "q-ce872e-2",
+        "label": "부분 뒷받침",
+        "reason": "인용문은 위탁이 운송부가 운영하는 공개 입찰을 통해 배정될 것이라고 말하지만, 이 내용이 '운송부가 말했다'고 명시적으로 전하진 않아 발화자(운송부의 발언)라는 점이 빠져 있음."
+      }
+    ]
+  },
+  "story-demo-3-correction:gate:c-4": {
+    "judgments": [
+      {
+        "quoteId": "q-b815da-4",
+        "label": "뒷받침",
+        "reason": "영문 문구가 'according to the text of the bill'이라며 승자 운영자(the winning operator)가 'about 1,400 employees'를 'for at least five years' 유지해야 한다고 직접 명시함. 클레임과 일치함."
+      },
+      {
+        "quoteId": "q-ce872e-3",
+        "label": "뒷받침",
+        "reason": "'Under the bill'을 근거로 'the winning operator would have to keep the terminal's current workforce of about 1,400 employees for at least five years'라고 명확히 서술하므로 클레임을 그대로 뒷받침함."
+      }
+    ]
+  },
+  "story-demo-3-correction:gate:c-5": {
+    "judgments": [
+      {
+        "quoteId": "q-b815da-2",
+        "label": "부분 뒷받침",
+        "reason": "법안이 88대 61로 가결됐고 토론이 자정을 넘겨 진행됐다고 직접적으로 서술하고 있으나, 이를 ‘메리디언 와이어가 보도했다’는 출처 표시는 없어 보도 주체가 빠져 있음."
+      }
+    ]
+  },
+  "story-demo-3-correction:gate:c-6": {
+    "judgments": [
+      {
+        "quoteId": "q-b815da-5",
+        "label": "부분 뒷받침",
+        "reason": "최종 본문을 검토한 뒤 법적 대응 여부를 결정하겠다고 ‘말했다’는 부분은 일치하지만, 기존 연금 조건을 보장하지 않는 위탁에 반대한다는 내용은 포함되어 있지 않음."
+      },
+      {
+        "quoteId": "q-ce872e-4",
+        "label": "부분 뒷받침",
+        "reason": "기존 연금 조건을 보장하지 않는 위탁에 반대한다고 ‘말했다’는 부분은 일치하지만, 최종 본문 검토 후 법적 대응 여부를 결정하겠다는 내용은 포함되어 있지 않음."
+      }
+    ]
+  },
+  "story-demo-3-correction:gate:c-7": {
+    "judgments": [
+      {
+        "quoteId": "q-b815da-6",
+        "label": "부분 뒷받침",
+        "reason": "‘더 큰 선박을 처리하려면 새 크레인과 더 깊은 접안이 필요하다’고 선사들이 말했다는 점은 명시하지만, ‘오래 전부터 크레인 고장과 얕은 접안 수심을 불평해왔다’는 내용은 포함하지 않음."
+      },
+      {
+        "quoteId": "q-ce872e-5",
+        "label": "부분 뒷받침",
+        "reason": "‘선사들이 오래 전부터 크레인 고장과 얕은 접안 수심을 불평해왔다’는 점은 명시하지만, ‘더 큰 선박을 처리하려 새 크레인과 더 깊은 접안이 필요하다고 말했다’는 진술은 포함되지 않음."
+      }
+    ]
+  }
+}

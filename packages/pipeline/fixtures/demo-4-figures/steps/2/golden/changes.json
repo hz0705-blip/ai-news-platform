@@ -1,0 +1,30 @@
+[
+  {
+    "kind": "주장 추가·삭제·수정",
+    "claimChange": "추가",
+    "claimId": "demo-4-figures:c-3@rev-2",
+    "currentText": "손홀트 항구 당국은 화요일 검사 이후 부두 두 곳의 균열이 발견돼 손상액 추정치를 4,200만 달러에서 9,500만 달러로 상향했다고 밝혔다."
+  },
+  {
+    "kind": "주장 추가·삭제·수정",
+    "claimChange": "추가",
+    "claimId": "demo-4-figures:c-5@rev-2",
+    "currentText": "항구 당국은 화요일 검사에서 네 번째 선박-육상 크레인이 손상된 것으로 확인됐다고 말했다."
+  },
+  {
+    "kind": "주장 추가·삭제·수정",
+    "claimChange": "삭제",
+    "claimId": "demo-4-figures:c-4",
+    "previousText": "항만청은 항구 노동자 중 부상자는 없었다고 밝혔다."
+  },
+  {
+    "kind": "주장 추가·삭제·수정",
+    "claimChange": "삭제",
+    "claimId": "demo-4-figures:c-5",
+    "previousText": "터미널이 닫힌 동안 선사들은 배를 밴티지와 인근 다른 항구로 우회시키기 시작했다고 보도됐다."
+  },
+  {
+    "kind": "출처 추가",
+    "articleId": "article-meridian-liss-followup"
+  }
+]

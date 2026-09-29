@@ -1,0 +1,55 @@
+[
+  {
+    "kind": "주장 추가·삭제·수정",
+    "claimChange": "수정",
+    "claimId": "demo-3-correction:c-1",
+    "previousText": "메리디언 와이어는 칼데라 의회가 수요일 항구 케셀 컨테이너 터미널 운영을 25년간 민간 위탁으로 넘기는 법안을 가결했다고 보도했다.",
+    "currentText": "칼데라 의회는 수요일 항구 케셀 컨테이너 터미널 운영권을 민간에 25년 동안 부여하는 법안을 가결했다고 보도되었다."
+  },
+  {
+    "kind": "주장 추가·삭제·수정",
+    "claimChange": "추가",
+    "claimId": "demo-3-correction:c-2@rev-2",
+    "currentText": "의원들은 논의가 자정을 넘긴 뒤 그 법안을 찬성 88표, 반대 61표로 통과시켰다고 보도됐다."
+  },
+  {
+    "kind": "주장 추가·삭제·수정",
+    "claimChange": "추가",
+    "claimId": "demo-3-correction:c-3@rev-2",
+    "currentText": "교통부는 운영권을 교통부가 주관하는 공개 입찰로 수여할 것이며 그 공개 입찰을 3개월 이내에 시작하겠다고 밝혔다."
+  },
+  {
+    "kind": "주장 추가·삭제·수정",
+    "claimChange": "추가",
+    "claimId": "demo-3-correction:c-5@rev-2",
+    "currentText": "부두노조는 기존 연금 조건을 보장하지 않는 양도에는 반대한다고 노조가 밝혀왔다."
+  },
+  {
+    "kind": "주장 추가·삭제·수정",
+    "claimChange": "삭제",
+    "claimId": "demo-3-correction:c-3",
+    "previousText": "보도에 따르면 운송부는 공개 입찰을 통해 위탁 운영사를 선정할 것이라고 전했다."
+  },
+  {
+    "kind": "상충 상태 변화",
+    "claimId": "demo-3-correction:c-1",
+    "previousStatus": "보도 상충",
+    "currentStatus": "정정됨"
+  },
+  {
+    "kind": "상충 상태 변화",
+    "claimId": "demo-3-correction:c-4",
+    "previousStatus": "복수 출처 일치",
+    "currentStatus": "정정됨"
+  },
+  {
+    "kind": "상충 상태 변화",
+    "previousStatus": "보도 상충",
+    "currentStatus": "정정됨"
+  },
+  {
+    "kind": "원문 변경",
+    "articleId": "article-meridian-kessel",
+    "articleVersionId": "av-meridian-kessel-2"
+  }
+]

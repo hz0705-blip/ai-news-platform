@@ -1,0 +1,54 @@
+{
+  "av-meridian-kessel-1": {
+    "quotes": [
+      {
+        "quoteId": "q-b815da-1",
+        "quote": "Kaldera's parliament on Wednesday approved a bill that hands operation of the Port Kessel container terminal to a private concession for 25 years."
+      },
+      {
+        "quoteId": "q-b815da-2",
+        "quote": "Lawmakers passed the measure by 88 votes to 61 after a debate that ran past midnight."
+      },
+      {
+        "quoteId": "q-b815da-3",
+        "quote": "The concession will be awarded through an open tender that the transport ministry said it would launch within three months."
+      },
+      {
+        "quoteId": "q-b815da-4",
+        "quote": "The winning operator must keep the terminal's current workforce of about 1,400 employees for at least five years, according to the text of the bill."
+      },
+      {
+        "quoteId": "q-b815da-5",
+        "quote": "The dockworkers' union said it would study the final text before deciding whether to challenge the law in court."
+      },
+      {
+        "quoteId": "q-b815da-6",
+        "quote": "Shipping lines that use the port have said the terminal needs new cranes and deeper berths to handle larger vessels."
+      }
+    ]
+  },
+  "av-harbor-kessel-1": {
+    "quotes": [
+      {
+        "quoteId": "q-ce872e-1",
+        "quote": "Kaldera's parliament on Wednesday postponed a vote on a bill that would hand operation of the Port Kessel container terminal to a private concession for 25 years, after opposition lawmakers requested more time to review amendments."
+      },
+      {
+        "quoteId": "q-ce872e-2",
+        "quote": "The concession would be awarded through an open tender run by the transport ministry."
+      },
+      {
+        "quoteId": "q-ce872e-3",
+        "quote": "Under the bill, the winning operator would have to keep the terminal's current workforce of about 1,400 employees for at least five years."
+      },
+      {
+        "quoteId": "q-ce872e-4",
+        "quote": "The dockworkers' union has said it opposes any concession that does not guarantee existing pension terms."
+      },
+      {
+        "quoteId": "q-ce872e-5",
+        "quote": "Shipping lines that use the port have long complained about crane breakdowns and shallow berths."
+      }
+    ]
+  }
+}

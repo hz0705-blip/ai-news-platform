@@ -1,0 +1,38 @@
+{
+  "at": "2026-09-17T00:30:00.000Z",
+  "articles": [
+    {
+      "id": "article-meridian-liss",
+      "sourceId": "source-meridian-wire",
+      "storyId": "story-demo-4-figures",
+      "url": "https://meridianwire.example/typhoon-liss-sonholt",
+      "title": "Typhoon Liss shuts Sonholt port",
+      "publishedAt": "2026-09-16T02:40:00.000Z",
+      "topics": ["세계 경제·금융"],
+      "articleVersionId": "av-meridian-liss-1",
+      "file": "articles/meridian-liss-1.txt"
+    },
+    {
+      "id": "article-harbor-liss",
+      "sourceId": "source-harbor-ledger",
+      "storyId": "story-demo-4-figures",
+      "url": "https://harborledger.example/sonholt-typhoon-cranes",
+      "title": "Typhoon Liss halts Sonholt port as cranes topple",
+      "publishedAt": "2026-09-16T03:55:00.000Z",
+      "topics": ["세계 경제·금융"],
+      "articleVersionId": "av-harbor-liss-1",
+      "file": "articles/harbor-liss-1.txt"
+    },
+    {
+      "id": "article-meridian-liss-followup",
+      "sourceId": "source-meridian-wire",
+      "storyId": "story-demo-4-figures",
+      "url": "https://meridianwire.example/sonholt-damage-estimate-raised",
+      "title": "Sonholt typhoon damage estimate rises to $95 million",
+      "publishedAt": "2026-09-16T22:05:00.000Z",
+      "topics": ["세계 경제·금융"],
+      "articleVersionId": "av-meridian-liss-followup-1",
+      "file": "articles/meridian-liss-followup.txt"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "story-demo-4-figures:gate:c-1": {
+    "judgments": [
+      {
+        "quoteId": "q-ad0d04-1",
+        "label": "뒷받침",
+        "reason": "문장 자체가 태풍 리스가 월요일 손홀트 인근에 상륙해 항구의 모든 컨테이너 운영이 중단됐다고 직접 명시함."
+      },
+      {
+        "quoteId": "q-1a07e7-1",
+        "label": "뒷받침",
+        "reason": "같은 문장으로 동일한 사실(월요일 손홀트 인근 상륙·항구의 모든 컨테이너 운영 중단)을 명확히 서술함."
+      }
+    ]
+  },
+  "story-demo-4-figures:gate:c-2": {
+    "judgments": [
+      {
+        "quoteId": "q-ad0d04-2",
+        "label": "뒷받침",
+        "reason": "인용문이 정확히 동일하게 ’손홀트 항만청이 월요일 저녁 항만 시설 피해액을 4,200만 달러로 추산했다고 밝혔다’라고 명시함."
+      },
+      {
+        "quoteId": "q-1a07e7-2",
+        "label": "뒷받침",
+        "reason": "동일 문장으로 손홀트 항만청이 월요일 저녁에 피해액을 4,200만 달러로 추산했다고 밝히고 있어 전부 일치함."
+      }
+    ]
+  },
+  "story-demo-4-figures:gate:c-3": {
+    "judgments": [
+      {
+        "quoteId": "q-ad0d04-3",
+        "label": "뒷받침",
+        "reason": "문장이 정확히 ‘항만청(=the authority)이 폭풍으로 세 대의 선박-육상 크레인이 레일에서 탈선했다고 말했다’라고 명시하므로 일치함."
+      },
+      {
+        "quoteId": "q-1a07e7-3",
+        "label": "뒷받침",
+        "reason": "같은 문장으로 동일한 주장(항만청이 폭풍으로 세 대의 선박-육상 크레인이 레일에서 탈선했다고 말했다)을 명시하고 있어 일치함."
+      }
+    ]
+  },
+  "story-demo-4-figures:gate:c-4": {
+    "judgments": [
+      {
+        "quoteId": "q-ad0d04-4",
+        "label": "뒷받침",
+        "reason": "문장이 'No port workers were injured, the authority said.'로 항만청(=the authority)이 항구 노동자 중 부상자가 없었다고 밝혔다고 직접 명시하여 청구 내용과 일치함."
+      }
+    ]
+  },
+  "story-demo-4-figures:gate:c-5": {
+    "judgments": [
+      {
+        "quoteId": "q-1a07e7-4",
+        "label": "뒷받침",
+        "reason": "인용문이 정확히 같은 주장을 직접 서술함: 터미널이 닫힌 동안 선사들이 밴티지와 인근 항구로 선박을 우회시키기 시작했다고 밝힘."
+      }
+    ]
+  }
+}

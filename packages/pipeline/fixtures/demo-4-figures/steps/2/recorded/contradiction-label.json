@@ -1,0 +1,29 @@
+{
+  "story-demo-4-figures:c-1": {
+    "pairs": [
+      {
+        "a": "q-ad0d04-1",
+        "b": "q-1a07e7-1",
+        "label": "뒷받침 일치"
+      }
+    ]
+  },
+  "story-demo-4-figures:c-2": {
+    "pairs": [
+      {
+        "a": "q-ad0d04-2",
+        "b": "q-1a07e7-2",
+        "label": "뒷받침 일치"
+      }
+    ]
+  },
+  "story-demo-4-figures:c-4": {
+    "pairs": [
+      {
+        "a": "q-ad0d04-3",
+        "b": "q-1a07e7-3",
+        "label": "뒷받침 일치"
+      }
+    ]
+  }
+}

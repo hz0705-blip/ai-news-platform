@@ -8,16 +8,16 @@ import {
 } from "@newsplatform/db";
 import { createArticleVersion } from "@newsplatform/domain";
 import {
-  createRecordedModelClient,
-  DEMO_REFERENCE_TIME,
+  createDemoStepModelClient,
+  demoStepBatchInput,
   listGoldenSetSlugs,
-  loadDemoStoryFixture,
+  loadDemoStorySteps,
   runBatch,
 } from "@newsplatform/pipeline";
 
 /**
- * 데모 사건 적재 명령(#21 Ruling 6, #22 Ruling 22-15): 픽스처 → 배치(기록된 응답, 데모 기준
- * 시각 시계) → 발행. 도메인·DB·파이프라인을 잇는 자리는 워커뿐이다. 멱등은 `publishRevision`이
+ * 데모 사건 적재 명령(#21 Ruling 6, #22 Ruling 22-15, #88): 픽스처 단계마다 배치(기록된 응답, 단계 시각
+ * 시계) → 발행(변화 포함). 도메인·DB·파이프라인을 잇는 자리는 워커뿐이다. 멱등은 `publishRevision`이
  * 한 트랜잭션에서 보장한다. 재실행은 개정판을 만들지 않고 `checked_at`만 갱신한다(스펙 134행).
  *
  * 실행: pnpm --filter @newsplatform/worker demo:load [slug] (DATABASE_MIGRATION_URL 필요, 인자
@@ -34,63 +34,67 @@ export async function loadDemoStory(params: {
   checkedAt: Date | undefined;
   storyIsDemo: boolean;
 }> {
-  const now = params.now ?? DEMO_REFERENCE_TIME;
-  const fixture = loadDemoStoryFixture(params.slug);
+  const demo = loadDemoStorySteps(params.slug);
+  const { story, sources, steps } = demo;
 
   // 적재 명령은 마이그레이션 URL(세션 풀러)로 연결한다. 연결 설정(풀 1, prepared statement 끔)은 런타임과 같다.
   const { db, sql } = createRuntimeDb({ DATABASE_URL: params.url });
   try {
-    const latestRevision = await loadLatestRevision(db, { slug: params.slug });
-
-    const result = await runBatch(
-      {
-        articles: fixture.articles.map((a) => ({ ...a.meta, rawBody: a.rawBody })),
-        now,
-        dailyBudget: { tokens: 1_000_000, spend: 10 },
-        sources: fixture.sources,
-        existingStories: [{ story: fixture.story, ...(latestRevision ? { latestRevision } : {}) }],
-      },
-      {
-        modelClient: createRecordedModelClient(params.slug),
-        embeddingClient: { embed: async () => ({ vectors: [], usage: { tokens: 0, spend: 0 } }) },
-        clock: () => now,
-      },
-    );
-    const revision = result.revisions[0];
-    const confirmed = result.confirmed[0];
-    if (revision === undefined && confirmed === undefined) {
-      throw new Error(`데모 사건을 발행하지 못했다: ${JSON.stringify(result.report.failures)}`);
-    }
-
+    // 단계는 순서대로 적용한다(#88). 이미 적재된 개정판 수만큼 앞 단계를 건너뛰고, 모두 적재됐으면 마지막 단계를
+    // 다시 돌려 같은 내용이면 확인 시각만 갱신한다. `now`는 마지막 단계의 시각을 덮어쓴다(기본은 단계 시각).
+    let latestRevision = await loadLatestRevision(db, { slug: params.slug });
+    const start = Math.min(latestRevision?.revisionNumber ?? 0, steps.length - 1);
     let inserted = false;
-    if (revision !== undefined) {
-      // 본문을 처리할 수 있는 출처의 기사만 기사 버전을 저장한다. 링크만 기사는 메타데이터만 남긴다(Ruling 15).
-      const rightsOf = new Map(fixture.sources.map((s) => [s.id, s.rightsTier]));
-      const articleVersions = fixture.articles
-        .filter((a) => rightsOf.get(a.meta.sourceId) === "본문 처리 + 발췌 표시")
-        .map((a) =>
-          createArticleVersion({
-            id: a.meta.articleVersionId,
-            articleId: a.meta.id,
-            rawBody: a.rawBody,
-            capturedAt: now,
-          }),
-        );
-      inserted = (
-        await publishRevision(db, {
-          story: fixture.story,
+    let confirmed = false;
+    for (let index = start; index < steps.length; index++) {
+      const step = steps[index] as (typeof steps)[number];
+      const last = index === steps.length - 1;
+      const now = last && params.now !== undefined ? params.now : step.at;
+      const result = await runBatch(
+        demoStepBatchInput(demo, index, { ...(latestRevision ? { latestRevision } : {}), now }),
+        {
+          modelClient: createDemoStepModelClient(step),
+          embeddingClient: { embed: async () => ({ vectors: [], usage: { tokens: 0, spend: 0 } }) },
+          clock: () => now,
+        },
+      );
+      const revision = result.revisions[0];
+      const confirmedRevision = result.confirmed[0];
+      if (revision === undefined && confirmedRevision === undefined) {
+        throw new Error(`데모 사건을 발행하지 못했다: ${JSON.stringify(result.report.failures)}`);
+      }
+
+      if (revision !== undefined) {
+        // 본문을 처리할 수 있는 출처의 기사만 기사 버전을 저장한다. 링크만 기사는 메타데이터만 남긴다(Ruling 15).
+        const rightsOf = new Map(sources.map((s) => [s.id, s.rightsTier]));
+        const articleVersions = step.articles
+          .filter((a) => rightsOf.get(a.meta.sourceId) === "본문 처리 + 발췌 표시")
+          .map((a) =>
+            createArticleVersion({
+              id: a.meta.articleVersionId,
+              articleId: a.meta.id,
+              rawBody: a.rawBody,
+              capturedAt: now,
+            }),
+          );
+        const published = await publishRevision(db, {
+          story,
           revision,
-          articles: fixture.articles.map((a) => a.meta),
+          articles: step.articles.map((a) => a.meta),
           articleVersions,
-          sources: fixture.sources,
-        })
-      ).inserted;
-    }
-    if (confirmed !== undefined) {
-      await confirmRevision(db, {
-        revisionId: confirmed.revisionId,
-        checkedAt: confirmed.checkedAt,
-      });
+          sources,
+          changes: result.changes[0]?.changes ?? [],
+        });
+        inserted ||= published.inserted;
+        latestRevision = revision;
+      }
+      if (confirmedRevision !== undefined) {
+        await confirmRevision(db, {
+          revisionId: confirmedRevision.revisionId,
+          checkedAt: confirmedRevision.checkedAt,
+        });
+        confirmed = true;
+      }
     }
 
     // `sql`는 `drizzle(sql)`과 연결을 공유하므로(런타임 시각 열의 파싱을 drizzle이 가져간다) 시각 열은
@@ -98,13 +102,13 @@ export async function loadDemoStory(params: {
     const revisionRows = await sql<{ revision_count: number }[]>`
       select count(r.id)::int as revision_count
       from stories s left join story_revisions r on r.story_id = s.id
-      where s.slug = ${fixture.story.slug}
+      where s.slug = ${story.slug}
       group by s.id
     `;
     const page = await loadPublishedStory(db, { slug: params.slug });
     return {
       inserted,
-      confirmed: confirmed !== undefined,
+      confirmed,
       revisionCount: revisionRows[0]?.revision_count ?? 0,
       checkedAt: page?.revision.checkedAt,
       storyIsDemo: page?.story.isDemo ?? false,
