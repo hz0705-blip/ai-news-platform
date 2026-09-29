@@ -133,7 +133,8 @@ export async function runContradictionLabel(
     undeterminable: pairs.some((pair) => pair.label === "판정 불가"),
     supportingOrigins: supporting.size,
     conflictingOrigins,
-    // 에피소드 기록은 M3가 채운다. 사건 단위의 열린 에피소드는 batch-run이 `openEpisodes`로 넘긴다.
+    // 열린 에피소드는 `previous`(보도 상충)로 들어온다 — batch-run이 앞 개정판에서 빠진 에피소드 주장까지 잇는다(#90).
+    // 사건 단위의 열린 에피소드 수는 batch-run이 `openEpisodes`로 넘긴다.
     openEpisode: false,
     // 명시 정정: 근거가 재수집의 정정 후보 기사 버전을 쓴다(#86). 명시 해소는 에피소드 기록이 생기면 채운다.
     explicitCorrection: input.explicitCorrection ?? false,

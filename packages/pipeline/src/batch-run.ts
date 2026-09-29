@@ -428,10 +428,23 @@ async function processStory(
   // 좌표 정렬(#86): 이전 개정판 근거 중 기사 버전이 바뀐 것을 새 버전 좌표로 옮긴다. 실패한 근거는 옛 버전에 남아
   // 매칭 겹침이 0이다(새 식별자 + 계보는 #85 규칙대로).
   const alignedPrevious = realignClaims(latest?.claims ?? [], versions, state, spanRealignment);
+  // 열린 상충 에피소드(#90): 마지막 개정판의 보도 상충 주장 + 그 앞 개정판에서 보도 상충인 채 빠진 주장.
+  // 빠진 주장도 매칭 후보라 다시 나오면 식별자와 이전 상태를 잇는다(명시 종료 입력 전까지 보도 상충).
+  const latestIds = new Set((latest?.claims ?? []).map((c) => c.id));
+  const absentEpisodes = realignClaims(
+    (state.openEpisodeClaims ?? []).filter((c) => !latestIds.has(c.id)),
+    versions,
+    state,
+    spanRealignment,
+  );
+  const episodeClaimIds = [
+    ...(latest?.claims ?? []).filter((c) => c.contradictionStatus === "보도 상충").map((c) => c.id),
+    ...absentEpisodes.map((c) => c.id),
+  ];
 
   // 주장 매칭(#85): 이전 개정판 주장과 근거 구간 겹침으로 식별자를 잇는다. 상충 판정이 이전 상태를 보므로 그 앞에서 한다.
   const matches = matchClaims(
-    alignedPrevious,
+    [...alignedPrevious, ...absentEpisodes],
     supported.map(({ claim, evidence }) => ({ claimType: claim.claimType, evidence })),
   );
   const lineage = new Map<string, string>();
@@ -450,7 +463,8 @@ async function processStory(
         storyId,
         claimKey: claim.claimKey,
         claimText: claim.text,
-        previous: latest?.claims.find((c) => c.id === claimId)?.contradictionStatus,
+        previous: [...(latest?.claims ?? []), ...absentEpisodes].find((c) => c.id === claimId)
+          ?.contradictionStatus,
         // 정정 후보 기사 버전(#86)을 근거로 쓰는 주장은 명시 정정 입력을 받는다(상태 규칙 ③).
         ...(evidence.some((item) => item.origin.article.correctionCandidate === true)
           ? { explicitCorrection: true }
@@ -505,12 +519,10 @@ async function processStory(
       "표시할 주장이 없다",
     );
   }
-  // Ruling 22-8: 이전 개정판에서 보도 상충이던 주장이 이번 개정판에 없으면 그 에피소드는 아직 열려 있다.
+  // Ruling 22-8·#90: 열린 에피소드의 주장이 이번 개정판에 없으면 그 에피소드는 아직 열려 있다(요약 제외로 닫히지 않음).
+  // 이번 개정판에 있으면 그 주장의 상태가 정한다(명시 정정·해소 입력으로만 보도 상충을 벗어난다).
   const publishedClaimIds = new Set(claims.map((c) => c.id));
-  const openEpisodes =
-    latest?.claims.filter(
-      (c) => c.contradictionStatus === "보도 상충" && !publishedClaimIds.has(c.id),
-    ).length ?? 0;
+  const openEpisodes = episodeClaimIds.filter((id) => !publishedClaimIds.has(id)).length;
   const draft = revisionStage.runRevision({
     story: { id: story.id, slug: story.slug },
     revisionNumber,
@@ -536,6 +548,13 @@ async function processStory(
       .filter(({ article }) => article.correctionCandidate !== true)
       .map(({ article, version }) => ({ articleId: article.id, articleVersionId: version.id })),
   });
+  // 주장 순서·근거 differsIn처럼 변화로 세지 않는 차이만 있으면 변화 0건 개정판 대신 확인만 한다(개정판 생성 조건, #90).
+  if (latest !== undefined && changes.length === 0) {
+    return {
+      kind: "confirmed",
+      confirmed: { storyId: story.id, revisionId: latest.id, checkedAt: input.now },
+    };
+  }
   return { kind: "revision", revision: draft, changes };
 }
 
