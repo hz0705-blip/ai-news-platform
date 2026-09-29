@@ -34,6 +34,12 @@ export {
 } from "./claim-status.ts";
 export type { CollectedArticle } from "./collected-article.ts";
 export { CONTRADICTION_STATUSES, type ContradictionStatus } from "./contradiction-status.ts";
+export {
+  CORRECTION_MARKERS,
+  judgeRecheckedBody,
+  newCorrectionMarkers,
+  type RecheckedBodyJudgement,
+} from "./correction-marker.ts";
 export { canDisplayExcerpt, DISPLAY_POLICY_VERSION } from "./display-policy.ts";
 export type { Evidence } from "./evidence.ts";
 export {
@@ -50,8 +56,27 @@ export {
   type GateFailure,
   type GateStage1Result,
 } from "./gate-stage1.ts";
+export {
+  canStartRecheck,
+  GNEWS_DAILY_LIMIT,
+  GNEWS_DISCOVERY_SHARE,
+  GNEWS_MAX_REQUESTS_PER_LOOKUP,
+  GNEWS_RECHECK_SHARE,
+  type GnewsLedgerDay,
+  gnewsLedgerDate,
+  gnewsLedgerRemaining,
+} from "./gnews-ledger.ts";
 export { sha256Hex } from "./hash.ts";
 export { properNounsOf } from "./proper-nouns.ts";
+export {
+  type DormantRecheckSlot,
+  type PlannedRecheck,
+  planRechecks,
+  RECHECK_DORMANT_DAILY_CAP,
+  RECHECK_SLOTS,
+  type RecheckCandidate,
+  type RecheckSlot,
+} from "./recheck-schedule.ts";
 export { formatRelativeTime } from "./relative-time.ts";
 export {
   countReportingOrigins,
@@ -86,6 +111,12 @@ export {
   spanText,
   toUtf16Range,
 } from "./span.ts";
+export {
+  createSpanAligner,
+  SPAN_REALIGN_MAX_EDITS,
+  type SpanRealignFailure,
+  type SpanRealignResult,
+} from "./span-realign.ts";
 export { STORY_LIFECYCLES, type Story, type StoryLifecycle } from "./story.ts";
 export {
   ACTIVE_WINDOW_MS,

@@ -12,6 +12,8 @@ import postgres, { type Sql } from "postgres";
 const LOCK_KEY = 2106;
 
 const TABLES = [
+  "gnews_request_ledger",
+  "article_rechecks",
   "batch_runs",
   "revision_changes",
   "evidence",

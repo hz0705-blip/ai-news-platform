@@ -67,20 +67,32 @@ export {
 export { createRecordedGdeltFetch, type RecordedGdeltResponse } from "./sources/gdelt-recorded.ts";
 export {
   buildGnewsRequest,
+  buildTitleSearchRequest,
   type CollectGnewsDeps,
   type CollectGnewsResult,
   collectGnews,
   collectionWindow,
   GNEWS_MAX_PAGES_PER_TOPIC,
   GNEWS_PAGE_SIZE,
+  GNEWS_RECHECK_WINDOW_MS,
   GNEWS_TOPIC_QUERIES,
+  type GnewsArticle,
   GnewsRequestError,
   GnewsResponseSchema,
   type GnewsTopicKey,
   type GnewsTopicQuery,
+  pickRecheckMatch,
+  type RecheckTarget,
+  searchByExactTitle,
+  type TitleSearchResult,
   toCollected,
 } from "./sources/gnews.ts";
-export { createRecordedGnewsFetch, type RecordedGnewsResponse } from "./sources/gnews-recorded.ts";
+export {
+  createRecordedGnewsFetch,
+  createRecordedRecheckFetch,
+  loadRecordedRecheck,
+  type RecordedGnewsResponse,
+} from "./sources/gnews-recorded.ts";
 export {
   type AssignmentArticle,
   type AssignmentDeps,

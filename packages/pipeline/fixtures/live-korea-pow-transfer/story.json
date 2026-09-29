@@ -1,0 +1,35 @@
+{
+  "story": {
+    "id": "story-live-korea-pow-transfer",
+    "slug": "live-korea-pow-transfer",
+    "title": "젤렌스키의 북한군 포로 이송 공개에 한국 반발",
+    "topics": ["한국 관련 해외 보도"],
+    "isDemo": false,
+    "lifecycle": "활성"
+  },
+  "sources": [
+    {
+      "id": "gnews:eaeeaeaa1e329f65d3a921c9c867fd7b",
+      "name": "Washington Examiner",
+      "rightsTier": "본문 처리 + 발췌 표시",
+      "region": "미확인",
+      "ownership": "unknown",
+      "language": "en",
+      "isFictional": false,
+      "externalId": "eaeeaeaa1e329f65d3a921c9c867fd7b"
+    }
+  ],
+  "articles": [
+    {
+      "id": "article-korea-pow-1",
+      "sourceId": "gnews:eaeeaeaa1e329f65d3a921c9c867fd7b",
+      "storyId": "story-live-korea-pow-transfer",
+      "articleVersionId": "av-korea-pow-1",
+      "url": "https://www.washingtonexaminer.com/news/world/4745534/south-korea-outraged-zelensky-revealing-north-korea-pow-transfer/",
+      "title": "South Korea outraged by Zelensky revealing North Korean POW transfer",
+      "publishedAt": "2026-09-28T19:41:58.000Z",
+      "topics": ["한국 관련 해외 보도"],
+      "file": "articles/washington-examiner.txt"
+    }
+  ]
+}

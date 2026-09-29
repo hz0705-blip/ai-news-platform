@@ -1,6 +1,7 @@
 import {
   type CollectedArticle,
   matchSourceByDomain,
+  normalizeArticleUrl,
   type Source,
   type Topic,
 } from "@newsplatform/domain";
@@ -278,4 +279,80 @@ export async function collectGnews(
     excludedArticles,
     failures,
   };
+}
+
+// ── 원문 재수집: 정확 제목 조회(#86) ─────────────────────────────
+
+/** 재수집 조회 창: 발행 시각 ±24시간(스펙 "개발 중 결정 항목" 원문 재수집과 변경 판별). */
+export const GNEWS_RECHECK_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/** 재수집할 기사 하나: 저장된 제목·URL·발행 시각. */
+export interface RecheckTarget {
+  readonly title: string;
+  readonly url: string;
+  readonly publishedAt: Date;
+}
+
+/**
+ * 정확 제목 조회 요청 URL(API 키 없음): `/search`, `in=title`, 따옴표로 묶은 제목, 창 = 발행 시각 ±24시간.
+ * 제목 안의 큰따옴표는 구문을 깨므로 공백으로 바꾼다.
+ */
+export function buildTitleSearchRequest(target: RecheckTarget): URL {
+  const title = target.title.replace(/"/g, " ").replace(/\s+/g, " ").trim();
+  const url = new URL(`${GNEWS_BASE_URL}/search`);
+  url.searchParams.set("q", `"${title}"`);
+  url.searchParams.set("in", "title");
+  url.searchParams.set("lang", "en");
+  url.searchParams.set("max", "10");
+  url.searchParams.set(
+    "from",
+    formatGnewsTime(new Date(target.publishedAt.getTime() - GNEWS_RECHECK_WINDOW_MS)),
+  );
+  url.searchParams.set(
+    "to",
+    formatGnewsTime(new Date(target.publishedAt.getTime() + GNEWS_RECHECK_WINDOW_MS)),
+  );
+  return url;
+}
+
+export type GnewsArticle = GnewsResponse["articles"][number];
+
+/** 조회 결과: 정규화 URL이 같은 기사를 찾았거나, 못 찾아 미확인(변경 아님). */
+export type TitleSearchResult =
+  | { readonly kind: "found"; readonly article: GnewsArticle }
+  | { readonly kind: "unconfirmed" };
+
+/** 순수 판정: 응답 중 정규화 URL이 대상과 같은 첫 기사만 채택한다. 없으면 미확인. */
+export function pickRecheckMatch(
+  response: GnewsResponse,
+  target: RecheckTarget,
+): TitleSearchResult {
+  const key = normalizeArticleUrl(target.url);
+  const article = response.articles.find((item) => normalizeArticleUrl(item.url) === key);
+  return article === undefined ? { kind: "unconfirmed" } : { kind: "found", article };
+}
+
+/**
+ * 재수집 조회 한 번. 요청 수(재시도 포함)는 원장에 기록하도록 돌려준다. 요청이 끝내 실패하면 던지지 않고
+ * 결과 미확인과 `error`를 돌려준다 — 못 찾은 것과 구별해 다시 할지는 호출한 쪽이 정한다. 발행사 페이지는 가져오지 않는다.
+ */
+export async function searchByExactTitle(
+  target: RecheckTarget,
+  deps: CollectGnewsDeps,
+): Promise<{
+  readonly result: TitleSearchResult;
+  readonly requestCount: number;
+  readonly error?: string;
+}> {
+  const count = { requests: 0 };
+  try {
+    const response = await requestPage(buildTitleSearchRequest(target), deps, count);
+    return { result: pickRecheckMatch(response, target), requestCount: count.requests };
+  } catch (error) {
+    return {
+      result: { kind: "unconfirmed" },
+      requestCount: count.requests,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 }

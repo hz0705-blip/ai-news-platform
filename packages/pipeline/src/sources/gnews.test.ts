@@ -3,13 +3,20 @@ import { dedupeExact, type Source } from "@newsplatform/domain";
 import { describe, expect, it } from "vitest";
 import {
   buildGnewsRequest,
+  buildTitleSearchRequest,
   collectGnews,
   collectionWindow,
   GNEWS_TOPIC_QUERIES,
   GnewsResponseSchema,
+  searchByExactTitle,
   toCollected,
 } from "./gnews.ts";
-import { createRecordedGnewsFetch, recordedGnewsPath } from "./gnews-recorded.ts";
+import {
+  createRecordedGnewsFetch,
+  createRecordedRecheckFetch,
+  loadRecordedRecheck,
+  recordedGnewsPath,
+} from "./gnews-recorded.ts";
 
 const registeredSource: Source = {
   id: "other.example",
@@ -226,5 +233,75 @@ describe("GNews 응답 매핑", () => {
     expect(deduped).toHaveLength(3);
     expect(deduped.every((a) => a.topics.length === 2)).toBe(true);
     expect(deduped[0]?.topics).toEqual(["국제 정치·외교·안보", "세계 경제·금융"]);
+  });
+});
+
+describe("원문 재수집 정확 제목 조회(#86)", () => {
+  const found = loadRecordedRecheck("korea-pow-transfer");
+  const target = {
+    title: "South Korea outraged by Zelensky revealing North Korean POW transfer",
+    url: "https://www.washingtonexaminer.com/news/world/4745534/south-korea-outraged-zelensky-revealing-north-korea-pow-transfer/",
+    publishedAt: new Date("2026-09-28T19:41:58.000Z"),
+  };
+  const deps = (recorded = found) => ({
+    fetch: createRecordedRecheckFetch(recorded),
+    apiKey: "test-key",
+  });
+
+  it("요청은 /search·in=title·따옴표 제목·발행 ±24시간이고 키가 없다", () => {
+    const url = buildTitleSearchRequest({ ...target, title: 'He said "no" today' });
+    expect(url.pathname).toBe("/api/v4/search");
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      q: '"He said no today"',
+      in: "title",
+      lang: "en",
+      max: "10",
+      from: "2026-09-27T19:41:58Z",
+      to: "2026-09-29T19:41:58Z",
+    });
+    // 기록된 실제 요청과 같은 모양이다(키는 기록에 없다).
+    expect(found.request.params).toEqual(
+      Object.fromEntries(buildTitleSearchRequest(target).searchParams),
+    );
+  });
+
+  it("정규화 URL이 일치하는 결과만 채택하고 없으면 미확인", async () => {
+    const hit = await searchByExactTitle(target, deps());
+    expect(hit.result.kind).toBe("found");
+    expect(hit.requestCount).toBe(1);
+    // www·쿼리·끝 / 차이는 같은 기사다(정규화 URL).
+    const variant = await searchByExactTitle(
+      {
+        ...target,
+        url: `${target.url.replace("https://www.", "https://").replace(/\/$/, "")}?utm_source=x`,
+      },
+      deps(),
+    );
+    expect(variant.result.kind).toBe("found");
+    // 제목이 같아도 URL이 다르면 채택하지 않는다.
+    const other = await searchByExactTitle({ ...target, url: "https://example.com/other" }, deps());
+    expect(other.result).toEqual({ kind: "unconfirmed" });
+    // 실제로 결과가 0건이었던 조회(BBC, 2026-09-29 기록)도 미확인이다.
+    const empty = await searchByExactTitle(
+      {
+        title:
+          "Iran says it will wait for official US response after Trump rejects Strait of Hormuz proposal",
+        url: "https://www.bbc.com/news/articles/cmvgyyw2jeego",
+        publishedAt: new Date("2026-09-27T02:16:52.000Z"),
+      },
+      deps(loadRecordedRecheck("hormuz-bbc-com")),
+    );
+    expect(empty.result).toEqual({ kind: "unconfirmed" });
+  });
+
+  it("요청이 끝내 실패하면 던지지 않고 미확인과 요청 수를 돌려준다", async () => {
+    const failing = await searchByExactTitle(target, {
+      fetch: async () => new Response("rate limited", { status: 429 }),
+      apiKey: "test-key",
+      retryDelayMs: 0,
+    });
+    expect(failing.result).toEqual({ kind: "unconfirmed" });
+    expect(failing.requestCount).toBe(2);
+    expect(failing.error).toMatch(/429/);
   });
 });

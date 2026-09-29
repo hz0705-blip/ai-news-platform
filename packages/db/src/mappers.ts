@@ -285,6 +285,7 @@ export function toArticleVersionRow(
     body_hash: version.bodyHash,
     captured_at: version.capturedAt,
     body_expires_at: new Date(basis.getTime() + BODY_RETENTION_MS),
+    correction_candidate: false,
   };
 }
 
