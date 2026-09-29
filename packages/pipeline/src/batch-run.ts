@@ -1,16 +1,10 @@
 import {
-  type Claim,
-  classifyMatch,
-  computeChanges,
   createArticleVersion,
-  createSpanAligner,
-  isSameRevisionContent,
-  matchClaims,
   type Revision,
   type RevisionChange,
   type RevisionSource,
-  type SpanRealignResult,
 } from "@newsplatform/domain";
+import { finalizeRevision, prepareContinuity } from "./continuity.ts";
 import { MODEL_MAX_RETRIES, MODEL_RETRY_DELAY_MS, requestReservationUsd } from "./openai/client.ts";
 import { prioritizeStories } from "./priority.ts";
 import * as claimGeneratePrompt from "./prompts/claim-generate.ts";
@@ -40,7 +34,6 @@ import {
   type ModelUsage,
   type RevisionChanges,
   StageFailure,
-  type StoryState,
 } from "./types.ts";
 
 /** 개정판이 기록하는 프롬프트 버전(`<단계>@<정수>`, `src/prompts/`). */
@@ -426,61 +419,42 @@ async function processStory(
     supported.push({ claim, evidence });
   }
 
-  // 좌표 정렬(#86): 이전 개정판 근거 중 기사 버전이 바뀐 것을 새 버전 좌표로 옮긴다. 실패한 근거는 옛 버전에 남아
-  // 매칭 겹침이 0이다(새 식별자 + 계보는 #85 규칙대로).
-  const alignedPrevious = realignClaims(latest?.claims ?? [], versions, state, spanRealignment);
-  // 열린 상충 에피소드(#90): 마지막 개정판의 보도 상충 주장 + 그 앞 개정판에서 보도 상충인 채 빠진 주장.
-  // 빠진 주장도 매칭 후보라 다시 나오면 식별자와 이전 상태를 잇는다(명시 종료 입력 전까지 보도 상충).
-  const latestIds = new Set((latest?.claims ?? []).map((c) => c.id));
-  const absentEpisodes = realignClaims(
-    (state.openEpisodeClaims ?? []).filter((c) => !latestIds.has(c.id)),
-    versions,
-    state,
-    spanRealignment,
-  );
-  const episodeClaimIds = [
-    ...(latest?.claims ?? []).filter((c) => c.contradictionStatus === "보도 상충").map((c) => c.id),
-    ...absentEpisodes.map((c) => c.id),
-  ];
-
-  // 주장 매칭(#85): 이전 개정판 주장과 근거 구간 겹침으로 식별자를 잇는다. 상충 판정이 이전 상태를 보므로 그 앞에서 한다.
-  const matches = matchClaims(
-    [...alignedPrevious, ...absentEpisodes],
-    supported.map(({ claim, evidence }) => ({ claimType: claim.claimType, evidence })),
-  );
-  const lineage = new Map<string, string>();
-  const correctedArticles = new Set(
-    versions
-      .filter(({ article }) => article.correctionCandidate && article.correctionFirstReprocess)
-      .map(({ article }) => article.id),
-  );
-  const previousById = new Map([...alignedPrevious, ...absentEpisodes].map((c) => [c.id, c]));
-  const currentVersionOf = new Map(versions.map((v) => [v.article.id, v.version.id]));
+  // 연속성 규칙(#85·#86·#90·#94): 상충 판정이 이전 상태를 보므로 그 앞에서 식별자·이전 상태·명시 정정 입력을 정한다.
+  const continuity = prepareContinuity({
+    story,
+    latest,
+    openEpisodeClaims: state.openEpisodeClaims,
+    previousVersionBodies: state.previousVersionBodies,
+    articleVersions: versions.map(({ article, version }) => ({
+      articleId: article.id,
+      articleVersionId: version.id,
+      body: version.body,
+      correctionCandidate: article.correctionCandidate,
+      correctionFirstReprocess: article.correctionFirstReprocess,
+    })),
+    drafts: supported.map(({ claim, evidence }) => ({
+      claimKey: claim.claimKey,
+      text: claim.text,
+      claimType: claim.claimType,
+      modality: claim.modality,
+      evidence,
+    })),
+  });
+  spanRealignment.attempted += continuity.spanRealignment.attempted;
+  spanRealignment.aligned += continuity.spanRealignment.aligned;
 
   // 4. 상충 판정
   const claims: revisionStage.RevisionInput["claims"] = [];
   for (const [index, { claim, evidence }] of supported.entries()) {
-    const match = matches[index] ?? {};
-    const claimId =
-      match.previousId ?? revisionStage.claimId(story.slug, claim.claimKey, revisionNumber);
-    if (match.previousId === undefined && match.lineageOf !== undefined) {
-      lineage.set(claimId, match.lineageOf);
-    }
+    const prepared = continuity.claims[index];
+    if (prepared === undefined) throw new Error(`연속성 결정 없음: ${claim.claimKey}`);
     const { result, differsIn } = await contradiction.runContradictionLabel(
       {
         storyId,
         claimKey: claim.claimKey,
         claimText: claim.text,
-        previous: [...(latest?.claims ?? []), ...absentEpisodes].find((c) => c.id === claimId)
-          ?.contradictionStatus,
-        // 명시 정정 입력(상태 규칙 ③, #94): 정정 후보 버전의 첫 재처리에서 그 버전의 근거가 바뀐 이어진 주장만 받는다.
-        ...(match.previousId !== undefined &&
-        isCorrected(previousById.get(match.previousId), claim, evidence, {
-          correctedArticles,
-          currentVersionOf,
-        })
-          ? { explicitCorrection: true }
-          : {}),
+        previous: prepared.previousStatus,
+        ...(prepared.explicitCorrection ? { explicitCorrection: true } : {}),
         evidence: evidence.map((item) => ({
           quoteId: item.quoteId,
           quote: item.spanText,
@@ -496,7 +470,7 @@ async function processStory(
       continue;
     }
     claims.push({
-      id: claimId,
+      id: prepared.claimId,
       claimKey: claim.claimKey,
       text: claim.text,
       claimType: claim.claimType,
@@ -524,21 +498,10 @@ async function processStory(
     })),
     ...(state.linkOnlySources ?? []),
   ];
-  if (claims.length === 0) {
-    throw new StageFailure(
-      revisionStage.STAGE,
-      `${story.id}:rev:${revisionNumber}`,
-      "표시할 주장이 없다",
-    );
-  }
-  // Ruling 22-8·#90: 열린 에피소드의 주장이 이번 개정판에 없으면 그 에피소드는 아직 열려 있다(요약 제외로 닫히지 않음).
-  // 이번 개정판에 있으면 그 주장의 상태가 정한다(명시 정정·해소 입력으로만 보도 상충을 벗어난다).
-  const publishedClaimIds = new Set(claims.map((c) => c.id));
-  const openEpisodes = episodeClaimIds.filter((id) => !publishedClaimIds.has(id)).length;
-  const draft = revisionStage.runRevision({
+  const finalized = finalizeRevision({
+    kind: "reprocessed",
+    continuity,
     story: { id: story.id, slug: story.slug },
-    revisionNumber,
-    openEpisodes,
     title: generated.title,
     publishedAt: deps.clock(),
     promptVersions: PROMPT_VERSIONS,
@@ -546,100 +509,11 @@ async function processStory(
     claims,
     sources,
   });
-  if (latest !== undefined && isSameRevisionContent(latest, draft)) {
+  if (finalized.kind === "confirmed") {
     return {
       kind: "confirmed",
-      confirmed: { storyId: story.id, revisionId: latest.id, checkedAt: input.now },
+      confirmed: { storyId: story.id, revisionId: finalized.revisionId, checkedAt: input.now },
     };
   }
-  // 정정 후보 버전은 원문 변경으로 세지 않는다(스펙 "정정 vs 원문 변경": 정정은 상충 상태 변화로 드러난다).
-  const changes = computeChanges(latest, draft, {
-    lineage,
-    alignedClaims: alignedPrevious,
-    articleVersions: versions
-      .filter(({ article }) => article.correctionCandidate !== true)
-      .map(({ article, version }) => ({ articleId: article.id, articleVersionId: version.id })),
-  });
-  // 주장 순서·근거 differsIn처럼 변화로 세지 않는 차이만 있으면 변화 0건 개정판 대신 확인만 한다(개정판 생성 조건, #90).
-  if (latest !== undefined && changes.length === 0) {
-    return {
-      kind: "confirmed",
-      confirmed: { storyId: story.id, revisionId: latest.id, checkedAt: input.now },
-    };
-  }
-  return { kind: "revision", revision: draft, changes };
-}
-
-/**
- * 이어진 주장이 정정 후보 버전에서 바뀌었는가(#94). 이전 주장(좌표 정렬 뒤)이 정정 후보 기사(첫 재처리)의 근거를
- * 가졌고, 그 근거의 좌표 정렬이 실패했거나(옛 버전에 남음) 매칭 분류가 실질 변경(주장 수정)이면 참이다.
- * 구간이 그대로 옮겨졌고 문장만 다르거나(표현만 변경) 같으면(불변) 거짓이다.
- */
-function isCorrected(
-  previous: Claim | undefined,
-  next: {
-    readonly text: string;
-    readonly claimType: Claim["claimType"];
-    readonly modality: Claim["modality"];
-  },
-  evidence: readonly {
-    readonly articleVersionId: string;
-    readonly span: Claim["evidence"][number]["span"];
-  }[],
-  context: {
-    readonly correctedArticles: ReadonlySet<string>;
-    readonly currentVersionOf: ReadonlyMap<string, string>;
-  },
-): boolean {
-  if (previous === undefined) return false;
-  const touched = previous.evidence.filter((e) => context.correctedArticles.has(e.articleId));
-  if (touched.length === 0) return false;
-  if (touched.some((e) => e.articleVersionId !== context.currentVersionOf.get(e.articleId))) {
-    return true;
-  }
-  return classifyMatch(previous, { ...next, evidence }) === "실질 변경";
-}
-
-/**
- * 이전 개정판 주장의 근거를 이번 입력의 기사 버전 좌표로 옮긴다(#86). 근거의 기사 버전이 입력 버전과 같거나 그 기사가
- * 입력에 없으면 그대로 둔다. 다르면 이전 본문(`previousVersionBodies`)과 새 본문의 차이로 구간을 옮기고, 실패하면
- * 그대로 둔다(옛 버전이라 겹침 0). 시도·성공 수를 `counter`에 더한다.
- */
-function realignClaims(
-  claims: readonly Claim[],
-  versions: readonly {
-    readonly article: ArticleInput;
-    readonly version: { readonly id: string; readonly body: string };
-  }[],
-  state: StoryState,
-  counter: { attempted: number; aligned: number },
-): Claim[] {
-  const currentByArticle = new Map(versions.map((v) => [v.article.id, v.version]));
-  const bodies = new Map(
-    (state.previousVersionBodies ?? []).map((v) => [v.articleVersionId, v.body]),
-  );
-  const aligners = new Map<
-    string,
-    (span: Claim["evidence"][number]["span"]) => SpanRealignResult
-  >();
-  return claims.map((claim) => ({
-    ...claim,
-    evidence: claim.evidence.map((item) => {
-      const current = currentByArticle.get(item.articleId);
-      if (current === undefined || current.id === item.articleVersionId) return item;
-      counter.attempted++;
-      const previousBody = bodies.get(item.articleVersionId);
-      if (previousBody === undefined) return item;
-      const key = `${item.articleVersionId}\n${current.id}`;
-      let align = aligners.get(key);
-      if (align === undefined) {
-        align = createSpanAligner(previousBody, current.body);
-        aligners.set(key, align);
-      }
-      const result = align(item.span);
-      if (!result.ok) return item;
-      counter.aligned++;
-      return { ...item, articleVersionId: current.id, span: result.span };
-    }),
-  }));
+  return { kind: "revision", revision: finalized.revision, changes: finalized.changes };
 }

@@ -3,15 +3,14 @@ import {
   type AssignmentCandidate,
   type AssignmentThresholds,
   articleIdFor,
-  computeChanges,
   decideAssignment,
   embeddingInputFor,
   type Revision,
   type RevisionChange,
   type RevisionSource,
-  revisionWithSources,
   type Source,
 } from "@newsplatform/domain";
+import { finalizeRevision } from "../continuity.ts";
 import type { GdeltLink } from "../sources/gdelt.ts";
 import type { EmbeddingClient } from "../types.ts";
 
@@ -152,15 +151,15 @@ export async function attachLinkOnlyArticles(
     const previous = await deps.store.loadRevisionToExtend(storyId);
     if (previous === undefined) continue;
     const known = new Set(previous.sources.map((s) => s.articleId));
-    const next = revisionWithSources(
-      previous,
-      [...previous.sources, ...added.filter((s) => !known.has(s.articleId))],
-      { revisionNumber: previous.revisionNumber + 1, publishedAt: input.now },
-    );
-    // 변화는 "출처 추가"뿐이다. 새로 붙은 기사가 이미 출처 구획에 있으면(변화 없음) 개정판을 내지 않는다.
-    const changes = computeChanges(previous, next);
-    if (changes.length === 0) continue;
-    await deps.store.publishRevision(next, changes);
+    const finalized = finalizeRevision({
+      kind: "sources-added",
+      latest: previous,
+      sources: [...previous.sources, ...added.filter((s) => !known.has(s.articleId))],
+      publishedAt: input.now,
+    });
+    // 변화는 "출처 추가"뿐이다. 새로 붙은 기사가 이미 출처 구획에 있으면(확인) 개정판을 내지 않는다.
+    if (finalized.kind === "confirmed") continue;
+    await deps.store.publishRevision(finalized.revision, finalized.changes);
     revisedStoryIds.push(storyId);
   }
   return { outcomes, revisedStoryIds, usage: embedded.usage };
