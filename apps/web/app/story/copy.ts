@@ -8,6 +8,7 @@ export const ARTICLE_PUBLISHED = "기사 발행";
 /** 링크만 기사(GDELT)의 시각 라벨. GDELT가 기사를 본 시각이며 발행 시각이 아니다(스펙 "데이터 소스와 권리"). */
 export const ARTICLE_OBSERVED = "관측 시각";
 export const FOLLOW = "팔로우";
+export const FOLLOW_FAILED = "팔로우를 바꾸지 못했습니다. 다시 눌러 주세요.";
 export const SHARE = "공유";
 export const sourceCount = (count: number): string => `출처 ${count}곳`;
 
@@ -111,6 +112,13 @@ export const CURRENT_REVISION = "현재 개정판";
 export const FIRST_REVISION = "첫 개정판";
 export const SHOW_TABLE = "표로 보기";
 export const REVISION_COLUMN = "개정판";
+
+/** 읽은 이후 변화(#105, 로그인 사용자의 요청 시점 영역). */
+export const SEEN_POINT = "내가 본 지점";
+export const SINCE_LAST_SEEN_HEADING = "읽은 이후 변화";
+export const sinceLastSeenIntro = (lastSeen: number, count: number): string =>
+  `${SEEN_POINT}(개정판 ${lastSeen}) 이후 개정판 ${count}개의 변화입니다.`;
+export const NOTHING_SINCE_LAST_SEEN = "마지막으로 본 이후 새 개정판이 없습니다.";
 
 export const COVERAGE_HEADING = "보도량 추이";
 export const coverageCaption = (binSize: string): string =>

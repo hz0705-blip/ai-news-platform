@@ -1,7 +1,6 @@
 /** @jsxImportSource react */
 import {
   DEMO_NOTICE,
-  FOLLOW,
   SHARE,
   STATUS_COUNTS_LABEL,
   STORY_UPDATED,
@@ -13,10 +12,10 @@ import {
 import { claimHref } from "../../lib/claim-anchor.ts";
 import { formatAbsolute } from "../../lib/format-time.ts";
 import type { StoryView } from "../../lib/story-view.ts";
-import { LoginGate } from "../auth/login-gate.tsx";
 import { DemoBadge } from "../demo-badge.tsx";
 import { StatusBadge } from "../status-badge.tsx";
 import { Button } from "../ui/button.tsx";
+import { FollowControl } from "./story-personal.tsx";
 
 /** 사건 머리: 데모 표기·토픽·제목·사건 상충 상태·출처 개수·갱신 시각, 팔로우·공유 자리. */
 export function StoryHeader({ header }: { header: StoryView["header"] }) {
@@ -59,7 +58,7 @@ export function StoryHeader({ header }: { header: StoryView["header"] }) {
       </ul>
       {/* 로그인 게이트의 <dialog>는 <p> 안에 둘 수 없다. */}
       <div className="flex flex-wrap gap-2">
-        <LoginGate label={FOLLOW} />
+        <FollowControl />
         <Button disabled aria-disabled="true">
           {SHARE}
         </Button>

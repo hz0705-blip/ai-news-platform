@@ -4,7 +4,7 @@
 import { usePathname } from "next/navigation";
 import { useId, useRef, useState } from "react";
 import { CANCEL, LOGIN_REASON, LOGIN_TITLE } from "../../app/auth/copy.ts";
-import { safeReturnPath } from "../../lib/auth/return-path.ts";
+import { FOLLOW_INTENT_QUERY, safeReturnPath } from "../../lib/auth/return-path.ts";
 import { Button } from "../ui/button.tsx";
 import { LoginOptions } from "./login-options.tsx";
 
@@ -13,9 +13,14 @@ import { LoginOptions } from "./login-options.tsx";
  * 로그인하면 지금 페이지로 돌아오고, 취소하면 대화상자만 닫혀 같은 페이지 읽기가 이어진다(포커스는 여는 버튼으로).
  * 네이티브 모달 `<dialog>`를 쓴다 — 포커스 가두기·Esc·배경 비활성·포커스 복귀를 브라우저가 맡는다.
  * 로그인 여부를 묻지 않는다: 공개 화면은 인증 상태를 담지 않고, 로그인 사용자의 동작은 그 동작의 서버 코드가 검증한다.
+ * `intent="follow"`면 돌아갈 주소에 하려던 팔로우(`?intent=follow`)를 담아 돌아온 사건 페이지가 팔로우를 마친다.
  */
-export function LoginGate({ label }: { label: string }) {
-  const next = safeReturnPath(usePathname());
+export function LoginGate({ label, intent }: { label: string; intent?: "follow" }) {
+  const pathname = usePathname();
+  const next = safeReturnPath(
+    intent === "follow" ? `${pathname}?${FOLLOW_INTENT_QUERY}` : pathname,
+    safeReturnPath(pathname),
+  );
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const reasonId = useId();

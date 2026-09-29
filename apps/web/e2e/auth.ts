@@ -79,6 +79,8 @@ type Fixtures = {
   providerHits: string[];
   makeUser: (label: string) => Promise<TestUser>;
   openAs: (user: TestUser | null, options?: { userAgent?: string }) => Promise<BrowserContext>;
+  /** 이미 열린 컨텍스트에 세션을 넣는다(익명으로 시작해 로그인한 뒤를 흉내 낸다 — 제공자 흐름은 타지 않는다). */
+  signIn: (context: BrowserContext, user: TestUser) => Promise<void>;
 };
 
 export const test = base.extend<Fixtures>({
@@ -129,6 +131,12 @@ export const test = base.extend<Fixtures>({
       return context;
     });
     for (const context of opened) await context.close();
+  },
+  signIn: async ({ baseURL }, use) => {
+    if (baseURL === undefined) throw new Error("baseURL이 없다");
+    await use(async (context, user) => {
+      await context.addCookies(await sessionCookies(user, baseURL));
+    });
   },
 });
 
