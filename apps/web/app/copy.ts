@@ -13,6 +13,7 @@ export const DEMO_NOTICE = "기능 설명을 위해 만든 데모 사건입니�
 export const DEMO_TIME = "데모 기준 시각";
 export const STORY_UPDATED = "사건 갱신";
 export const MORE = "더 보기";
+export const FOLLOWS_LINK = "팔로우한 사건 보기";
 export const storyCount = (count: number) => `사건 ${count}건`;
 export const sourceCount = (count: number) => `출처 ${count}개`;
 // 배치 상태(#56, 스펙 "배치와 비용"). 제목은 상태 이름, 설명은 독자가 할 일·남는 것.

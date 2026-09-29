@@ -105,13 +105,15 @@ test("익명 사용자가 로그인 게이트를 열고 취소하면 같은 사�
   await expect(
     gate.getByText("14세 이상만 계정을 만들 수 있습니다.", { exact: false }),
   ).toBeVisible();
+  // 돌아갈 주소는 같은 사건과 하려던 팔로우(#105)뿐이다.
+  const next = encodeURIComponent(`${STORY_URL}?intent=follow`);
   await expect(gate.getByRole("link", { name: "카카오로 계속하기" })).toHaveAttribute(
     "href",
-    `/auth/login/start?provider=kakao&next=${encodeURIComponent(STORY_URL)}`,
+    `/auth/login/start?provider=kakao&next=${next}`,
   );
   await expect(gate.getByRole("link", { name: "Google로 계속하기" })).toHaveAttribute(
     "href",
-    `/auth/login/start?provider=google&next=${encodeURIComponent(STORY_URL)}`,
+    `/auth/login/start?provider=google&next=${next}`,
   );
   await expectNoAxeViolations(page, testInfo, "login-gate");
 
@@ -137,7 +139,7 @@ test("KakaoTalk 인앱에서 Google을 고르면 외부 브라우저 안내가 �
   const heading = gate.getByRole("heading", { name: "외부 브라우저에서 Google 로그인" });
   await expect(heading).toBeFocused();
   await expect(page).toHaveURL(new RegExp(`${STORY_URL}$`));
-  const start = `${baseURL}/auth/login/start?provider=google&next=${encodeURIComponent(STORY_URL)}`;
+  const start = `${baseURL}/auth/login/start?provider=google&next=${encodeURIComponent(`${STORY_URL}?intent=follow`)}`;
   await expect(gate.getByRole("link", { name: "외부 브라우저로 열기" })).toHaveAttribute(
     "href",
     `kakaotalk://web/openExternal?url=${encodeURIComponent(start)}`,
