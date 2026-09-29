@@ -80,7 +80,8 @@ function toEvidenceRow(item: Evidence, claimRevision: string, order: number): Ev
   };
 }
 
-export function toRows(revision: Revision): RevisionRows {
+/** 개정판을 쓸 행 묶음으로 바꾼다. 출처 구획은 `source_article_ids`에만 남는다(읽을 때 잇는다). */
+export function toRows(revision: Revision): Omit<RevisionRows, "sources"> {
   const claimRevisions: ClaimRevisionRow[] = [];
   const evidence: EvidenceRow[] = [];
   for (const claim of revision.claims) {
@@ -120,14 +121,6 @@ export function toRows(revision: Revision): RevisionRows {
     claims: revision.claims.map((claim) => ({ id: claim.id, story_id: revision.storyId })),
     claimRevisions,
     evidence,
-    sources: revision.sources.map((s) => ({
-      source_id: s.sourceId,
-      article_id: s.articleId,
-      article_title: s.articleTitle,
-      article_url: s.articleUrl,
-      published_at: s.publishedAt,
-      rights_tier: s.rightsTier,
-    })),
   };
 }
 

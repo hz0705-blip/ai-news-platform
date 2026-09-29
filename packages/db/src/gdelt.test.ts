@@ -9,11 +9,11 @@ import {
   recordArticleObservations,
   saveLinkOnlyArticle,
 } from "./gdelt.ts";
-import { publishRevision } from "./publish.ts";
+import { commitRevision } from "./publish.ts";
 import { loadPublishedStory } from "./queries/story.ts";
 import { articles, articleVersions, stories } from "./schema/index.ts";
 import { createMigrationDb, readTestDbUrl } from "./test-db.ts";
-import { fixture } from "./test-fixtures.ts";
+import { fixture, publishFixture } from "./test-fixtures.ts";
 
 const url = readTestDbUrl();
 const maybe = url === undefined ? describe.skip : describe;
@@ -44,7 +44,7 @@ maybe("GDELT 링크만 기사 저장", () => {
   it("link-only article without body version persists and loads", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {
-      await publishRevision(db, fixture);
+      await publishFixture(db, fixture);
       await saveLinkOnlyArticle(db, link);
       await saveLinkOnlyArticle(db, link); // 같은 URL은 한 번만
 
@@ -85,7 +85,7 @@ maybe("GDELT 링크만 기사 저장", () => {
       // 확장할 개정판의 출처 구획은 발행 때의 것이다(링크 없음, #85). 링크를 더한 출처 추가 개정판이 발행된다.
       const found = await loadRevisionToExtend(db, fixture.story.id);
       if (found === undefined) throw new Error("확장할 개정판 없음");
-      expect(found.revision.sources.map((s) => s.articleId)).not.toContain(link.articleId);
+      expect(found.sources.map((s) => s.articleId)).not.toContain(link.articleId);
       const linkSource = {
         sourceId: gdeltSource.id,
         articleId: link.articleId,
@@ -94,17 +94,11 @@ maybe("GDELT 링크만 기사 저장", () => {
         publishedAt: link.observedAt,
         rightsTier: gdeltSource.rightsTier,
       };
-      const next = revisionWithSources(found.revision, [...found.revision.sources, linkSource], {
+      const next = revisionWithSources(found, [...found.sources, linkSource], {
         revisionNumber: 2,
         publishedAt: new Date("2026-09-17T06:00:00.000Z"),
       });
-      await publishRevision(db, {
-        story: found.story,
-        revision: next,
-        articles: [],
-        articleVersions: [],
-        sources: [],
-      });
+      await commitRevision(db, { revision: next });
       const page = await loadPublishedStory(db, { slug: fixture.story.slug });
       expect(page?.revision.revisionNumber).toBe(2);
       expect(page?.claims.map((c) => c.text)).toEqual(fixture.revision.claims.map((c) => c.text));
@@ -135,7 +129,7 @@ maybe("GDELT 링크만 기사 저장", () => {
       );
       // 열 추가만 하고 기존 행을 고치지 않는다.
       expect(migration).not.toMatch(/\b(UPDATE|DELETE|DROP)\b/i);
-      await publishRevision(db, fixture);
+      await publishFixture(db, fixture);
       // 마이그레이션 전 모양의 행(새 열 없음)은 보통 기사 기본값을 받는다.
       await sql`insert into articles (id, source_id, url, normalized_url, title, published_at, topics)
         values ('a-legacy', 'src-meridian', 'https://legacy.invalid/1', 'https://legacy.invalid/1', 'Legacy', now(), '{}')`;

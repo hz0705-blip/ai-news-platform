@@ -3,7 +3,7 @@ import { createArticleVersion, planRechecks } from "@newsplatform/domain";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { loadBatchStories } from "./batch.ts";
-import { confirmRevision, publishRevision } from "./publish.ts";
+import { confirmRevision } from "./publish.ts";
 import {
   addGnewsRequests,
   loadDormantSampledToday,
@@ -14,7 +14,7 @@ import {
 } from "./recheck.ts";
 import { articleRechecks, articleVersions, stories } from "./schema/index.ts";
 import { createMigrationDb, readTestDbUrl } from "./test-db.ts";
-import { fixture } from "./test-fixtures.ts";
+import { fixture, publishFixture } from "./test-fixtures.ts";
 
 const url = readTestDbUrl();
 const maybe = url === undefined ? describe.skip : describe;
@@ -26,7 +26,7 @@ const now = new Date(fixture.revision.publishedAt.getTime() + 12 * HOUR);
 
 /** 픽스처(데모·종료 사건)를 발행하고 재수집 대상이 되도록 라이브·활성 사건으로 바꾼다. */
 async function seedLiveStory(db: Awaited<ReturnType<typeof createMigrationDb>>["db"]) {
-  await publishRevision(db, fixture);
+  await publishFixture(db, fixture);
   await db
     .update(stories)
     .set({
@@ -164,7 +164,7 @@ maybe("원문 재수집 저장(#86, 실 DB)", () => {
       expect(migration.replace(/ON (DELETE|UPDATE) no action/g, "")).not.toMatch(
         /\b(UPDATE|DELETE|DROP)\b/i,
       );
-      await publishRevision(db, fixture);
+      await publishFixture(db, fixture);
       // 마이그레이션 전 모양의 기사 버전 행(새 열 없음)은 정정 후보가 아니다.
       await sql`insert into article_versions (id, article_id, body, normalization_version, body_hash, captured_at, body_expires_at)
         values ('av-legacy', 'a-meridian', 'legacy body', 1, 'legacy-hash', now(), now())`;

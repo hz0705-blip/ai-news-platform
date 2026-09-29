@@ -1,10 +1,9 @@
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { toStoryRow } from "../mappers.ts";
-import { publishRevision } from "../publish.ts";
 import { articles, stories } from "../schema/index.ts";
 import { createMigrationDb, readTestDbUrl } from "../test-db.ts";
-import { fixture, UNPUBLISHED_BODY_SENTENCE } from "../test-fixtures.ts";
+import { fixture, publishFixture, UNPUBLISHED_BODY_SENTENCE } from "../test-fixtures.ts";
 import { loadPublishedToday } from "./today.ts";
 
 const url = readTestDbUrl();
@@ -28,11 +27,11 @@ maybe("loadPublishedToday", () => {
   it("최신 개정판의 제목·첫 주장 전문·상태와 중복 없는 출처 수를 담는다", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {
-      await publishRevision(db, fixture);
+      await publishFixture(db, fixture);
       const updatedAt = new Date("2026-09-18T00:00:00Z");
       const summary =
         "후속 협상은 당사자들이 동의할 경우에만 10월에 재개될 가능성이 있다고 보도했다.";
-      await publishRevision(db, {
+      await publishFixture(db, {
         ...fixture,
         revision: {
           ...fixture.revision,
@@ -101,7 +100,7 @@ maybe("loadPublishedToday", () => {
         ["b", "2026-09-19T00:00:00Z"],
         ["a", "2026-09-19T00:00:00Z"],
       ] as const) {
-        await publishRevision(db, {
+        await publishFixture(db, {
           story: { ...fixture.story, id, slug: id, isDemo: false },
           revision: {
             ...fixture.revision,
