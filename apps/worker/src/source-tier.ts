@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import {
   loadStoryRevisionsForSources,
+  loadStoryRevisionsForStories,
   type RuntimeDb,
   type SourceTierChange,
   syncSourceRegistry,
@@ -30,6 +31,8 @@ export interface TierExpiry {
   readonly tierChanges: readonly SourceTierChange[];
   /** 만료를 요청한(무효화 경로가 없으면 요청했어야 할) 태그 수. */
   readonly expiredTags: number;
+  /** 만료를 요청한(요청했어야 할) 사건 수. */
+  readonly expiredStories: number;
   /** 무효화 경로(`WEB_REVALIDATE_URL`·`REVALIDATE_SECRET`)가 없어 만료 요청을 못 했으면 거짓. */
   readonly cacheInvalidated: boolean;
 }
@@ -42,14 +45,27 @@ async function expireSourceStories(
   db: RuntimeDb["db"],
   sourceIds: readonly string[],
   invalidate: CacheInvalidator | undefined,
-): Promise<Pick<TierExpiry, "expiredTags" | "cacheInvalidated">> {
-  const tags = storyCacheTags(await loadStoryRevisionsForSources(db, sourceIds));
-  if (tags.length === 0) return { expiredTags: 0, cacheInvalidated: true };
-  if (invalidate === undefined) return { expiredTags: tags.length, cacheInvalidated: false };
+  storyIds: readonly string[] = [],
+): Promise<Pick<TierExpiry, "expiredTags" | "expiredStories" | "cacheInvalidated">> {
+  const bySource = await loadStoryRevisionsForSources(db, sourceIds);
+  const seen = new Set(bySource.map((s) => s.storyId));
+  const stories = [
+    ...bySource,
+    ...(await loadStoryRevisionsForStories(
+      db,
+      storyIds.filter((id) => !seen.has(id)),
+    )),
+  ];
+  const tags = storyCacheTags(stories);
+  const expiredStories = stories.length;
+  if (tags.length === 0) return { expiredTags: 0, expiredStories, cacheInvalidated: true };
+  if (invalidate === undefined) {
+    return { expiredTags: tags.length, expiredStories, cacheInvalidated: false };
+  }
   for (let i = 0; i < tags.length; i += MAX_TAGS_PER_REQUEST) {
     await invalidate(tags.slice(i, i + MAX_TAGS_PER_REQUEST), { immediate: true });
   }
-  return { expiredTags: tags.length, cacheInvalidated: true };
+  return { expiredTags: tags.length, expiredStories, cacheInvalidated: true };
 }
 
 /**
@@ -60,20 +76,46 @@ export function exitCodeOf(result: Pick<TierExpiry, "cacheInvalidated">): 0 | 1 
   return result.cacheInvalidated ? 0 : 1;
 }
 
-/** 출처 표 파일 → DB 동기화(`sources:sync`) 뒤 등급이 바뀐 출처의 사건 캐시를 만료한다. */
+/**
+ * 출처 표 파일 → DB 동기화(`sources:sync`) 뒤 등급이 바뀐 출처의 사건과 근거를 옮긴 사건(#115)의 캐시를 만료한다.
+ * 근거 이동은 한 번만 일어나므로 만료를 못 했으면 `repointedEvidenceSources`의 출처마다
+ * `source:set-tier <출처> <현재 등급>`으로 다시 만료한다(그 출처의 기사가 붙은 사건 전부라 근거를 옮긴 사건을 포함한다).
+ */
 export async function syncSourcesFile(
   db: RuntimeDb["db"],
   path: string,
   invalidate: CacheInvalidator | undefined,
-): Promise<TierExpiry & { readonly synced: number; readonly repointedArticles: number }> {
+): Promise<
+  TierExpiry & {
+    readonly synced: number;
+    readonly repointedArticles: number;
+    readonly repointedEvidence: number;
+    readonly repointedEvidenceSources: readonly string[];
+  }
+> {
   const registry = parseSourceRegistry(JSON.parse(readFileSync(path, "utf8"))).map(toSource);
-  const { synced, repointedArticles, tierChanges } = await syncSourceRegistry(db, registry);
+  const {
+    synced,
+    repointedArticles,
+    repointedEvidence,
+    repointedEvidenceStories,
+    repointedEvidenceSources,
+    tierChanges,
+  } = await syncSourceRegistry(db, registry);
   const expiry = await expireSourceStories(
     db,
     tierChanges.map((c) => c.id),
     invalidate,
+    repointedEvidenceStories,
   );
-  return { synced, repointedArticles, tierChanges, ...expiry };
+  return {
+    synced,
+    repointedArticles,
+    repointedEvidence,
+    repointedEvidenceSources,
+    tierChanges,
+    ...expiry,
+  };
 }
 
 /**
