@@ -8,6 +8,7 @@ import {
   RIGHTS_TIERS,
   STORY_LIFECYCLES,
   TOPICS,
+  UNLINK_PROVIDERS,
 } from "@newsplatform/domain";
 import {
   boolean,
@@ -365,6 +366,41 @@ export const lastSeenRevisions = pgTable(
   },
   (t) => [primaryKey({ columns: [t.user_id, t.story_id] })],
 ).enableRLS();
+
+/**
+ * 계정 삭제의 운영 기록 두 가지(스펙 "계정": 계정 데이터 밖의 예외, #106). 둘 다 서버 전용 — RLS를 켜고 정책을 두지 않아
+ * Supabase Data API(anon·authenticated)로는 닿지 않는다. 제공자 이메일·닉네임은 담지 않는다.
+ */
+
+/**
+ * 삭제 대기 행: 제공자 연결 해제가 끝나지 않은 제공자 계정 하나. 연결 해제가 끝나면 지운다. 이 행이 있는 제공자 ID의 로그인은
+ * 세션을 만들지 않는다(재가입 차단). 담는 것은 제공자·제공자 ID·해제용 토큰(Google만, 로그에 쓰지 않는다)과, 사용자를 가리키지 않는
+ * 일정 값(요청 키·요청 시각·실패 횟수·다음 시도 시각)뿐이다. 인증 사용자 ID는 담지 않는다.
+ */
+export const accountDeletionPending = pgTable(
+  "account_deletion_pending",
+  {
+    provider: text({ enum: UNLINK_PROVIDERS }).notNull(),
+    provider_subject: text().notNull(),
+    revocation_token: text(),
+    /** 삭제 요청의 멱등 키(무작위). 삭제 결과 화면이 이 키로 처리 중·완료를 가린다. */
+    request_key: uuid().notNull(),
+    requested_at: timestamptz("requested_at").notNull(),
+    attempts: integer().notNull().default(0),
+    next_attempt_at: timestamptz("next_attempt_at").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.provider, t.provider_subject] }),
+    index("account_deletion_pending_next_attempt_at_idx").on(t.next_attempt_at),
+    index("account_deletion_pending_request_key_idx").on(t.request_key),
+  ],
+).enableRLS();
+
+/** 삭제 기록: 삭제한 인증 사용자 ID. 백업 복원 뒤 삭제를 다시 적용하는 데 쓰고, 백업 보관 기간(90일)이 지나면 지운다. */
+export const accountDeletions = pgTable("account_deletions", {
+  user_id: uuid().primaryKey(),
+  deleted_at: timestamptz("deleted_at").notNull(),
+}).enableRLS();
 
 export type SourceRow = typeof sources.$inferSelect;
 export type StoryRow = typeof stories.$inferSelect;

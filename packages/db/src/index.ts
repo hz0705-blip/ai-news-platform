@@ -1,4 +1,21 @@
 export {
+  type AccountDeletionExport,
+  AccountDeletionExportSchema,
+  type AccountDeletionPorts,
+  type AccountDeletionStatus,
+  type DeleteAccountInput,
+  type DeletionIdentity,
+  deleteAccount,
+  exportAccountDeletions,
+  hasPendingDeletion,
+  loadDeletionStatus,
+  purgeDeletionRecords,
+  type ReplayDeletionsReport,
+  replayAccountDeletions,
+  retryPendingUnlinks,
+  type UnlinkRetryReport,
+} from "./account-deletion.ts";
+export {
   type AssignmentArticle,
   type AssignToStoryInput,
   assignArticleToStory,

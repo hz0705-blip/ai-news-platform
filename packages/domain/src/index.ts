@@ -1,3 +1,16 @@
+export {
+  DELETION_RECORD_RETENTION_MS,
+  isUnlinkDone,
+  isUnlinkOverdue,
+  isUnlinkProvider,
+  nextUnlinkAttemptAt,
+  UNLINK_DEADLINE_MS,
+  UNLINK_PROVIDERS,
+  UNLINK_RETRY_DELAYS_MS,
+  UNLINK_RETRY_HOURLY_MS,
+  type UnlinkProvider,
+  type UnlinkResult,
+} from "./account-deletion.ts";
 export type { Article } from "./article.ts";
 export { type ArticleVersion, createArticleVersion } from "./article-version.ts";
 export {

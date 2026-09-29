@@ -3,7 +3,8 @@ import type { NextRequest } from "next/server";
 /** 로그인 시작에서 콜백까지 돌아갈 주소를 들고 가는 쿠키(경로 `/auth`, 10분, HttpOnly). */
 export const RETURN_COOKIE = "auth-return-path";
 
-export type LoginError = "unavailable" | "failed";
+/** 로그인 화면 안내. `pending-deletion`은 삭제 대기 중인 제공자 계정의 재가입 차단이다. */
+export type LoginError = "unavailable" | "failed" | "pending-deletion";
 
 /**
  * 요청의 출처. `nextUrl.origin`은 서버가 듣는 이름(`localhost`)으로 바뀔 수 있어 브라우저가 보낸 Host를 쓴다 —

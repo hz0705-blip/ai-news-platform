@@ -30,6 +30,8 @@ export default defineConfig({
       DATABASE_URL: process.env.DATABASE_URL ?? "",
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "",
+      // 계정 삭제(#106)의 Auth 관리자 API. 로컬 CLI 고정 값이다.
+      SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY ?? "",
     },
   },
 });

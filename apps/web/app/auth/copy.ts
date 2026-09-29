@@ -13,6 +13,8 @@ export const LOGOUT = "로그아웃";
 export const RETURN_TO_READING = "읽던 곳으로 돌아가기";
 export const LOGIN_UNAVAILABLE = "지금은 로그인할 수 없습니다. 잠시 뒤 다시 시도해 주세요.";
 export const LOGIN_FAILED = "로그인을 완료하지 못했습니다. 다시 시도해 주세요.";
+export const LOGIN_PENDING_DELETION =
+  "삭제한 계정의 로그인 연결 해제가 아직 끝나지 않아 이 계정으로는 로그인할 수 없습니다. 연결 해제는 72시간 안에 끝나며, 그 뒤에 다시 가입할 수 있습니다.";
 
 /** 인앱 브라우저에서 Google을 고른 경우(스펙 "계정" 인앱 브라우저). */
 export const IN_APP_TITLE = "외부 브라우저에서 Google 로그인";
