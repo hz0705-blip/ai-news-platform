@@ -112,45 +112,36 @@ export async function loadLatestRevision(
 }
 
 /**
- * 마지막 개정판에 없는 열린 상충 에피소드의 주장(#90, 스펙 "상충 상태"). 별도 표 없이 `claim_revisions`에서 파생한다:
- * 사건의 주장마다 가장 늦은 개정판의 기록을 보고, 그 상태가 보도 상충이고 마지막 개정판에 없는 주장만 그 기록 그대로
- * 돌려준다. 보도 상충은 명시 정정·해소 입력으로만 벗어나므로(전이 가드 ②) 마지막 기록이 보도 상충이면 에피소드가
- * 열려 있다. 주장 순서(`claim_id`)대로.
+ * 사건의 주장 개정판 이력(#90): 개정판 번호 순(오래된 것 먼저)의 개정판별 주장(근거 포함, 표시 순). 열린 상충
+ * 에피소드는 이 원자료에서 도메인 규칙(`openEpisodeClaims`)이 파생한다 — 별도 표는 없다.
  */
-export async function loadOpenEpisodeClaims(
+export async function loadClaimHistory(
   db: RuntimeDb["db"],
-  params: { readonly storyId: string; readonly latestClaimIds: readonly string[] },
-): Promise<Claim[]> {
+  params: { readonly storyId: string },
+): Promise<Claim[][]> {
   const rows = await db
-    .select({ claimRevision: claimRevisions })
+    .select({ revisionNumber: storyRevisions.revision_number, claimRevision: claimRevisions })
     .from(claimRevisions)
     .innerJoin(storyRevisions, eq(storyRevisions.id, claimRevisions.story_revision_id))
     .where(eq(storyRevisions.story_id, params.storyId))
-    .orderBy(claimRevisions.claim_id, desc(storyRevisions.revision_number));
-  const latestIds = new Set(params.latestClaimIds);
-  const seen = new Set<string>();
-  const open: (typeof claimRevisions.$inferSelect)[] = [];
-  for (const { claimRevision } of rows) {
-    if (seen.has(claimRevision.claim_id)) continue;
-    seen.add(claimRevision.claim_id);
-    if (
-      claimRevision.contradiction_status === "보도 상충" &&
-      !latestIds.has(claimRevision.claim_id)
-    ) {
-      open.push(claimRevision);
-    }
-  }
-  if (open.length === 0) return [];
+    .orderBy(storyRevisions.revision_number, claimRevisions.display_order);
+  if (rows.length === 0) return [];
   const evidenceRows = await db
     .select()
     .from(evidence)
     .where(
       inArray(
         evidence.claim_revision_id,
-        open.map((cr) => cr.id),
+        rows.map((r) => r.claimRevision.id),
       ),
     );
-  return open.map((cr) => toDomainClaim(cr, evidenceRows));
+  const byRevision = new Map<number, Claim[]>();
+  for (const { revisionNumber, claimRevision } of rows) {
+    const claims = byRevision.get(revisionNumber) ?? [];
+    claims.push(toDomainClaim(claimRevision, evidenceRows));
+    byRevision.set(revisionNumber, claims);
+  }
+  return [...byRevision.values()];
 }
 
 /** 개정판 하나에 저장된 변화(#85)를 순서대로 읽는다. 첫 개정판·마이그레이션 전 개정판은 빈 목록이다. */

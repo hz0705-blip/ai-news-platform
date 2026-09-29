@@ -120,6 +120,32 @@ describe("데모 사건 ③④ 시나리오", () => {
     expect(status("demo-3-correction:c-5@rev-2")).not.toBe("정정됨");
   });
 
+  it("데모 단계 입력도 열린 에피소드를 받는다", () => {
+    const demo = loadDemoStorySteps("demo-3-correction");
+    const rev1 = loadDemoStepGolden("demo-3-correction", 1).revision;
+    const rev2 = loadDemoStepGolden("demo-3-correction", 2).revision;
+    const disputed = rev1.claims.find((c) => c.id === "demo-3-correction:c-1");
+    expect(disputed?.contradictionStatus).toBe("보도 상충");
+    // 직전 개정판(rev-1)에 있는 보도 상충 주장은 그 개정판의 상태가 정한다 — 개정판 밖의 에피소드는 없다.
+    expect(
+      demoStepBatchInput(demo, 1, { latestRevision: rev1 }).existingStories[0]?.openEpisodeClaims,
+    ).toBeUndefined();
+
+    // 보도 상충 주장이 최신 개정판 요약에서 빠지면 앞 단계 정답의 기록이 열린 에피소드로 오고, 그 근거 버전의 본문도 온다.
+    const withoutDisputed = { ...rev2, claims: rev2.claims.filter((c) => c.id !== disputed?.id) };
+    const state = demoStepBatchInput(demo, 1, { latestRevision: withoutDisputed })
+      .existingStories[0];
+    expect(state?.openEpisodeClaims).toEqual([disputed]);
+    const currentVersionIds = new Set(demo.steps[1]?.articles.map((a) => a.meta.articleVersionId));
+    const oldEpisodeVersions = (disputed?.evidence ?? [])
+      .map((e) => e.articleVersionId)
+      .filter((id) => !currentVersionIds.has(id));
+    expect(oldEpisodeVersions.length).toBeGreaterThan(0);
+    expect(state?.previousVersionBodies?.map((v) => v.articleVersionId)).toEqual(
+      expect.arrayContaining(oldEpisodeVersions),
+    );
+  });
+
   /** 데모 ③ 2단계 입력을 rev-2 정답 위에서 첫 재처리 표시 없이 다시 처리한다(이후 배치). */
   async function reprocessAfterCorrection(override?: RecordedOverride) {
     const demo = loadDemoStorySteps("demo-3-correction");

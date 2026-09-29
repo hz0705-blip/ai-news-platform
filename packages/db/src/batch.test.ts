@@ -11,6 +11,7 @@ import {
   markStoriesDeferred,
   startBatchRun,
 } from "./batch.ts";
+import { loadRevisionToExtend } from "./gdelt.ts";
 import { confirmRevision } from "./publish.ts";
 import { articles, articleVersions, sources, stories } from "./schema/index.ts";
 import { createMigrationDb, readTestDbUrl } from "./test-db.ts";
@@ -220,6 +221,50 @@ maybe("배치 대상 사건", () => {
       expect((await loadBatchStories(db)).stories).toEqual([]);
       await db.update(stories).set({ last_processed_at: new Date(later.getTime() + 1) });
       expect((await loadBatchStories(db)).stories.map((s) => s.story.id)).toEqual(["story-live"]);
+    } finally {
+      await cleanup();
+    }
+  });
+});
+
+maybe("재처리 필요 조건", () => {
+  it("배치 대상(loadBatchStories)과 출처 추가 바탕(loadRevisionToExtend)은 같은 조건의 정·역이다", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      await seedLiveStory(db);
+      /** [배치 대상인가, 확장할 개정판이 있는가] — 늘 정확히 하나만 참이다. */
+      const sides = async () => [
+        (await loadBatchStories(db)).stories.some((s) => s.story.id === "story-live"),
+        (await loadRevisionToExtend(db, "story-live")) !== undefined,
+      ];
+      // 개정판 없음 → 재처리 필요.
+      expect(await sides()).toEqual([true, false]);
+
+      await publishFixture(db, {
+        ...fixture,
+        story: { ...fixture.story, id: "story-live", slug: "story-live", isDemo: false },
+        revision: {
+          ...fixture.revision,
+          id: "story-live:rev-1",
+          storyId: "story-live",
+          publishedAt: now,
+        },
+      });
+      // 처리 시각 = 확인 시각 → 재처리 필요 없음.
+      expect(await sides()).toEqual([false, true]);
+
+      // 미룸 → 재처리 필요.
+      await markStoriesDeferred(db, { storyIds: ["story-live"], at: now });
+      expect(await sides()).toEqual([true, false]);
+      await clearStoriesDeferred(db, ["story-live"]);
+
+      // 처리 시각이 확인 시각보다 늦음 → 재처리 필요.
+      await db.update(stories).set({ last_processed_at: new Date(now.getTime() + 1) });
+      expect(await sides()).toEqual([true, false]);
+
+      // 처리 시각 없음 → 늦지 않은 것으로 본다.
+      await db.update(stories).set({ last_processed_at: null });
+      expect(await sides()).toEqual([false, true]);
     } finally {
       await cleanup();
     }

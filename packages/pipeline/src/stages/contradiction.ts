@@ -133,9 +133,7 @@ export async function runContradictionLabel(
     undeterminable: pairs.some((pair) => pair.label === "판정 불가"),
     supportingOrigins: supporting.size,
     conflictingOrigins,
-    // 열린 에피소드는 `previous`(보도 상충)로 들어온다 — batch-run이 앞 개정판에서 빠진 에피소드 주장까지 잇는다(#90).
-    // 사건 단위의 열린 에피소드 수는 batch-run이 `openEpisodes`로 넘긴다.
-    openEpisode: false,
+    // 열린 에피소드는 `previous`(보도 상충)로 들어온다 — 연속성 규칙이 앞 개정판에서 빠진 에피소드 주장까지 잇는다(#90).
     // 명시 정정: 정정 후보 기사 버전에서 근거가 바뀌었다(#86·#94). 이전 상태가 정정됨이면 이미 일어난 명시 정정
     // 사실이 유지된다(가드 ②가 먼저라 새 상충이 생기면 보도 상충으로 재개). 명시 해소는 에피소드 기록이 생기면 채운다.
     explicitCorrection: (input.explicitCorrection ?? false) || input.previous === "정정됨",

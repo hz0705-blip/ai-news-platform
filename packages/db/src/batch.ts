@@ -7,10 +7,11 @@ import type {
   Source,
   Story,
 } from "@newsplatform/domain";
+import { deriveReprocessContext } from "@newsplatform/domain";
 import { slotAtOf } from "@newsplatform/domain/batch-slot";
-import { and, desc, eq, gt, gte, inArray, isNotNull, lt, lte, ne, or, sql } from "drizzle-orm";
-import { toDomainSource } from "./mappers.ts";
-import { loadLatestRevision, loadOpenEpisodeClaims } from "./queries/revision.ts";
+import { and, desc, eq, gt, gte, inArray, lt, lte, ne, sql } from "drizzle-orm";
+import { toDomainSource, toDomainStory } from "./mappers.ts";
+import { loadClaimHistory, loadRevision } from "./queries/revision.ts";
 import type { RuntimeDb } from "./runtime.ts";
 import {
   articles,
@@ -230,43 +231,46 @@ export interface BatchStory {
   readonly deferredSince?: Date;
   /** 붙은 링크만 기사(#77, 본문 버전 없음)의 출처 구획 줄. 발행 시각·기사 식별자 순. */
   readonly linkOnlySources?: readonly RevisionSource[];
-  /** 마지막 개정판 근거가 가리키는 옛 기사 버전(지금 버전과 다른 것)의 본문 — 좌표 정렬용(#86). */
+  /** 최신 개정판과 열린 에피소드 근거가 가리키는 옛 기사 버전(지금 버전과 다른 것)의 본문 — 좌표 정렬용(#86). */
   readonly previousVersionBodies?: readonly {
     readonly articleVersionId: string;
     readonly body: string;
   }[];
-  /** 마지막 개정판에 없는 열린 상충 에피소드의 주장(#90, `loadOpenEpisodeClaims`). */
+  /** 마지막 개정판에 없는 열린 상충 에피소드의 주장(#90, `openEpisodeClaims`). */
   readonly openEpisodeClaims?: readonly Claim[];
 }
 
+/** 사건의 최신 확인 시각(`story_revisions.checked_at` 최댓값). 개정판이 없으면 null. */
+const latestCheckedAt = sql`(select max(${storyRevisions.checked_at}) from ${storyRevisions} where ${storyRevisions.story_id} = ${stories.id})`;
+
 /**
- * 이번 배치가 처리할 라이브 사건(스펙 "개정판 생성 조건": 입력이 바뀐 사건만): 종료가 아니고,
- * 개정판이 없거나 마지막 처리 시각(`last_processed_at`, 배정·갱신 버전이 올린다)이 최신 개정판의 확인
- * 시각보다 늦거나, 이전 배치가 미룬 사건. 기사는 마지막 버전의 본문과 함께 오고, 버전이 없는 기사는 뺀다
- * (링크만 기사는 `linkOnlySources`로 따로 온다).
- * 우선순위는 파이프라인이 정한다(`prioritizeStories`).
+ * 재처리 필요(스펙 "개정판 생성 조건": 입력이 바뀐 사건만): 미뤄졌거나, 개정판이 없거나, 마지막 처리 시각
+ * (`last_processed_at`, 배정·갱신 버전이 올린다)이 최신 확인 시각보다 늦다. 배치 대상(`loadBatchStories`)은 이 조건,
+ * 출처 추가 개정판의 바탕(`loadRevisionToExtend`)은 그 부정이다. 처리 시각이 없으면 늦지 않은 것으로 본다.
+ */
+export const storyNeedsReprocess = sql`(${stories.deferred_at} is not null or ${latestCheckedAt} is null or coalesce(${stories.last_processed_at} > ${latestCheckedAt}, false))`;
+
+/**
+ * 이번 배치가 처리할 라이브 사건: 종료가 아니고 재처리 필요(`storyNeedsReprocess`)인 사건. 사건마다 원자료(최신
+ * 개정판·주장 개정판 이력·기사 버전 전부·최신 확인 시각)를 읽어 재처리 컨텍스트 규칙(`deriveReprocessContext`)으로
+ * 기사 입력 버전·정정 표시·이전 본문·열린 에피소드를 정한다. 버전이 없는 기사는 뺀다(링크만 기사는
+ * `linkOnlySources`로 따로 온다). 우선순위는 파이프라인이 정한다(`prioritizeStories`).
  */
 export async function loadBatchStories(
   db: RuntimeDb["db"],
 ): Promise<{ readonly stories: readonly BatchStory[]; readonly sources: readonly Source[] }> {
-  const latestChecked = sql`(select max(${storyRevisions.checked_at}) from ${storyRevisions} where ${storyRevisions.story_id} = ${stories.id})`;
   const storyRows = await db
-    .select()
-    .from(stories)
-    .where(
-      and(
-        eq(stories.is_demo, false),
-        ne(stories.lifecycle, "종료"),
-        or(
-          isNotNull(stories.deferred_at),
-          sql`${latestChecked} is null`,
-          sql`${stories.last_processed_at} > ${latestChecked}`,
-        ),
+    .select({
+      story: stories,
+      latestCheckedAt: sql<Date | null>`${latestCheckedAt}`.mapWith(
+        (v: string | Date) => new Date(v),
       ),
-    )
+    })
+    .from(stories)
+    .where(and(eq(stories.is_demo, false), ne(stories.lifecycle, "종료"), storyNeedsReprocess))
     .orderBy(stories.id);
   if (storyRows.length === 0) return { stories: [], sources: [] };
-  const storyIds = storyRows.map((s) => s.id);
+  const storyIds = storyRows.map((s) => s.story.id);
 
   const articleRows = await db
     .select()
@@ -277,14 +281,12 @@ export async function loadBatchStories(
     articleRows.length === 0
       ? []
       : await db
-          .selectDistinctOn([articleVersions.article_id], {
-            id: articleVersions.id,
-            article_id: articleVersions.article_id,
+          .select({
+            articleId: articleVersions.article_id,
+            articleVersionId: articleVersions.id,
             body: articleVersions.body,
-            correction_candidate: articleVersions.correction_candidate,
-            // 정정 후보 버전이 생긴 뒤 첫 재처리(#94): 그 사건의 마지막 개정판 확인(발행·확인) 시각보다 늦게 수집됐다.
-            // 사건이 미뤄지거나 실패하면 확인 시각이 그대로라 다음 배치가 여전히 첫 재처리다.
-            unprocessed: sql<boolean>`"article_versions"."captured_at" > coalesce((select max(sr.checked_at) from story_revisions sr join articles a on a.story_id = sr.story_id where a.id = "article_versions"."article_id"), '-infinity'::timestamptz)`,
+            capturedAt: articleVersions.captured_at,
+            correctionCandidate: articleVersions.correction_candidate,
           })
           .from(articleVersions)
           .where(
@@ -293,8 +295,7 @@ export async function loadBatchStories(
               articleRows.map((a) => a.id),
             ),
           )
-          .orderBy(articleVersions.article_id, desc(articleVersions.captured_at));
-  const versionByArticle = new Map(versionRows.map((v) => [v.article_id, v]));
+          .orderBy(articleVersions.article_id, articleVersions.captured_at);
   const sourceIds = [...new Set(articleRows.map((a) => a.source_id))];
   const sourceRows =
     sourceIds.length === 0
@@ -303,12 +304,20 @@ export async function loadBatchStories(
 
   const tierById = new Map(sourceRows.map((s) => [s.id, s.rights_tier]));
   const result: BatchStory[] = [];
-  for (const row of storyRows) {
+  for (const { story: row, latestCheckedAt: checkedAt } of storyRows) {
+    const storyArticles = articleRows.filter((a) => a.story_id === row.id);
+    const storyArticleIds = new Set(storyArticles.map((a) => a.id));
+    const loaded = await loadRevision(db, { storyId: row.id });
+    const context = deriveReprocessContext({
+      latestRevision: loaded?.revision,
+      latestCheckedAt: checkedAt ?? undefined,
+      claimHistory: loaded === undefined ? [] : await loadClaimHistory(db, { storyId: row.id }),
+      articleVersions: versionRows.filter((v) => storyArticleIds.has(v.articleId)),
+    });
     const batchArticles: BatchArticle[] = [];
     const linkOnlySources: RevisionSource[] = [];
-    for (const article of articleRows) {
-      if (article.story_id !== row.id) continue;
-      const version = versionByArticle.get(article.id);
+    for (const article of storyArticles) {
+      const version = context.currentVersions.get(article.id);
       if (version === undefined) {
         const tier = tierById.get(article.source_id);
         if (article.is_link_only && tier !== undefined) {
@@ -331,54 +340,25 @@ export async function loadBatchStories(
         title: article.title,
         publishedAt: article.published_at,
         topics: article.topics,
-        articleVersionId: version.id,
+        articleVersionId: version.articleVersionId,
         rawBody: version.body,
-        ...(version.correction_candidate ? { correctionCandidate: true } : {}),
-        ...(version.correction_candidate && version.unprocessed
-          ? { correctionFirstReprocess: true }
-          : {}),
+        ...(version.correctionCandidate ? { correctionCandidate: true } : {}),
+        ...(version.correctionFirstReprocess ? { correctionFirstReprocess: true } : {}),
       });
     }
     if (batchArticles.length === 0) continue;
-    const latestRevision = await loadLatestRevision(db, { slug: row.slug });
-    const openEpisodeClaims =
-      latestRevision === undefined
-        ? []
-        : await loadOpenEpisodeClaims(db, {
-            storyId: row.id,
-            latestClaimIds: latestRevision.claims.map((c) => c.id),
-          });
-    const currentVersionIds = new Set(batchArticles.map((a) => a.articleVersionId));
-    const oldVersionIds = [
-      ...new Set(
-        [...(latestRevision?.claims ?? []), ...openEpisodeClaims]
-          .flatMap((c) => c.evidence.map((e) => e.articleVersionId))
-          .filter((id) => !currentVersionIds.has(id)),
-      ),
-    ];
-    const previousVersionBodies =
-      oldVersionIds.length === 0
-        ? []
-        : await db
-            .select({ articleVersionId: articleVersions.id, body: articleVersions.body })
-            .from(articleVersions)
-            .where(inArray(articleVersions.id, oldVersionIds))
-            .orderBy(articleVersions.id);
     result.push({
-      story: {
-        id: row.id,
-        slug: row.slug,
-        title: row.title,
-        topics: row.topics,
-        isDemo: row.is_demo,
-        lifecycle: row.lifecycle,
-      },
+      story: toDomainStory(row),
       articles: batchArticles,
-      ...(latestRevision === undefined ? {} : { latestRevision }),
+      ...(context.latestRevision === undefined ? {} : { latestRevision: context.latestRevision }),
       ...(row.deferred_at === null ? {} : { deferredSince: row.deferred_at }),
       ...(linkOnlySources.length === 0 ? {} : { linkOnlySources }),
-      ...(previousVersionBodies.length === 0 ? {} : { previousVersionBodies }),
-      ...(openEpisodeClaims.length === 0 ? {} : { openEpisodeClaims }),
+      ...(context.previousVersionBodies === undefined
+        ? {}
+        : { previousVersionBodies: context.previousVersionBodies }),
+      ...(context.openEpisodeClaims === undefined
+        ? {}
+        : { openEpisodeClaims: context.openEpisodeClaims }),
     });
   }
   return { stories: result, sources: sourceRows.map(toDomainSource) };

@@ -219,6 +219,18 @@ export function toStoryRow(story: Story): StoryRow {
   };
 }
 
+/** 사건 행을 도메인 사건으로 되돌린다. 배정 열(중심·시각)은 도메인 사건에 없다. */
+export function toDomainStory(row: StoryRow): Story {
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    topics: row.topics,
+    isDemo: row.is_demo,
+    lifecycle: row.lifecycle,
+  };
+}
+
 export function toSourceRow(source: Source): SourceRow {
   return {
     id: source.id,
