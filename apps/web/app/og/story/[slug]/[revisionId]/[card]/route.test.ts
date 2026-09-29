@@ -100,7 +100,8 @@ async function request(slug = "demo-1-agreement", revisionId = "rev%3A1") {
   const response = await GET(new Request("http://web.test/og"), {
     params: Promise.resolve({ slug, revisionId, card: "ko-t1-f1.3.9.png" }),
   });
-  return { response, png: decodePng(Buffer.from(await response.arrayBuffer())) };
+  const bytes = Buffer.from(await response.arrayBuffer());
+  return { response, bytes, png: decodePng(bytes) };
 }
 
 describe("GET /og/story/[slug]/[revisionId]/[card]", () => {
@@ -115,10 +116,32 @@ describe("GET /og/story/[slug]/[revisionId]/[card]", () => {
     const { response, png } = await request();
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("image/png");
-    expect(response.headers.get("cache-control")).toContain("immutable");
     expect([png.width, png.height]).toEqual([1200, 600]);
     // URL의 개정판(디코딩한 값)을 읽는다 — 포인터의 최신 개정판이 아니다.
     expect(getStoryRevisionView).toHaveBeenCalledWith("s-1", "rev:1", "ko", 1, "demo-1-agreement");
+  });
+
+  it("story card is only briefly cached outside the server", async () => {
+    getLatestRevisionPointer.mockResolvedValue({ storyId: "s-1", revisionId: "rev:1" });
+    getStoryRevisionView.mockResolvedValue(view());
+    const { response } = await request();
+    const cacheControl = response.headers.get("cache-control") ?? "";
+    expect(cacheControl).not.toContain("immutable");
+    expect(Number(/max-age=(\d+)/.exec(cacheControl)?.[1])).toBeLessThanOrEqual(300);
+    expect(cacheControl).not.toContain("s-maxage");
+  });
+
+  it("after the story tag is revalidated the next request renders the new data", async () => {
+    // 긴 캐시는 사건 태그가 붙은 `use cache` 함수에만 있다. 무효화 뒤 그 함수가 새 값을 돌려주면 카드도 새로 그려진다.
+    getLatestRevisionPointer.mockResolvedValue({ storyId: "s-1", revisionId: "rev:1" });
+    getStoryRevisionView.mockResolvedValue(view());
+    const before = (await request()).bytes;
+    getStoryRevisionView.mockResolvedValue(
+      view({ summary: "정정된 주장: 합의는 아직 이뤄지지 않았다." }),
+    );
+    const after = (await request()).bytes;
+    expect(after.equals(before)).toBe(false);
+    expect(getStoryRevisionView).toHaveBeenCalledTimes(2);
   });
 
   it("unknown story returns safe card", async () => {

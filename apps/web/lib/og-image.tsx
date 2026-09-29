@@ -141,8 +141,13 @@ function SafeCard({ withText }: { withText: boolean }) {
   );
 }
 
+/** 사이트 카드에는 사건 데이터가 없고 URL이 템플릿·폰트 버전마다 바뀌므로 불변 캐시로 둔다. */
 const IMMUTABLE = "public, immutable, no-transform, max-age=31536000";
-/** 안전 카드는 원인(발행 직후 캐시 지연·일시 장애)이 풀리면 바뀌어야 하므로 짧게 둔다. */
+/**
+ * 사건 카드와 안전 카드. 사건 카드에는 주장·상태가 그려지고 정정·철회는 과거 개정판 표현까지 즉시 무효화해야 하므로
+ * (스펙 "렌더링·캐시") 서버가 되돌릴 수 없는 브라우저·메신저·CDN 캐시는 5분으로 둔다. 긴 캐시는 사건 태그가 붙은
+ * `use cache` 데이터(`story-cache.ts`)에만 있고 재검증 라우트가 지운다. 안전 카드는 원인이 풀리면 바뀌어야 한다.
+ */
 const SHORT = "public, no-transform, max-age=300";
 
 async function png(element: ReactElement, fonts: Fonts | undefined): Promise<ArrayBuffer> {
@@ -154,8 +159,8 @@ const respond = (body: ArrayBuffer, cacheControl: string) =>
   new Response(body, { headers: { "content-type": "image/png", "cache-control": cacheControl } });
 
 /**
- * 카드 응답. 항상 200 PNG다. 사건 카드는 URL이 개정판·버전마다 달라 불변 캐시로 두고(첫 요청이 곧 생성),
- * 사건이 없거나(`undefined`) 렌더가 실패하면 안전 카드를 짧은 캐시로 낸다. `site`는 사이트 기본 카드다.
+ * 카드 응답. 항상 200 PNG다. 사건 카드와 안전 카드(사건 없음 `undefined`·렌더 실패)는 짧은 캐시로,
+ * 사이트 기본 카드(`site`)는 불변 캐시로 낸다. `site`는 사이트 기본 카드다.
  */
 export async function ogCardResponse(
   card: OgStoryCard | "site" | undefined,
@@ -163,7 +168,7 @@ export async function ogCardResponse(
 ): Promise<Response> {
   if (card !== undefined && card !== "site" && fonts !== undefined) {
     try {
-      return respond(await png(<StoryCard card={card} />, fonts), IMMUTABLE);
+      return respond(await png(<StoryCard card={card} />, fonts), SHORT);
     } catch {
       // 안전 카드로 내려간다.
     }
