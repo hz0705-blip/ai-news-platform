@@ -90,6 +90,7 @@ export { type BatchRunRow, batchRuns } from "./schema/index.ts";
 export {
   loadSourceRegistry,
   loadStoryRevisionsForSources,
+  loadStoryRevisionsForStories,
   type SourceTierChange,
   syncSourceRegistry,
   updateUnregisteredSourceTier,

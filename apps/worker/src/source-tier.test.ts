@@ -240,4 +240,51 @@ maybe("source:set-tier", () => {
       await cleanup();
     }
   });
+
+  it("sources:sync expires latest and revision tags of stories whose evidence moved", async () => {
+    const { db, sql, cleanup } = await createMigrationDb(url as string);
+    try {
+      await seed(sql);
+      // s-2에 옛 GNews 출처 기사 하나와 그 기사를 가리키는 근거 하나(재지정 전 상태).
+      await sql`insert into sources (id, name, rights_tier, region, ownership, language, is_fictional, external_id)
+        values ('gnews:g1', 'The Guardian', '본문 처리 + 발췌 표시', 'gb', 'unknown', 'en', false, 'g1')`;
+      await sql`insert into articles (id, source_id, story_id, url, normalized_url, title, published_at, topics, is_link_only)
+        values ('a-g', 'gnews:g1', 's-2', 'https://www.theguardian.com/g', 'theguardian.com/g', 'G', now(), '{}', false)`;
+      await sql`insert into article_versions (id, article_id, body, normalization_version, body_hash, captured_at, body_expires_at)
+        values ('av-g', 'a-g', 'body', 1, 'h', now(), now() + interval '30 days')`;
+      await sql`insert into claims (id, story_id) values ('c-1', 's-2')`;
+      await sql`insert into claim_revisions (id, story_revision_id, claim_id, display_order, text, claim_type, modality, contradiction_status)
+        values ('cr-1', 'r-3', 'c-1', 0, '주장', '보도된 사실', '단정', '단일 출처')`;
+      await sql`insert into evidence (id, claim_revision_id, display_order, article_id, article_version_id, source_id,
+          span_start, span_end, offset_unit, normalization_version, span_text, span_hash, excerpt, excerpt_start,
+          excerpt_end, highlight_start, highlight_end, source_url, verified_at)
+        values ('e-1', 'cr-1', 0, 'a-g', 'av-g', 'gnews:g1', 0, 4, 'code-point', 1, 'body', 'h', 'body', 0, 4, 0, 4,
+          'https://www.theguardian.com/g', now())`;
+      const path = registryCopy();
+      const { invalidate, calls } = recorder();
+
+      expect(await syncSourcesFile(db, path, invalidate)).toMatchObject({
+        repointedArticles: 1,
+        repointedEvidence: 1,
+        repointedEvidenceSources: [REGISTERED],
+        tierChanges: [],
+        expiredStories: 1,
+        expiredTags: 2,
+        cacheInvalidated: true,
+      });
+      expect(calls).toEqual([
+        [["story:s-2:latest", "story:s-2:rev:r-3:ko:v1"], { immediate: true }],
+      ]);
+
+      // 두 번째 실행은 옮길 근거가 없어 만료도 없다.
+      calls.length = 0;
+      expect(await syncSourcesFile(db, path, invalidate)).toMatchObject({
+        repointedEvidence: 0,
+        expiredStories: 0,
+      });
+      expect(calls).toEqual([]);
+    } finally {
+      await cleanup();
+    }
+  });
 });

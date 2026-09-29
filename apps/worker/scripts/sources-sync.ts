@@ -4,8 +4,9 @@ import { createCacheInvalidator } from "../src/revalidate.ts";
 import { exitCodeOf, syncSourcesFile } from "../src/source-tier.ts";
 
 /**
- * 출처 표 파일 → DB `sources` upsert(#76) + 옛 `gnews:*` 기사 재지정. 권리 등급이 바뀐 출처가 있으면 영향받는
- * 사건의 최신·과거 개정판 캐시를 즉시 만료한다(#78). 파일 검증에 실패하면 아무것도 쓰지 않는다.
+ * 출처 표 파일 → DB `sources` upsert(#76) + 옛 `gnews:*` 기사·근거 재지정(#115). 권리 등급이 바뀐 출처가 있거나
+ * 근거를 옮긴 사건이 있으면 그 사건의 최신·과거 개정판 캐시를 즉시 만료한다(#78). 출력 JSON의 `repointedEvidence`는
+ * 옮긴 근거 수, `expiredStories`는 만료한 사건 수다. 파일 검증에 실패하면 아무것도 쓰지 않는다.
  * 실행: pnpm --filter @newsplatform/worker sources:sync (DATABASE_MIGRATION_URL 필요. 마이그레이션이 먼저다.
  * 캐시 만료는 WEB_REVALIDATE_URL·REVALIDATE_SECRET이 있을 때만 한다.)
  */
@@ -20,7 +21,7 @@ try {
   console.log(JSON.stringify(result));
   if (exitCodeOf(result) !== 0) {
     console.error(
-      "등급이 바뀐 출처의 사건 캐시를 만료하지 못했다(WEB_REVALIDATE_URL·REVALIDATE_SECRET 없음). 설정한 뒤 출처마다 source:set-tier <출처> <현재 등급>으로 다시 만료한다.",
+      "등급이 바뀐 출처·근거를 옮긴 사건의 캐시를 만료하지 못했다(WEB_REVALIDATE_URL·REVALIDATE_SECRET 없음). 설정한 뒤 tierChanges·repointedEvidenceSources의 출처마다 source:set-tier <출처> <현재 등급>으로 다시 만료한다.",
     );
     process.exitCode = 1;
   }
