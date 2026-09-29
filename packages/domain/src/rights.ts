@@ -6,3 +6,13 @@
 export const RIGHTS_TIERS = ["본문 처리 + 발췌 표시", "링크만"] as const;
 
 export type RightsTier = (typeof RIGHTS_TIERS)[number];
+
+/** 이 등급의 기사 본문을 AI로 처리(근거 추출·주장 생성·게이트)할 수 있는지. 거짓이면 메타데이터와 링크만 쓴다. */
+export function canProcessBody(rightsTier: RightsTier): boolean {
+  return rightsTier === "본문 처리 + 발췌 표시";
+}
+
+/** `링크만` 등급인지. 이 등급 기사는 근거가 되지 않고 보도 원점으로 세지 않는다. */
+export function isLinkOnly(rightsTier: RightsTier): boolean {
+  return rightsTier === "링크만";
+}

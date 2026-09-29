@@ -1,4 +1,4 @@
-import type { RightsTier } from "./rights.ts";
+import { isLinkOnly, type RightsTier } from "./rights.ts";
 
 export interface OriginEvidence {
   readonly sourceId: string;
@@ -13,7 +13,7 @@ export interface OriginEvidence {
 export function reportingOrigins(evidence: readonly OriginEvidence[]): ReadonlySet<string> {
   const origins = new Set<string>();
   for (const item of evidence) {
-    if (item.rightsTier === "링크만") continue;
+    if (isLinkOnly(item.rightsTier)) continue;
     origins.add(item.wireId ?? item.sourceId);
   }
   return origins;

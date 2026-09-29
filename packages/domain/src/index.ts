@@ -116,7 +116,7 @@ export {
 } from "./revision-changes.ts";
 export { isSameRevisionContent } from "./revision-equality.ts";
 export { revisionWithSources } from "./revision-sources.ts";
-export { RIGHTS_TIERS, type RightsTier } from "./rights.ts";
+export { canProcessBody, isLinkOnly, RIGHTS_TIERS, type RightsTier } from "./rights.ts";
 export { splitSentences } from "./sentence.ts";
 export {
   matchSourceByDomain,

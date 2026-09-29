@@ -1,4 +1,4 @@
-import type { RightsTier } from "./rights.ts";
+import { isLinkOnly, type RightsTier } from "./rights.ts";
 import { splitSentences } from "./sentence.ts";
 import { type CodePointSpan, spanLength, spanText } from "./span.ts";
 import { NORMALIZATION_VERSION } from "./text.ts";
@@ -44,7 +44,7 @@ export function checkEvidenceSpan(input: {
     return { ok: false, reason: "정규화 버전 불일치" };
   }
 
-  if (input.rightsTier === "링크만") {
+  if (isLinkOnly(input.rightsTier)) {
     return { ok: false, reason: "링크만 등급" };
   }
 

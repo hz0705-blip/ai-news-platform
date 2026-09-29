@@ -1,4 +1,5 @@
 import {
+  canProcessBody,
   createArticleVersion,
   type Revision,
   type RevisionChange,
@@ -330,7 +331,7 @@ async function processStory(
   });
 
   // 링크만 기사는 근거 추출·게이트를 거치지 않고 출처 구획으로만 간다(Ruling 15).
-  const processable = versions.filter((v) => v.source.rightsTier === "본문 처리 + 발췌 표시");
+  const processable = versions.filter((v) => canProcessBody(v.source.rightsTier));
 
   // 1. 근거 추출
   const located: gate.GateInput["located"] = [];
