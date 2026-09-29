@@ -94,5 +94,4 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 
 - diff·리뷰·로그는 서브에이전트가 읽고 컨트롤러는 판정만 받는다. PR 본문·코멘트 초안은 스크래치패드 파일로 만들어 `--body-file`로 넘긴다.
 - `git push`가 매달리는 것을 막기 위해 저장소 git config에 `http.lowSpeedLimit 1000`·`http.lowSpeedTime 45`를 두었다(로컬 설정, 새 클론마다 다시 넣는다).
-- Herdr 안에서는 PreToolUse(`Agent`, 백그라운드 `Bash`) 훅 `.claude/hooks/agent-monitor-start.sh`가 오른쪽 pane에 `scripts/agent-monitor`를 띄워 서브에이전트 진행을 보인다. 모든 태스크가 끝나거나 300초 이상 갱신이 없는 상태가 90초 지속되면 pane이 닫힌다. Herdr 밖·서브에이전트 세션·포그라운드 Bash에서는 아무것도 하지 않는다.
 - 인계 문서에 Herdr 에이전트는 이름과 pane ID를 함께 적는다.
