@@ -156,21 +156,28 @@ function byDisplayOrder(a: { display_order: number }, b: { display_order: number
   return a.display_order - b.display_order;
 }
 
+/** 주장 개정판 행 하나를 도메인 주장으로 되돌린다. `evidence` 중 그 행의 근거만 `display_order` 순으로 붙인다. */
+export function toDomainClaim(row: ClaimRevisionRow, evidence: readonly EvidenceRow[]): Claim {
+  return {
+    id: row.claim_id,
+    text: row.text,
+    claimType: row.claim_type,
+    modality: row.modality,
+    order: row.display_order,
+    contradictionStatus: row.contradiction_status,
+    evidence: evidence
+      .filter((e) => e.claim_revision_id === row.id)
+      .sort(byDisplayOrder)
+      .map((e) => toDomainEvidence(e, row.claim_id)),
+  };
+}
+
 /** 행 묶음을 개정판으로 되돌린다. 주장·근거는 `display_order` 순, 출처 구획은 받은 순서다. */
 export function toDomainRevision(rows: RevisionRows): Revision {
   const { revision } = rows;
-  const claims: Claim[] = [...rows.claimRevisions].sort(byDisplayOrder).map((cr) => ({
-    id: cr.claim_id,
-    text: cr.text,
-    claimType: cr.claim_type,
-    modality: cr.modality,
-    order: cr.display_order,
-    contradictionStatus: cr.contradiction_status,
-    evidence: rows.evidence
-      .filter((e) => e.claim_revision_id === cr.id)
-      .sort(byDisplayOrder)
-      .map((e) => toDomainEvidence(e, cr.claim_id)),
-  }));
+  const claims: Claim[] = [...rows.claimRevisions]
+    .sort(byDisplayOrder)
+    .map((cr) => toDomainClaim(cr, rows.evidence));
 
   const sources: RevisionSource[] = rows.sources.map((s) => ({
     sourceId: s.source_id,

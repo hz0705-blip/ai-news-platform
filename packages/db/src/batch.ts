@@ -1,5 +1,6 @@
 import type {
   Article,
+  Claim,
   DueBatchRun,
   Revision,
   RevisionSource,
@@ -9,7 +10,7 @@ import type {
 import { slotAtOf } from "@newsplatform/domain/batch-slot";
 import { and, desc, eq, gt, gte, inArray, isNotNull, lt, lte, ne, or, sql } from "drizzle-orm";
 import { toDomainSource } from "./mappers.ts";
-import { loadLatestRevision } from "./queries/revision.ts";
+import { loadLatestRevision, loadOpenEpisodeClaims } from "./queries/revision.ts";
 import type { RuntimeDb } from "./runtime.ts";
 import {
   articles,
@@ -232,6 +233,8 @@ export interface BatchStory {
     readonly articleVersionId: string;
     readonly body: string;
   }[];
+  /** 마지막 개정판에 없는 열린 상충 에피소드의 주장(#90, `loadOpenEpisodeClaims`). */
+  readonly openEpisodeClaims?: readonly Claim[];
 }
 
 /**
@@ -330,10 +333,17 @@ export async function loadBatchStories(
     }
     if (batchArticles.length === 0) continue;
     const latestRevision = await loadLatestRevision(db, { slug: row.slug });
+    const openEpisodeClaims =
+      latestRevision === undefined
+        ? []
+        : await loadOpenEpisodeClaims(db, {
+            storyId: row.id,
+            latestClaimIds: latestRevision.claims.map((c) => c.id),
+          });
     const currentVersionIds = new Set(batchArticles.map((a) => a.articleVersionId));
     const oldVersionIds = [
       ...new Set(
-        (latestRevision?.claims ?? [])
+        [...(latestRevision?.claims ?? []), ...openEpisodeClaims]
           .flatMap((c) => c.evidence.map((e) => e.articleVersionId))
           .filter((id) => !currentVersionIds.has(id)),
       ),
@@ -360,6 +370,7 @@ export async function loadBatchStories(
       ...(row.deferred_at === null ? {} : { deferredSince: row.deferred_at }),
       ...(linkOnlySources.length === 0 ? {} : { linkOnlySources }),
       ...(previousVersionBodies.length === 0 ? {} : { previousVersionBodies }),
+      ...(openEpisodeClaims.length === 0 ? {} : { openEpisodeClaims }),
     });
   }
   return { stories: result, sources: sourceRows.map(toDomainSource) };

@@ -339,9 +339,7 @@ describe("배치 실행", () => {
         ),
       )
     ).revisions[0];
-    expect(corrected?.claims.find((c) => c.id === disputed.id)?.contradictionStatus).toBe(
-      "정정됨",
-    );
+    expect(corrected?.claims.find((c) => c.id === disputed.id)?.contradictionStatus).toBe("정정됨");
     expect(corrected?.contradictionStatus).toBe("정정됨");
   });
 

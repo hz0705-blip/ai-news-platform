@@ -243,12 +243,20 @@ export async function runBatchSlot(
         dailyBudget: { tokens: budget.tokens, spend: remainingUsd },
         sources,
         existingStories: stories.map(
-          ({ story, latestRevision, deferredSince, linkOnlySources, previousVersionBodies }) => ({
+          ({
+            story,
+            latestRevision,
+            deferredSince,
+            linkOnlySources,
+            previousVersionBodies,
+            openEpisodeClaims,
+          }) => ({
             story,
             ...(latestRevision === undefined ? {} : { latestRevision }),
             ...(deferredSince === undefined ? {} : { deferredSince }),
             ...(linkOnlySources === undefined ? {} : { linkOnlySources }),
             ...(previousVersionBodies === undefined ? {} : { previousVersionBodies }),
+            ...(openEpisodeClaims === undefined ? {} : { openEpisodeClaims }),
           }),
         ),
         deadline: new Date(startedAt.getTime() + BATCH_MODEL_DEADLINE_MS),
