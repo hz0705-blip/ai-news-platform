@@ -1,5 +1,7 @@
 import { createRuntimeDb } from "@newsplatform/db";
 import { createOpenAiEmbeddingClient, createOpenAiModelClient } from "@newsplatform/pipeline";
+import { createProviderUnlinker } from "@newsplatform/pipeline/provider-unlink";
+import { runAccountUnlinkSweep } from "./account-unlink.ts";
 import { pipelineDailyBudget } from "./budget.ts";
 import { createCacheInvalidator } from "./revalidate.ts";
 import { runBatchSlot } from "./run-batch-slot.ts";
@@ -7,11 +9,12 @@ import { startScheduler } from "./schedule.ts";
 import { createShutdown } from "./shutdown.ts";
 
 /**
- * 워커 데몬(#55): pg-boss 스케줄(KST 05:00·17:00)로 배치를 돈다.
+ * 워커 데몬(#55): pg-boss 스케줄(KST 05:00·17:00)로 배치를 돌고, 매분 계정 삭제의 연결 해제를 재시도한다(#106).
  * 실행: 배포(Railway)는 저장소 루트에서 `node apps/worker/src/index.ts`(pnpm 래퍼는 SIGTERM 종료를 실패로 보고한다, #66),
  * 로컬은 pnpm --filter @newsplatform/worker start(.env 로드).
  * WORKER_DATABASE_URL(세션 풀러)·OPENAI_API_KEY·GNEWS_API_KEY 필수, WEB_REVALIDATE_URL·REVALIDATE_SECRET·
- * PIPELINE_DAILY_BUDGET_USD(일일 예산 덮어쓰기, 잘못된 값이면 시작 실패) 선택.
+ * PIPELINE_DAILY_BUDGET_USD(일일 예산 덮어쓰기, 잘못된 값이면 시작 실패)·KAKAO_ADMIN_KEY(Kakao 연결 해제, 없으면 그 행은
+ * 완료되지 않고 재시도 로그에 `kakao-admin-key-missing`으로 남는다) 선택.
  */
 const log = (event: Record<string, unknown>) =>
   console.log(JSON.stringify({ at: new Date().toISOString(), ...event }));
@@ -38,11 +41,13 @@ try {
 
 const { db, sql } = createRuntimeDb({ DATABASE_URL: connectionString });
 const invalidateCache = createCacheInvalidator(process.env);
+const unlink = createProviderUnlinker({ fetch, kakaoAdminKey: process.env.KAKAO_ADMIN_KEY });
 const boss = await startScheduler({
   connectionString,
   db,
   clock: () => new Date(),
   log,
+  sweepAccounts: () => runAccountUnlinkSweep({ db, unlink, clock: () => new Date(), log }),
   run: (slotKey) =>
     runBatchSlot(
       { slotKey },

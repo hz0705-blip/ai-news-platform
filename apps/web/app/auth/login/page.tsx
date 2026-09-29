@@ -9,6 +9,7 @@ import { getCurrentUserId } from "../../../lib/auth/server.ts";
 import {
   BACK_TO_READING,
   LOGIN_FAILED,
+  LOGIN_PENDING_DELETION,
   LOGIN_REASON,
   LOGIN_TITLE,
   LOGIN_UNAVAILABLE,
@@ -50,9 +51,15 @@ async function LoginBody({
   const unavailable = !configured || error === "unavailable";
   return (
     <>
-      {unavailable || error === "failed" ? (
+      {unavailable || error === "failed" || error === "pending-deletion" ? (
         <Alert>
-          <AlertTitle>{unavailable ? LOGIN_UNAVAILABLE : LOGIN_FAILED}</AlertTitle>
+          <AlertTitle>
+            {unavailable
+              ? LOGIN_UNAVAILABLE
+              : error === "failed"
+                ? LOGIN_FAILED
+                : LOGIN_PENDING_DELETION}
+          </AlertTitle>
         </Alert>
       ) : null}
       <p>{LOGIN_REASON}</p>
