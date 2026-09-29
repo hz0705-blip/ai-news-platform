@@ -172,8 +172,11 @@ export function toDomainClaim(row: ClaimRevisionRow, evidence: readonly Evidence
   };
 }
 
-/** 행 묶음을 개정판으로 되돌린다. 주장·근거는 `display_order` 순, 출처 구획은 받은 순서다. */
-export function toDomainRevision(rows: RevisionRows): Revision {
+/**
+ * 행 묶음을 개정판으로 되돌린다. 주장·근거는 `display_order` 순, 출처 구획은 받은 순서다.
+ * 주장 행(`claims`)은 식별자뿐이라 읽지 않는다 — 주장 내용은 `claimRevisions`에 있다.
+ */
+export function toDomainRevision(rows: Omit<RevisionRows, "claims">): Revision {
   const { revision } = rows;
   const claims: Claim[] = [...rows.claimRevisions]
     .sort(byDisplayOrder)
