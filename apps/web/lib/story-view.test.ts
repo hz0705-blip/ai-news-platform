@@ -1,7 +1,8 @@
 import type { StoryPageData } from "@newsplatform/db";
 import type { ContradictionStatus } from "@newsplatform/domain";
 import { describe, expect, it } from "vitest";
-import { buildStoryView } from "./story-view.ts";
+import { MULTI_REV_1, MULTI_REV_2, multiRevisionFixture } from "../e2e/story-data.ts";
+import { buildCoverage, buildStoryView, diffWords } from "./story-view.ts";
 
 // 발췌 안에 보조 평면 문자(🇰🇷)를 넣어 UTF-16 변환을 시험한다.
 const excerpt = "Officials in 🇰🇷 Seoul agreed on the framework. The deal covers three ports.";
@@ -23,6 +24,24 @@ const data: StoryPageData = {
     checkedAt: new Date("2026-09-17T00:30:00.000Z"),
     contradictionStatus: "복수 출처 일치",
   },
+  coverageArticles: [
+    { publishedAt: new Date("2026-09-16T22:00:00.000Z"), isLinkOnly: false, observedAt: null },
+    { publishedAt: new Date("2026-09-16T23:00:00.000Z"), isLinkOnly: false, observedAt: null },
+  ],
+  changes: [],
+  revisions: [
+    {
+      id: "rev-1",
+      revisionNumber: 1,
+      publishedAt: new Date("2026-09-17T00:30:00.000Z"),
+      changeCounts: {
+        "주장 추가·삭제·수정": 0,
+        "상충 상태 변화": 0,
+        "원문 변경": 0,
+        "출처 추가": 0,
+      },
+    },
+  ],
   claims: [
     {
       id: "claim-1",
@@ -47,6 +66,7 @@ const data: StoryPageData = {
   sources: [
     {
       id: "src-meridian",
+      articleId: "a-meridian",
       name: "Meridian Wire",
       isFictional: true,
       rightsTier: "본문 처리 + 발췌 표시",
@@ -61,6 +81,7 @@ const data: StoryPageData = {
     },
     {
       id: "src-atlas",
+      articleId: "a-atlas",
       name: "Atlas Dispatch",
       isFictional: true,
       rightsTier: "링크만",
@@ -116,6 +137,7 @@ function dataWith(options: {
     })),
     sources: indexes.map((j) => ({
       id: `src-${j}`,
+      articleId: `a-${j}`,
       name: options.sourceNames?.[j] ?? `Source ${j}`,
       isFictional: true,
       rightsTier: "본문 처리 + 발췌 표시",
@@ -283,6 +305,7 @@ describe("buildStoryView", () => {
         ...data.sources,
         {
           id: "gdelt:harbor-news.example",
+          articleId: "a-harbor-news",
           name: "harbor-news.example",
           isFictional: false,
           rightsTier: "링크만",
@@ -301,5 +324,112 @@ describe("buildStoryView", () => {
     expect(row).toMatchObject({ isLinkOnly: true, observedAt, excerptAvailable: false });
     expect(row).not.toHaveProperty("publishedAt");
     expect(view.sources[0]).toMatchObject({ isLinkOnly: false, excerptAvailable: true });
+  });
+});
+
+describe("변화·개정판 띠·보도량 뷰(#87)", () => {
+  it("주장 수정은 이전·현재 문장의 단어 차이를 조각으로 낸다", () => {
+    expect(diffWords("가 나 다 라", "가 나 마 라 바")).toEqual({
+      previous: [
+        { text: "가 나", changed: false },
+        { text: "다", changed: true },
+        { text: "라", changed: false },
+      ],
+      current: [
+        { text: "가 나", changed: false },
+        { text: "마", changed: true },
+        { text: "라", changed: false },
+        { text: "바", changed: true },
+      ],
+    });
+    const view = buildStoryView(multiRevisionFixture);
+    const modified = view.changes.items[0];
+    expect(modified?.type).toBe("주장 수정");
+    if (modified?.type !== "주장 수정") return;
+    expect(modified.claimOrder).toBe(1);
+    expect(modified.previous.filter((s) => s.changed).map((s) => s.text)).toEqual(["이번", "한"]);
+    expect(modified.current.filter((s) => s.changed).map((s) => s.text)).toEqual(["다음", "두"]);
+  });
+
+  it("출처 추가는 항목이 아니라 개수로만 세고 나머지는 저장 순서대로 항목이 된다", () => {
+    const { changes } = buildStoryView(multiRevisionFixture);
+    expect(changes.revisionNumber).toBe(2);
+    expect(changes.sourceAdditionCount).toBe(2);
+    expect(changes.items.map((i) => i.type)).toEqual([
+      "주장 수정",
+      "주장 추가",
+      "주장 삭제",
+      "상충 상태 변화",
+      "상충 상태 변화",
+      "원문 변경",
+    ]);
+    expect(changes.items[3]).toEqual({
+      type: "상충 상태 변화",
+      claimOrder: 1,
+      previousStatus: "보도 상충",
+      currentStatus: "상충 해소",
+    });
+    expect(changes.items[4]).not.toHaveProperty("claimOrder");
+    expect(changes.items[5]).toEqual({
+      type: "원문 변경",
+      article: {
+        sourceName: "Tidewater Gazette",
+        articleTitle: "Tidewater Gazette article",
+        articleUrl: "https://tidewater.example/berth",
+      },
+    });
+  });
+
+  it("개정판 띠는 발행 순서대로 고정 URL·현재 표시·종류별 개수를 낸다", () => {
+    const { revisions } = buildStoryView(multiRevisionFixture);
+    expect(revisions.map((r) => [r.revisionNumber, r.href, r.isCurrent])).toEqual([
+      [1, `/story/multi-revision-changes/revision/${encodeURIComponent(MULTI_REV_1)}`, false],
+      [2, `/story/multi-revision-changes/revision/${encodeURIComponent(MULTI_REV_2)}`, true],
+    ]);
+    expect(revisions[0]?.href).toContain("%3A");
+    expect(revisions[1]?.counts).toEqual([
+      { kind: "주장 추가·삭제·수정", count: 3 },
+      { kind: "상충 상태 변화", count: 2 },
+      { kind: "원문 변경", count: 1 },
+      { kind: "출처 추가", count: 2 },
+    ]);
+  });
+
+  it("보도량 구간은 KST 경계로 자르고 빈 구간은 0", () => {
+    const coverage = buildStoryView(multiRevisionFixture).coverage;
+    expect(coverage?.binSize).toBe("6시간");
+    // 2026-09-17 06:00 KST(= 09-16T21:00Z)부터 6시간마다, 개정판 발행(09-18 09:30 KST)이 든 구간까지
+    expect(coverage?.bins.map((b) => [b.start.toISOString(), b.count])).toEqual([
+      ["2026-09-16T21:00:00.000Z", 2],
+      ["2026-09-17T03:00:00.000Z", 0],
+      ["2026-09-17T09:00:00.000Z", 0],
+      ["2026-09-17T15:00:00.000Z", 1],
+      ["2026-09-17T21:00:00.000Z", 1],
+    ]);
+  });
+
+  it("발행 시각이 없으면 관측 시각으로 세고 그 수를 구간과 합계에 남긴다", () => {
+    const coverage = buildStoryView(multiRevisionFixture).coverage;
+    expect(coverage?.observedTotal).toBe(1);
+    expect(coverage?.bins.map((b) => b.observedCount)).toEqual([0, 0, 0, 0, 1]);
+  });
+
+  it("72시간 이하 사건은 6시간, 초과는 1일 구간", () => {
+    const at = (iso: string) => ({ at: new Date(iso), observed: false });
+    const start = "2026-09-16T15:00:00.000Z"; // 09-17 00:00 KST
+    expect(buildCoverage([at(start)], new Date("2026-09-19T15:00:00.000Z"))?.binSize).toBe("6시간");
+    const daily = buildCoverage(
+      [at(start), at("2026-09-18T14:59:00.000Z")],
+      new Date("2026-09-19T15:00:01.000Z"),
+    );
+    expect(daily?.binSize).toBe("1일");
+    // KST 자정 경계: 09-17, 09-18(빈 구간 0 아님 — 23:59 KST 기사), 09-19, 09-20(개정판 발행 00:00:01 KST)
+    expect(daily?.bins.map((b) => [b.start.toISOString(), b.count])).toEqual([
+      ["2026-09-16T15:00:00.000Z", 1],
+      ["2026-09-17T15:00:00.000Z", 1],
+      ["2026-09-18T15:00:00.000Z", 0],
+      ["2026-09-19T15:00:00.000Z", 0],
+    ]);
+    expect(buildCoverage([], new Date(start))).toBeUndefined();
   });
 });

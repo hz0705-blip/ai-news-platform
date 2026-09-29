@@ -79,3 +79,44 @@ const OWNERSHIP_NAMES: Readonly<Record<string, string>> = {
 export const ownershipName = (value: string): string => OWNERSHIP_NAMES[value] ?? value;
 
 export const NO_CHANGES = "아직 변화가 없습니다";
+
+/** 변화 구획(#87). 변화 종류는 아이콘과 글자로 함께 보인다(색만으로 부호화하지 않는다). */
+export const CHANGES_INTRO = "직전 개정판과 비교한 변화입니다.";
+export const revisionLabel = (revisionNumber: number): string => `개정판 ${revisionNumber}`;
+export const CHANGE_CLAIM_ADDED = "주장 추가";
+export const CHANGE_CLAIM_REMOVED = "주장 삭제";
+export const CHANGE_CLAIM_MODIFIED = "주장 수정";
+export const STORY_STATUS = "사건 상태";
+export const PREVIOUS_SENTENCE = "이전";
+export const CURRENT_SENTENCE = "현재";
+export const PREVIOUS_STATUS = "이전 상태";
+export const CURRENT_STATUS = "현재 상태";
+/** `<del>`·`<ins>`의 텍스트 대체(스크린리더는 대개 두 요소를 따로 알리지 않는다). */
+export const DELETED_WORDS = "지운 단어:";
+export const INSERTED_WORDS = "넣은 단어:";
+export const sourceAdditionCount = (count: number): string => `출처 추가 ${count}건`;
+/** 변화 종류의 화면 이름. 주장 추가·삭제·수정은 "주장 변화"로 묶는다(CONTEXT.md "변화"). */
+export const CHANGE_KIND_NAMES = {
+  "주장 추가·삭제·수정": "주장 변화",
+  "상충 상태 변화": "상충 상태 변화",
+  "원문 변경": "원문 변경",
+  "출처 추가": "출처 추가",
+} as const;
+export const changeKindCount = (name: string, count: number): string => `${name} ${count}건`;
+
+export const REVISION_STRIP_HEADING = "개정판 이력";
+export const REVISION_STRIP_CAPTION =
+  "개정판을 발행 순서대로 보입니다. 각 개정판의 고정 주소로 이동합니다.";
+export const CURRENT_REVISION = "현재 개정판";
+export const FIRST_REVISION = "첫 개정판";
+export const SHOW_TABLE = "표로 보기";
+export const REVISION_COLUMN = "개정판";
+
+export const COVERAGE_HEADING = "보도량 추이";
+export const coverageCaption = (binSize: string): string =>
+  `기사 발행 시각 기준 ${binSize} 구간별 기사 수, 한국 시간(KST)`;
+export const coverageObservedNote = (count: number): string =>
+  `발행 시각을 모르는 기사 ${count}건은 관측 시각으로 셌습니다.`;
+export const COVERAGE_BIN_COLUMN = "구간(KST)";
+export const COVERAGE_COUNT_COLUMN = "기사 수";
+export const COVERAGE_OBSERVED_COLUMN = "관측 시각으로 센 기사";
