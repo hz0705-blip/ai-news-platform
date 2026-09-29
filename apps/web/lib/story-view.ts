@@ -70,7 +70,7 @@ interface SourceViewBase {
 }
 
 /**
- * 출처 구획의 행 하나. 링크만 기사(GDELT, #77)는 발행 시각을 모르므로 관측 시각(`seendate`)만 가진다
+ * 출처 구획의 행 하나. 링크만 기사(GDELT, #77)는 발행 시각을 모르므로 관측 시각(GKG `DATE`)만 가진다
  * (스펙 "데이터 소스와 권리" GDELT).
  */
 export type SourceView =

@@ -7,7 +7,7 @@ import { articles, sources, stories, storyRevisions } from "./schema/index.ts";
 
 /**
  * GDELT 단계(#77)의 저장소 함수. 링크만 기사는 기사 행만 있고 기사 버전(본문)이 없다(`is_link_only`).
- * 발행 시각을 모르므로 `published_at`은 관측 시각(`observed_at` = GDELT `seendate`)의 복사본이다.
+ * 발행 시각을 모르므로 `published_at`은 관측 시각(`observed_at` = GDELT GKG `DATE`)의 복사본이다.
  */
 
 /** 조회할 사건: 대표 기사(링크만이 아닌 기사 중 발행 시각·식별자 순 첫 기사)의 제목과 발행 시각. 입력 순서를 지킨다. */
