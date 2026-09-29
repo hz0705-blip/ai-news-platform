@@ -16,6 +16,7 @@ export default defineRailway(() =>
           WEB_REVALIDATE_URL: preserve(),
           REVALIDATE_SECRET: preserve(),
           PIPELINE_DAILY_BUDGET_USD: preserve(),
+          KAKAO_ADMIN_KEY: preserve(),
         },
         build: {
           builder: "RAILPACK",
