@@ -241,7 +241,7 @@ function axis(i: number): number[] {
   return v;
 }
 
-maybe("GDELT 단계(기록된 GDELT 응답)", () => {
+maybe("GDELT 단계(기록된 GKG 조각)", () => {
   it("link-only articles attach to the published story as a source-added revision with zero model calls", async () => {
     const { db, sql, cleanup } = await createMigrationDb(url as string);
     try {
@@ -266,14 +266,15 @@ maybe("GDELT 단계(기록된 GDELT 응답)", () => {
                 return model.complete(request);
               },
             },
-            // 링크 제목만 임베딩한다: Hormuz가 있으면 사건 축, 없으면 직교 축(배정 실패 → 버림).
+            // 링크 제목만 임베딩한다: 기록된 행 중 묶음 기사("… and other Mideast news")는 직교 축(배정 실패 → 버림),
+            // 나머지는 사건 축.
             embeddingClient: {
               embed: async (texts: readonly string[]) => ({
-                vectors: texts.map((t) => (/hormuz/i.test(t) ? axis(0) : axis(1))),
+                vectors: texts.map((t) => (/other Mideast news/.test(t) ? axis(1) : axis(0))),
                 usage: { tokens: texts.length, spend: 0 },
               }),
             },
-            gdelt: { fetch: createRecordedGdeltFetch(), sleep: async () => {} },
+            gdelt: { fetch: createRecordedGdeltFetch() },
             log: (event: Record<string, unknown>) => {
               if (typeof event.stage === "string") callsAt[event.stage] = modelCalls;
             },
@@ -287,7 +288,7 @@ maybe("GDELT 단계(기록된 GDELT 응답)", () => {
       if (!("attached" in gdelt))
         throw new Error(`GDELT 단계가 돌지 않았다: ${JSON.stringify(gdelt)}`);
       expect(gdelt).toMatchObject({
-        requestCount: 1,
+        files: { inWindow: 6, read: 6, skippedDeadline: 0 },
         failures: [],
         revisedStoryIds: [live.story.id],
       });

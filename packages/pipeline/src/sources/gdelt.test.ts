@@ -1,66 +1,150 @@
+import { createHash } from "node:crypto";
 import type { Source } from "@newsplatform/domain";
 import { describe, expect, it } from "vitest";
 import {
-  buildGdeltQuery,
-  buildGdeltRequest,
   collectGdelt,
+  formatGdeltTime,
+  GDELT_MASTERFILELIST_URL,
   GDELT_MAX_CONSECUTIVE_FAILURES,
-  GDELT_MIN_INTERVAL_MS,
-  type GdeltResponse,
+  GDELT_MAX_FILES_PER_BATCH,
+  GDELT_MAX_STORIES_PER_BATCH,
   type GdeltStoryQuery,
+  gdeltTermsOf,
   gdeltWindow,
-  mapGdeltArticles,
-  parseGdeltResponse,
+  gkgFilesInWindow,
+  normalizeForMatch,
+  parseGkgRow,
+  titleMatchesTerms,
 } from "./gdelt.ts";
-import { readRecordedGdelt } from "./gdelt-recorded.ts";
+import {
+  createRecordedGdeltFetch,
+  readRecordedGdeltFileList,
+  readRecordedGkgRows,
+  zipSingleEntry,
+} from "./gdelt-recorded.ts";
 
 const TITLE =
   "Iran says it will wait for official US response after Trump rejects Strait of Hormuz proposal";
 const firstPublishedAt = new Date("2026-09-27T02:16:52.000Z");
 const batchStartedAt = new Date("2026-09-27T08:00:00.000Z");
+const story: GdeltStoryQuery = { storyId: "s-hormuz", title: TITLE, firstPublishedAt };
 
-function recorded(): GdeltResponse {
-  const file = readRecordedGdelt("hormuz-proposal");
-  if (file === undefined) throw new Error("기록된 GDELT 응답 없음");
-  return parseGdeltResponse(JSON.stringify(file.body));
-}
+const recordedRows = readRecordedGkgRows("hormuz-proposal");
+const allRows = [...recordedRows.values()].flat();
 
-describe("GDELT 요청", () => {
-  it("buildGdeltQuery picks 2-4 proper nouns and window", () => {
-    // `US`처럼 세 글자 미만 키워드는 GDELT가 거부하므로 뺀다.
-    expect(buildGdeltQuery(TITLE)).toBe('Iran Trump "Strait of Hormuz" sourcelang:english');
-    // 고유명사가 넷을 넘으면 앞 넷, 둘 미만이면 조회하지 않는다.
-    expect(buildGdeltQuery("Lee meets Xi, Putin, Modi and Macron in Beijing")).toBe(
-      "Lee Putin Modi Macron sourcelang:english",
+describe("GDELT 매칭 용어", () => {
+  it("gdeltTermsOf picks 2-4 normalized proper nouns", () => {
+    // `US`처럼 세 글자 미만 한 단어는 뺀다(대소문자를 무시하면 대명사 `us`와 같다).
+    expect(gdeltTermsOf(TITLE)).toEqual(["iran", "trump", "strait of hormuz"]);
+    expect(gdeltTermsOf("Lee meets Xi, Putin, Modi and Macron in Beijing")).toEqual([
+      "lee",
+      "putin",
+      "modi",
+      "macron",
+    ]);
+    expect(gdeltTermsOf("Markets fall as yields rise")).toBeUndefined();
+    expect(gdeltTermsOf("Russia-derived system heads to Algeria")).toEqual([
+      "russia derived",
+      "algeria",
+    ]);
+  });
+
+  it("title match requires every proper noun, case and punctuation normalized", () => {
+    const terms = gdeltTermsOf(TITLE) ?? [];
+    const matches = (title: string) => titleMatchesTerms(normalizeForMatch(title), terms);
+    expect(matches("Trump Rejects Iran's Proposal To Open Strait Of Hormuz")).toBe(true);
+    expect(matches("US–Iran war: TRUMP rejects Strait-of-Hormuz deal")).toBe(true);
+    // 하나라도 빠지면(여기서는 "Strait of") 후보가 아니다.
+    expect(matches("Trump rejects Iran proposal to open Hormuz")).toBe(false);
+    // 단어 경계: `Iranian`은 `Iran`이 아니다.
+    expect(matches("Iranian Trump Strait of Hormuz")).toBe(false);
+    // 기록된 실제 행 중 매칭되지 않는 행은 무관한 제목이다.
+    const titles = allRows.map((l) => parseGkgRow(l)?.title ?? "");
+    expect(titles.filter((t) => !matches(t))).toEqual([
+      "Kuwait Food Authority inspects 17 establishments in Mubarak Al-Kabeer",
+      "Tories to deport all foreign criminals guilty of 'non-minor crimes'",
+    ]);
+  });
+});
+
+describe("GKG 행·파일 목록", () => {
+  it("gkg row parsing reads url, domain, observed time and title and drops rows without a title", () => {
+    const line = allRows.find((l) => l.includes("gulfnews.com/world/mena/us-iran-war"));
+    if (line === undefined) throw new Error("기록된 행 없음");
+    expect(parseGkgRow(line)).toEqual({
+      recordId: "20260927061500-308",
+      observedAt: new Date("2026-09-27T06:15:00.000Z"),
+      domain: "gulfnews.com",
+      url: "https://gulfnews.com/world/mena/us-iran-war-tehran-awaits-response-as-trump-rejects-hormuz-plan-saudi-arabia-condemns-iran-and-houthis-1.500689272",
+      // HTML 엔터티(`&#x2013;`)를 푼다.
+      title:
+        "US–Iran War Tensions Rise as Trump Rejects Strait of Hormuz Deal; Tehran Awaits Response, Saudi Arabia Condemns Iran and Houthis",
+    });
+    // 폭 없는 공백(`&#x200B;`)과 `&#xA0;`도 정리한다.
+    const zeroWidth = allRows.map((l) => parseGkgRow(l)?.title ?? "");
+    expect(zeroWidth).toContain(
+      "'They Have No Money Coming In': Donald Trump Rejects Iran's Offer to Reopen Strait of Hormuz - Pragativadi I Latest Odisha News in English I Breaking News",
     );
-    expect(buildGdeltQuery("Markets fall as yields rise")).toBeUndefined();
-    // 하이픈·아포스트로피가 든 후보는 따옴표로 묶는다.
-    expect(buildGdeltQuery("Russia-derived system heads to Algeria")).toBe(
-      '"Russia-derived" Algeria sourcelang:english',
+    expect(zeroWidth).toContain(
+      "Trump Rejects Iran's Plan to Reopen Strait of Hormuz in Seven Days – THISDAYLIVE",
     );
+    // 제목 태그가 없거나 비었으면 버린다.
+    expect(parseGkgRow(line.replace(/<PAGE_TITLE>.*<\/PAGE_TITLE>/, ""))).toBeUndefined();
+    expect(
+      parseGkgRow(line.replace(/<PAGE_TITLE>.*<\/PAGE_TITLE>/, "<PAGE_TITLE></PAGE_TITLE>")),
+    ).toBeUndefined();
+    // 웹 문서(수집 식별자 1)가 아니면 버린다.
+    expect(parseGkgRow(line.replace("\t1\tgulfnews.com", "\t2\tgulfnews.com"))).toBeUndefined();
+  });
 
+  it("file window from the file list keeps gkg files inside the window, newest first", () => {
     const window = gdeltWindow({ firstPublishedAt, batchStartedAt });
-    const url = buildGdeltRequest("Iran US sourcelang:english", window);
-    expect(`${url.origin}${url.pathname}`).toBe("https://api.gdeltproject.org/api/v2/doc/doc");
-    expect(Object.fromEntries(url.searchParams)).toEqual({
-      query: "Iran US sourcelang:english",
-      mode: "artlist",
-      format: "json",
-      maxrecords: "250",
-      // 창 = 사건 첫 기사 발행 24시간 전 ~ 배치 시작.
-      startdatetime: "20260926021652",
-      enddatetime: "20260927080000",
+    const files = gkgFilesInWindow(readRecordedGdeltFileList("hormuz-proposal"), window);
+    // 창 = 첫 기사 발행 24시간 전(09-26 02:16:52) ~ 배치 시작(09-27 08:00). 02:15·08:15 파일과 export·mentions는 빠진다.
+    expect(files.map((f) => formatGdeltTime(f.timestamp))).toEqual([
+      "20260927080000",
+      "20260927074500",
+      "20260927070000",
+      "20260927063000",
+      "20260927061500",
+      "20260927053000",
+    ]);
+    expect(files[0]).toEqual({
+      url: "http://data.gdeltproject.org/gdeltv2/20260927080000.gkg.csv.zip",
+      md5: "0231c73075d6f579b6847626d2d3815a",
+      size: 2382783,
+      timestamp: new Date("2026-09-27T08:00:00.000Z"),
     });
   });
 });
 
-describe("GDELT 응답 매핑", () => {
-  it("mapGdeltArticles drops non-English and excluded domains", () => {
-    const response = recorded();
-    const [first, second, third] = response.articles;
-    if (first === undefined || second === undefined || third === undefined) {
-      throw new Error("기록된 결과가 셋 미만");
+describe("GDELT 수집(기록된 GKG 조각)", () => {
+  it("collectGdelt links recorded rows whose titles carry every proper noun", async () => {
+    const result = await collectGdelt(
+      { stories: [story], batchStartedAt },
+      { fetch: createRecordedGdeltFetch() },
+    );
+    expect(result.failures).toEqual([]);
+    expect(result.files).toMatchObject({ inWindow: 6, read: 6, rows: allRows.length });
+    const [group] = result.linksByStory;
+    expect(group?.storyId).toBe(story.storyId);
+    expect(group?.links).toHaveLength(12);
+    for (const link of group?.links ?? []) {
+      expect(titleMatchesTerms(normalizeForMatch(link.title), group?.terms ?? [])).toBe(true);
+      expect(link.sourceId).toMatch(/^gdelt:/);
     }
+    // 출처 표에 없는 도메인은 `gdelt:<domain>` 출처(링크만, 이름 = 도메인, 영어).
+    expect(result.sources).toContainEqual(
+      expect.objectContaining({
+        id: "gdelt:gulfnews.com",
+        name: "gulfnews.com",
+        rightsTier: "링크만",
+        language: "en",
+      }),
+    );
+  });
+
+  it("excluded domains in the source registry are dropped", async () => {
     const excluded: Source = {
       id: "excluded.example",
       name: "Excluded",
@@ -69,174 +153,158 @@ describe("GDELT 응답 매핑", () => {
       ownership: "private",
       language: "en",
       isFictional: false,
-      domains: [second.domain],
+      domains: ["gulfnews.com"],
       isExcluded: true,
     };
-    const mapped = mapGdeltArticles(
+    const result = await collectGdelt(
+      { stories: [story], batchStartedAt, registry: [excluded] },
+      { fetch: createRecordedGdeltFetch() },
+    );
+    expect(result.dropped).toEqual({ excluded: 2, invalid: 0 });
+    expect(result.linksByStory[0]?.links.some((l) => l.url.includes("gulfnews.com"))).toBe(false);
+  });
+
+  it("checksum mismatch skips the file and is reported", async () => {
+    const result = await collectGdelt(
+      { stories: [story], batchStartedAt },
+      { fetch: createRecordedGdeltFetch("hormuz-proposal", { wrongMd5: ["20260927080000"] }) },
+    );
+    expect(result.failures).toEqual([
       {
-        articles: [
-          first,
-          { ...first }, // 같은 URL은 한 번만
-          second,
-          { ...third, language: "Spanish" },
-        ],
+        file: "http://data.gdeltproject.org/gdeltv2/20260927080000.gkg.csv.zip",
+        reason: expect.stringContaining("MD5"),
       },
-      [excluded],
-    );
-    expect(mapped.dropped).toEqual({ nonEnglish: 1, excluded: 1, invalid: 0 });
-    expect(mapped.links).toHaveLength(1);
-    const link = mapped.links[0];
-    // 쓰는 필드는 url·title·domain·language·seendate뿐이다(이미지·톤 무시).
-    expect(link).toEqual({
-      sourceId: `gdelt:${first.domain}`,
-      url: first.url,
-      normalizedUrl: expect.any(String),
-      title: first.title.trim(),
-      observedAt: expect.any(Date),
-    });
-    expect(Object.keys(link ?? {}).sort()).toEqual(
-      ["normalizedUrl", "observedAt", "sourceId", "title", "url"].sort(),
-    );
-    // 출처 표에 없는 도메인은 `gdelt:<domain>` 출처(링크만, 이름 = 도메인).
-    expect(mapped.sources).toEqual([
-      expect.objectContaining({
-        id: `gdelt:${first.domain}`,
-        name: first.domain,
-        rightsTier: "링크만",
-      }),
     ]);
-    // 결과가 없으면 GDELT는 빈 본문을 준다.
-    expect(parseGdeltResponse("").articles).toEqual([]);
+    expect(result.files.read).toBe(5);
+    // 그 파일의 행은 쓰지 않는다.
+    const links = result.linksByStory[0]?.links ?? [];
+    expect(links).toHaveLength(9);
+    expect(links.some((l) => l.observedAt.getTime() === batchStartedAt.getTime())).toBe(false);
   });
 });
 
-function stories(n: number): GdeltStoryQuery[] {
-  return Array.from({ length: n }, (_, i) => ({
-    storyId: `s-${i}`,
-    title: `Seoul and Tokyo talks round ${i}`,
-    firstPublishedAt,
-  }));
-}
-
-/** 시계는 `sleep`만 옮긴다. `fetch`가 부른 시각을 남긴다. */
-function fakeTime() {
-  let now = batchStartedAt.getTime();
-  const calls: number[] = [];
-  return {
-    calls,
-    clock: () => new Date(now),
-    sleep: async (ms: number) => {
-      now += ms;
-    },
-    advance: (ms: number) => {
-      now += ms;
-    },
-  };
-}
-
-describe("GDELT 수집", () => {
-  it("gdelt stage paces requests >=6s and caps at 20 stories", async () => {
-    const time = fakeTime();
-    const result = await collectGdelt(
-      { stories: stories(22), batchStartedAt },
-      {
-        clock: time.clock,
-        sleep: time.sleep,
-        fetch: async () => {
-          time.calls.push(time.clock().getTime());
-          time.advance(1000); // 응답에 1초
-          return new Response("", { status: 200 });
-        },
-      },
-    );
-    expect(result.requestCount).toBe(20);
-    expect(result.skippedOverCap).toBe(2);
-    expect(time.calls).toHaveLength(20);
-    for (let i = 1; i < time.calls.length; i++) {
-      expect((time.calls[i] ?? 0) - (time.calls[i - 1] ?? 0)).toBeGreaterThanOrEqual(
-        GDELT_MIN_INTERVAL_MS,
-      );
+/** 파일 `n`개짜리 목록과 빈 zip을 주는 `fetch`. `respond`로 파일 응답을 바꾼다. */
+function syntheticGdelt(n: number, respond?: (index: number) => Response | undefined) {
+  const zip = zipSingleEntry("x.gkg.csv", Buffer.alloc(0));
+  const md5 = createHash("md5").update(zip).digest("hex");
+  const quarter = 15 * 60 * 1000;
+  const urls = Array.from(
+    { length: n },
+    (_, i) =>
+      `http://data.gdeltproject.org/gdeltv2/${formatGdeltTime(new Date(batchStartedAt.getTime() - i * quarter))}.gkg.csv.zip`,
+  );
+  const fetched: string[] = [];
+  const fetchFn: typeof fetch = async (input) => {
+    const url = String(input);
+    if (url === GDELT_MASTERFILELIST_URL) {
+      return new Response(`cut\n${urls.map((u) => `${zip.length} ${md5} ${u}`).join("\n")}\n`, {
+        status: 206,
+      });
     }
-    // 첫 요청은 기다리지 않는다.
-    expect(time.calls[0]).toBe(batchStartedAt.getTime());
-  });
+    fetched.push(url);
+    const index = urls.indexOf(url.replace(/^https:/, "http:"));
+    return respond?.(index) ?? new Response(new Uint8Array(zip), { status: 200 });
+  };
+  return { fetch: fetchFn, fetched };
+}
 
-  it("gdelt 429 skips the story and is reported", async () => {
-    const time = fakeTime();
-    const body = readRecordedGdelt("hormuz-proposal")?.body;
-    let call = 0;
+describe("GDELT 수집 상한·실패", () => {
+  it("gdelt caps files per batch at 96 newest and stories at 20", async () => {
+    const many = Array.from({ length: GDELT_MAX_STORIES_PER_BATCH + 2 }, (_, i) => ({
+      ...story,
+      storyId: `s-${i}`,
+    }));
+    const synthetic = syntheticGdelt(GDELT_MAX_FILES_PER_BATCH + 4);
     const result = await collectGdelt(
-      { stories: stories(3), batchStartedAt },
-      {
-        clock: time.clock,
-        sleep: time.sleep,
-        fetch: async () => {
-          call++;
-          if (call === 2) {
-            return new Response("Please limit requests to one every 5 seconds", { status: 429 });
-          }
-          return new Response(JSON.stringify(body), { status: 200 });
-        },
-      },
+      { stories: [...many], batchStartedAt },
+      { fetch: synthetic.fetch },
     );
-    expect(result.requestCount).toBe(3);
-    expect(result.failures).toEqual([{ storyId: "s-1", reason: expect.stringContaining("429") }]);
-    expect(result.linksByStory.map((s) => s.storyId)).toEqual(["s-0", "s-2"]);
+    expect(result.skippedOverCap).toBe(2);
+    expect(result.files).toMatchObject({
+      inWindow: GDELT_MAX_FILES_PER_BATCH + 4,
+      read: GDELT_MAX_FILES_PER_BATCH,
+      skippedOverCap: 4,
+    });
+    // 최근 파일부터, https로 받는다.
+    expect(synthetic.fetched[0]).toBe(
+      "https://data.gdeltproject.org/gdeltv2/20260927080000.gkg.csv.zip",
+    );
   });
 
-  it("gdelt request times out and counts as a failure", async () => {
+  it("gdelt skips stories without enough proper nouns without fetching", async () => {
+    const synthetic = syntheticGdelt(1);
     const result = await collectGdelt(
-      { stories: stories(1), batchStartedAt },
+      { stories: [{ ...story, title: "Markets fall as yields rise" }], batchStartedAt },
+      { fetch: synthetic.fetch },
+    );
+    expect(result.skippedNoTerms).toBe(1);
+    expect(result.window).toBeUndefined();
+    expect(synthetic.fetched).toEqual([]);
+  });
+
+  it("gdelt file errors skip the file and stop after 3 consecutive failures", async () => {
+    // 0 실패, 1 성공, 2~4 실패 ×3 → 멈춤(남은 5~7은 읽지 않는다).
+    const synthetic = syntheticGdelt(8, (i) =>
+      i === 1 ? undefined : new Response("busy", { status: 503 }),
+    );
+    const result = await collectGdelt(
+      { stories: [story], batchStartedAt },
+      { fetch: synthetic.fetch },
+    );
+    expect(result.failures).toHaveLength(1 + GDELT_MAX_CONSECUTIVE_FAILURES);
+    expect(result.failures[0]?.reason).toContain("503");
+    expect(result.files).toMatchObject({ read: 1, skippedAfterFailures: 3 });
+  });
+
+  it("gdelt file download times out and counts as a failure", async () => {
+    const synthetic = syntheticGdelt(1);
+    const result = await collectGdelt(
+      { stories: [story], batchStartedAt },
       {
         timeoutMs: 20,
-        sleep: async () => {},
-        // 응답하지 않는 서버: 신호가 끊을 때까지 기다린다.
-        fetch: (_url, init) =>
-          new Promise<Response>((_resolve, reject) => {
-            init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
-          }),
+        fetch: (input, init) =>
+          String(input) === GDELT_MASTERFILELIST_URL
+            ? synthetic.fetch(input, init)
+            : new Promise<Response>((_resolve, reject) => {
+                init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+              }),
       },
     );
     expect(result.failures).toEqual([
-      { storyId: "s-0", reason: expect.stringMatching(/timed? ?out/i) },
+      {
+        file: expect.stringContaining(".gkg.csv.zip"),
+        reason: expect.stringMatching(/timed? ?out/i),
+      },
     ]);
   });
 
-  it("gdelt skips remaining stories once the deadline is reached", async () => {
-    const time = fakeTime();
-    const deadline = new Date(batchStartedAt.getTime() + 2 * GDELT_MIN_INTERVAL_MS);
+  it("gdelt skips remaining files once the deadline is reached", async () => {
+    let now = batchStartedAt.getTime();
+    const synthetic = syntheticGdelt(5, () => {
+      now += 60_000; // 파일마다 1분
+      return undefined;
+    });
     const result = await collectGdelt(
-      { stories: stories(5), batchStartedAt, deadline },
-      {
-        clock: time.clock,
-        sleep: time.sleep,
-        fetch: async () => new Response("", { status: 200 }),
-      },
+      { stories: [story], batchStartedAt, deadline: new Date(batchStartedAt.getTime() + 120_000) },
+      { fetch: synthetic.fetch, clock: () => new Date(now) },
     );
-    // 0초·6초 요청 뒤 세 번째 요청 시각(12초)이 기한이다.
-    expect(result.requestCount).toBe(2);
-    expect(result.skippedDeadline).toBe(3);
+    expect(result.files).toMatchObject({ read: 2, skippedDeadline: 3 });
   });
 
-  it("gdelt stops after 3 consecutive failed requests", async () => {
-    const time = fakeTime();
-    let call = 0;
+  it("gdelt reports a file list that ignores Range and reads no files", async () => {
+    const fetched: string[] = [];
     const result = await collectGdelt(
-      { stories: stories(8), batchStartedAt },
+      { stories: [story], batchStartedAt },
       {
-        clock: time.clock,
-        sleep: time.sleep,
-        fetch: async () => {
-          call++;
-          // 성공 한 번은 연속을 끊는다: 실패, 성공, 실패 ×3 → 멈춤.
-          return call === 2
-            ? new Response("", { status: 200 })
-            : new Response("Please limit requests", { status: 429 });
+        fetch: async (input) => {
+          fetched.push(String(input));
+          return new Response("whole list", { status: 200 });
         },
       },
     );
-    expect(result.requestCount).toBe(1 + 1 + GDELT_MAX_CONSECUTIVE_FAILURES);
-    expect(result.failures).toHaveLength(4);
-    expect(result.skippedAfterFailures).toBe(3);
+    expect(fetched).toEqual([GDELT_MASTERFILELIST_URL]);
+    expect(result.failures).toEqual([
+      { file: GDELT_MASTERFILELIST_URL, reason: expect.stringContaining("200") },
+    ]);
   });
 });

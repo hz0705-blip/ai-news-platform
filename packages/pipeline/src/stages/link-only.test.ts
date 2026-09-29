@@ -20,12 +20,18 @@ const live = loadDemoStoryFixture("live-hormuz-proposal");
 const now = LIVE_REFERENCE_TIME;
 const STORY_AXIS = [1, 0, 0];
 
-/** 고정 벡터: 제목에 Hormuz가 있으면 사건 축, 아니면 직교 축(배정 실패). 입력은 제목만이어야 한다. */
+/**
+ * 기록된 GKG 행 중 사건과 무관하게 임베딩할 제목(고유명사는 모두 들어 있지만 배정 임계값에 걸리는 경우를 흉내 낸다).
+ * 실제 행: "... and other Mideast news" 묶음 기사.
+ */
+const UNASSIGNABLE = /other Mideast news/;
+
+/** 고정 벡터: `UNASSIGNABLE` 제목은 직교 축(배정 실패), 나머지는 사건 축. 입력은 제목만이어야 한다. */
 const embeddingClient: EmbeddingClient = {
   async embed(texts) {
     for (const t of texts) if (t.includes("\n")) throw new Error(`제목만이 아니다: ${t}`);
     return {
-      vectors: texts.map((t) => (/hormuz/i.test(t) ? STORY_AXIS : [0, 1, 0])),
+      vectors: texts.map((t) => (UNASSIGNABLE.test(t) ? [0, 1, 0] : STORY_AXIS)),
       usage: { tokens: texts.length * 10, spend: 0 },
     };
   },
@@ -44,7 +50,7 @@ function countingModelClient() {
   return { client, counter };
 }
 
-/** 기록된 GDELT 응답(실제 응답)으로 링크를 만든다. */
+/** 기록된 GKG 조각(실제 파일의 행)으로 링크를 만든다. */
 async function gdeltLinks() {
   return collectGdelt(
     {
@@ -57,7 +63,7 @@ async function gdeltLinks() {
       ],
       batchStartedAt: now,
     },
-    { fetch: createRecordedGdeltFetch(), sleep: async () => {} },
+    { fetch: createRecordedGdeltFetch() },
   );
 }
 
@@ -99,7 +105,7 @@ function memoryStore(revision: Revision, existingUrls: ReadonlyMap<string, strin
   return { store, saved, observed, published, publishedChanges };
 }
 
-describe("링크만 기사(GDELT, 기록된 응답)", () => {
+describe("링크만 기사(GDELT, 기록된 GKG 조각)", () => {
   it("link-only article adds a source-added revision with zero model calls", async () => {
     const model = countingModelClient();
     const batch = await runBatch(
@@ -206,7 +212,7 @@ describe("링크만 기사(GDELT, 기록된 응답)", () => {
     );
     const discarded = result.outcomes.filter((o) => o.kind === "discarded");
     const attached = result.outcomes.filter((o) => o.kind === "attached");
-    // 기록된 결과에는 Hormuz가 제목에 없는 기사도 섞여 있다(넓은 쿼리, 스펙 같은 줄).
+    // 고유명사가 모두 든 제목이라도 사건과 멀면(여기서는 묶음 기사) 배정 임계값이 거른다.
     expect(discarded.length).toBeGreaterThan(0);
     expect(attached.length + discarded.length).toBe(
       collected.linksByStory.flatMap((s) => s.links).length,
