@@ -91,8 +91,24 @@ export {
   type SaveRecheckInput,
   saveRecheckResult,
 } from "./recheck.ts";
+export {
+  type AdmitInput,
+  type AdmitResult,
+  admitAnonymousRequest,
+  type CounterLimits,
+  kstDateOf,
+  purgeRequestCounters,
+  type RateLimit,
+  type RateWindow,
+  settleAnonymousRequest,
+} from "./request-limits.ts";
 export { createRuntimeDb, type RuntimeDb } from "./runtime.ts";
 export { type BatchRunRow, batchRuns } from "./schema/index.ts";
+export {
+  type StorySearchClaim,
+  type StorySearchHit,
+  searchStoriesByEmbedding,
+} from "./search.ts";
 export {
   loadSearchEmbeddingsByText,
   loadSearchEmbeddingTargets,
