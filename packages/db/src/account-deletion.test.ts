@@ -4,6 +4,7 @@ import {
   type AccountDeletionPorts,
   type DeletionIdentity,
   deleteAccount,
+  exportAccountDeletions,
   hasPendingDeletion,
   loadDeletionStatus,
   replayAccountDeletions,
@@ -249,41 +250,138 @@ maybe("계정 삭제", () => {
   });
 });
 
+maybe("계정 삭제 — 삭제 기록 실패", () => {
+  it("인증 사용자 삭제 뒤 삭제 기록을 쓰지 못해도 던지지 않고 처리 중이며, 연결 해제는 진행한다", async () => {
+    await withDb(async (db, sql) => {
+      const p = {
+        deleteAuthUser: vi.fn(async () => {
+          // 삭제 기록 삽입만 실패하게 한다(새 행에만 적용되는 제약).
+          await sql`alter table account_deletions add constraint block_insert check (false) not valid`;
+        }),
+        unlink: vi.fn(async (): Promise<UnlinkResult> => ({ outcome: "unlinked" })),
+      };
+      try {
+        expect(await deleteAccount(db, { ...input, identities: [KAKAO] }, p, () => now)).toBe(
+          "pending",
+        );
+        expect(p.unlink).toHaveBeenCalledTimes(1);
+        expect(await db.select().from(accountDeletions)).toEqual([]);
+      } finally {
+        await sql`alter table account_deletions drop constraint if exists block_insert`;
+      }
+    });
+  });
+});
+
 maybe("복원 재적용", () => {
-  it("복원된 DB에서 삭제 기록 사용자의 계정 데이터를 다시 지우고, 보관 기간(90일)이 지난 삭제 기록을 지운다", async () => {
+  const C = "00000000-0000-4000-8000-00000000000c";
+  const OLD = "00000000-0000-4000-8000-0000000000dd";
+  const KEY_AFTER = "00000000-0000-4000-8000-0000000000c2";
+
+  async function rowsByUser(db: Db): Promise<Record<string, number>> {
+    const rows = [
+      ...(await db.select({ u: storyFollows.user_id }).from(storyFollows)),
+      ...(await db.select({ u: topicFollows.user_id }).from(topicFollows)),
+      ...(await db.select({ u: lastSeenRevisions.user_id }).from(lastSeenRevisions)),
+    ];
+    const count: Record<string, number> = {};
+    for (const { u } of rows) count[u] = (count[u] ?? 0) + 1;
+    return count;
+  }
+
+  it("복원 전 DB에서 내보낸 삭제 기록·대기 행으로, 백업 시점 뒤에 삭제한 사용자의 되살아난 계정 데이터를 지우고 대기 행을 되돌린다", async () => {
     await withDb(async (db) => {
-      // 백업 시점의 계정 데이터(A·B)가 복원되었고 A는 그 뒤 삭제되어 삭제 기록이 있다.
-      await seedAccounts(db);
-      const old = "00000000-0000-4000-8000-0000000000dd";
+      // 복원 전(지금) DB: A는 백업 전, C는 백업 뒤에 삭제했다. C의 Kakao 연결 해제가 아직 대기 중이다.
       await db.insert(accountDeletions).values([
-        { user_id: A, deleted_at: after(-HOUR) },
-        { user_id: old, deleted_at: after(-91 * 24 * HOUR) },
+        { user_id: A, deleted_at: after(-2 * HOUR) },
+        { user_id: C, deleted_at: after(-HOUR) },
+        { user_id: OLD, deleted_at: after(-91 * 24 * HOUR) },
       ]);
-      expect(await replayAccountDeletions(db, { now })).toEqual({
-        deletionRecords: 2,
-        accountRows: 3,
+      await db.insert(accountDeletionPending).values({
+        provider: "kakao",
+        provider_subject: "4242",
+        revocation_token: null,
+        request_key: KEY_AFTER,
+        requested_at: after(-HOUR),
+        attempts: 2,
+        next_attempt_at: after(5 * MINUTE),
+      });
+      // 복원하기 전에 뜬다. 파일로 오가는 모양 그대로(JSON) 넘긴다.
+      const exported = JSON.parse(JSON.stringify(await exportAccountDeletions(db, { now })));
+
+      // 복원된 DB(백업 시점 T = 90분 전): C는 아직 삭제 전이라 계정 데이터가 있고 삭제 기록이 없다. A·OLD의 기록만 있다.
+      // T에 있던 다른 대기 행(그 뒤에 끝났다)이 되살아나 있다.
+      await db.delete(accountDeletions);
+      await db.delete(accountDeletionPending);
+      await seedAccounts(db); // A·B의 계정 데이터(A는 복원 전에 이미 지워졌지만 여기서는 되살아난 것으로 둔다)
+      await db.insert(storyFollows).values({ user_id: C, story_id: "story-s1" });
+      await db.insert(topicFollows).values({ user_id: C, topic: "기술·AI" });
+      await db.insert(accountDeletions).values([
+        { user_id: A, deleted_at: after(-2 * HOUR) },
+        { user_id: OLD, deleted_at: after(-91 * 24 * HOUR) },
+      ]);
+      await db.insert(accountDeletionPending).values({
+        provider: "google",
+        provider_subject: "1087",
+        revocation_token: "stale",
+        request_key: KEY,
+        requested_at: after(-3 * HOUR),
+        attempts: 1,
+        next_attempt_at: after(-3 * HOUR),
+      });
+
+      expect(await replayAccountDeletions(db, { now, exported })).toEqual({
+        deletionRecords: 3,
+        importedRecords: 1,
+        pendingRows: 1,
+        accountRows: 5,
         authUsers: null,
         purgedRecords: 1,
       });
-      expect(await accountRowsOf(db)).toEqual(["B", "B", "B"]);
-      expect(await db.select({ u: accountDeletions.user_id }).from(accountDeletions)).toEqual([
-        { u: A },
+      // 백업 뒤에 삭제한 C와 A의 데이터가 지워지고 B만 남는다.
+      expect(await rowsByUser(db)).toEqual({ [B]: 3 });
+      expect(
+        (await db.select({ u: accountDeletions.user_id }).from(accountDeletions))
+          .map((row) => row.u)
+          .sort(),
+      ).toEqual([A, C]);
+      // 대기 행은 복원 직전의 것(C의 Kakao)이다 — 재가입 차단과 재시도가 이어진다.
+      expect(await db.select().from(accountDeletionPending)).toEqual([
+        {
+          provider: "kakao",
+          provider_subject: "4242",
+          revocation_token: null,
+          request_key: KEY_AFTER,
+          requested_at: after(-HOUR),
+          attempts: 2,
+          next_attempt_at: after(5 * MINUTE),
+        },
       ]);
+      expect(await hasPendingDeletion(db, [KAKAO])).toBe(true);
       // 다시 돌려도 안전하다.
-      expect(await replayAccountDeletions(db, { now })).toMatchObject({ accountRows: 0 });
+      expect(await replayAccountDeletions(db, { now, exported })).toMatchObject({
+        accountRows: 0,
+        importedRecords: 0,
+      });
     });
   });
 
-  it("auth.users가 있는 DB(Supabase 전체 복원)에서는 삭제 기록의 인증 사용자도 다시 지운다", async () => {
+  it("auth.users가 있는 DB(Supabase 전체 복원)에서는 내보낸 기록의 인증 사용자도 다시 지운다", async () => {
     await withDb(async (db, sql) => {
-      await db.insert(accountDeletions).values({ user_id: A, deleted_at: now });
+      const exported = {
+        exportedAt: now.toISOString(),
+        deletions: [{ userId: A, deletedAt: now.toISOString() }],
+        pending: [],
+      };
       const rollback = new Error("rollback");
       await expect(
         db.transaction(async (tx) => {
           await tx.execute("create schema auth");
           await tx.execute("create table auth.users (id uuid primary key)");
           await tx.execute(`insert into auth.users (id) values ('${A}'), ('${B}')`);
-          expect(await replayAccountDeletions(tx, { now })).toMatchObject({ authUsers: 1 });
+          expect(await replayAccountDeletions(tx, { now, exported })).toMatchObject({
+            authUsers: 1,
+          });
           const left = await tx.execute<{ id: string }>("select id from auth.users");
           expect(left.map((row) => row.id)).toEqual([B]);
           throw rollback;

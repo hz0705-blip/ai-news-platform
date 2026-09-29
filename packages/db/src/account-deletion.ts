@@ -3,12 +3,14 @@ import {
   isUnlinkDone,
   isUnlinkOverdue,
   nextUnlinkAttemptAt,
+  UNLINK_PROVIDERS,
   type UnlinkProvider,
   type UnlinkResult,
 } from "@newsplatform/domain";
 import { and, asc, eq, inArray, lt, lte, or, sql } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
+import { z } from "zod";
 import {
   accountDeletionPending,
   accountDeletions,
@@ -39,6 +41,9 @@ export interface AccountDeletionPorts {
   readonly deleteAuthUser: (userId: string) => Promise<void>;
   readonly unlink: (target: DeletionIdentity) => Promise<UnlinkResult>;
 }
+
+/** 인증 사용자 삭제 뒤 삭제 기록 트랜잭션을 시도하는 횟수. */
+const RECORD_ATTEMPTS = 3;
 
 export interface DeleteAccountInput {
   /** 현재 사용자 헬퍼로 검증한 인증 사용자 ID. */
@@ -199,18 +204,27 @@ export async function deleteAccount(
     throw error;
   }
 
-  // 3) 계정 데이터와 삭제 기록(인증 사용자 ID만).
-  await db.transaction(async (tx) => {
-    await deleteAccountData(tx, [input.userId]);
-    await tx
-      .insert(accountDeletions)
-      .values({ user_id: input.userId, deleted_at: input.now })
-      .onConflictDoNothing();
-  });
+  // 3) 계정 데이터와 삭제 기록(인증 사용자 ID만). 인증 사용자는 이미 지워졌으므로 여기서 던지지 않는다 —
+  //    몇 번 다시 해도 쓰지 못하면 사용자에게는 "처리 중"으로 보이고, 연결 해제는 그대로 진행한다.
+  let recorded = false;
+  for (let attempt = 0; attempt < RECORD_ATTEMPTS && !recorded; attempt += 1) {
+    recorded = await db
+      .transaction(async (tx) => {
+        await deleteAccountData(tx, [input.userId]);
+        await tx
+          .insert(accountDeletions)
+          .values({ user_id: input.userId, deleted_at: input.now })
+          .onConflictDoNothing();
+      })
+      .then(
+        () => true,
+        () => false,
+      );
+  }
 
   // 4) 제공자 연결 해제. 실패한 행은 남아 워커가 일정대로 다시 한다.
   const rows = input.identities.length === 0 ? [] : await loadPendingRows(db, input.identities);
-  let pending = false;
+  let pending = !recorded;
   for (const row of rows) {
     if (!isUnlinkDone(await attemptUnlink(db, row, ports.unlink, clock))) pending = true;
   }
@@ -297,8 +311,60 @@ export async function purgeDeletionRecords(db: Db, now: Date): Promise<number> {
   return rows.length;
 }
 
+/**
+ * 복원 전에 떠 둔 삭제 기록·삭제 대기 행(`exportAccountDeletions`). 복원 대상 DB의 기록은 백업 시점까지만 있으므로
+ * 백업 뒤에 삭제한 사용자와 그 뒤에 생긴 대기 행은 이 내보내기에서 온다. 대기 행은 Google 해제용 토큰을 담으므로
+ * 파일은 시크릿처럼 다루고 쓰고 나면 지운다.
+ */
+export const AccountDeletionExportSchema = z.object({
+  exportedAt: z.iso.datetime(),
+  deletions: z.array(z.object({ userId: z.uuid(), deletedAt: z.iso.datetime() })),
+  pending: z.array(
+    z.object({
+      provider: z.enum(UNLINK_PROVIDERS),
+      providerSubject: z.string().min(1),
+      revocationToken: z.string().nullable(),
+      requestKey: z.uuid(),
+      requestedAt: z.iso.datetime(),
+      attempts: z.number().int().nonnegative(),
+      nextAttemptAt: z.iso.datetime(),
+    }),
+  ),
+});
+export type AccountDeletionExport = z.infer<typeof AccountDeletionExportSchema>;
+
+/** 복원하기 전에 지금(복원 전) DB의 삭제 기록과 삭제 대기 행을 모두 뜬다. */
+export async function exportAccountDeletions(
+  db: Db,
+  options: { readonly now: Date },
+): Promise<AccountDeletionExport> {
+  const deletions = await db.select().from(accountDeletions).orderBy(asc(accountDeletions.user_id));
+  const pending = await db.select().from(accountDeletionPending);
+  return {
+    exportedAt: options.now.toISOString(),
+    deletions: deletions.map((row) => ({
+      userId: row.user_id,
+      deletedAt: row.deleted_at.toISOString(),
+    })),
+    pending: pending.map((row) => ({
+      provider: row.provider,
+      providerSubject: row.provider_subject,
+      revocationToken: row.revocation_token,
+      requestKey: row.request_key,
+      requestedAt: row.requested_at.toISOString(),
+      attempts: row.attempts,
+      nextAttemptAt: row.next_attempt_at.toISOString(),
+    })),
+  };
+}
+
 export interface ReplayDeletionsReport {
+  /** 적용한 삭제 기록 수(내보내기 ∪ 복원된 DB). */
   readonly deletionRecords: number;
+  /** 내보내기에서 복원된 DB로 되살린 삭제 기록 수(백업 뒤의 삭제). */
+  readonly importedRecords: number;
+  /** 복원 뒤 삭제 대기 행 수(= 내보내기의 대기 행). */
+  readonly pendingRows: number;
   readonly accountRows: number;
   /** `auth.users`가 있는 DB(Supabase 전체 복원)에서 다시 지운 인증 사용자 수. 없으면 null. */
   readonly authUsers: number | null;
@@ -306,30 +372,74 @@ export interface ReplayDeletionsReport {
 }
 
 /**
- * 백업 복원 뒤 삭제 재적용(스펙 "데이터 보존": 복원하면 삭제 기록을 다시 적용한 뒤 서비스를 연다). 삭제 기록의 사용자마다
- * 계정 데이터를 지우고, `auth.users`가 있으면(Supabase 복원) 그 인증 사용자도 지운다(FK 연쇄). 다시 돌려도 안전하다.
- * 끝에 보관 기간이 지난 삭제 기록을 지운다.
+ * 백업 복원 뒤 삭제 재적용(스펙 "데이터 보존": 복원하면 삭제 기록을 다시 적용한 뒤 서비스를 연다). 복원된 DB `db`에 대해
+ * 1) 복원 전 내보내기의 삭제 기록을 되살리고(있는 것은 그대로), 2) 삭제 대기 행을 내보내기의 것으로 바꾼다(백업 뒤에 생긴 행은
+ * 되살리고, 백업 뒤에 끝난 행은 지운다 — 복원 직전의 상태가 정본이다), 3) 삭제 기록의 사용자마다 계정 데이터를 지우고
+ * `auth.users`가 있으면(Supabase 복원) 그 인증 사용자도 지운다(FK 연쇄), 4) 보관 기간이 지난 삭제 기록을 지운다.
+ * 한 트랜잭션이며 다시 돌려도 안전하다.
  */
 export async function replayAccountDeletions(
   db: Db,
-  options: { readonly now: Date },
+  options: { readonly now: Date; readonly exported: AccountDeletionExport },
 ): Promise<ReplayDeletionsReport> {
-  const records = await db.select({ userId: accountDeletions.user_id }).from(accountDeletions);
-  const userIds = records.map((row) => row.userId);
-  const accountRows = await deleteAccountData(db, userIds);
-  let authUsers: number | null = null;
-  const [auth] = await db.execute<{ present: boolean }>(
-    sql`select to_regclass('auth.users') is not null as present`,
-  );
-  if (auth?.present === true) {
-    authUsers = 0;
-    if (userIds.length > 0) {
-      const deleted = await db.execute(
-        sql`delete from auth.users where id in (select user_id from account_deletions) returning id`,
-      );
-      authUsers = deleted.length;
+  const exported = AccountDeletionExportSchema.parse(options.exported);
+  return db.transaction(async (tx) => {
+    let importedRecords = 0;
+    // 보관 기간이 이미 지난 기록은 되살리지 않는다(아래 정리와 같은 기준).
+    const cutoff = options.now.getTime() - DELETION_RECORD_RETENTION_MS;
+    const live = exported.deletions.filter((row) => Date.parse(row.deletedAt) >= cutoff);
+    if (live.length > 0) {
+      const inserted = await tx
+        .insert(accountDeletions)
+        .values(
+          live.map((row) => ({
+            user_id: row.userId,
+            deleted_at: new Date(row.deletedAt),
+          })),
+        )
+        .onConflictDoNothing()
+        .returning();
+      importedRecords = inserted.length;
     }
-  }
-  const purgedRecords = await purgeDeletionRecords(db, options.now);
-  return { deletionRecords: userIds.length, accountRows, authUsers, purgedRecords };
+    await tx.delete(accountDeletionPending);
+    if (exported.pending.length > 0) {
+      await tx.insert(accountDeletionPending).values(
+        exported.pending.map((row) => ({
+          provider: row.provider,
+          provider_subject: row.providerSubject,
+          revocation_token: row.revocationToken,
+          request_key: row.requestKey,
+          requested_at: new Date(row.requestedAt),
+          attempts: row.attempts,
+          next_attempt_at: new Date(row.nextAttemptAt),
+        })),
+      );
+    }
+
+    const records = await tx.select({ userId: accountDeletions.user_id }).from(accountDeletions);
+    const userIds = records.map((row) => row.userId);
+    const accountRows = await deleteAccountData(tx, userIds);
+    let authUsers: number | null = null;
+    const [auth] = await tx.execute<{ present: boolean }>(
+      sql`select to_regclass('auth.users') is not null as present`,
+    );
+    if (auth?.present === true) {
+      authUsers = 0;
+      if (userIds.length > 0) {
+        const deleted = await tx.execute(
+          sql`delete from auth.users where id in (select user_id from account_deletions) returning id`,
+        );
+        authUsers = deleted.length;
+      }
+    }
+    const purgedRecords = await purgeDeletionRecords(tx, options.now);
+    return {
+      deletionRecords: userIds.length,
+      importedRecords,
+      pendingRows: exported.pending.length,
+      accountRows,
+      authUsers,
+      purgedRecords,
+    };
+  });
 }

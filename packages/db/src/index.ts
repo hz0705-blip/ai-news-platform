@@ -1,9 +1,12 @@
 export {
+  type AccountDeletionExport,
+  AccountDeletionExportSchema,
   type AccountDeletionPorts,
   type AccountDeletionStatus,
   type DeleteAccountInput,
   type DeletionIdentity,
   deleteAccount,
+  exportAccountDeletions,
   hasPendingDeletion,
   loadDeletionStatus,
   purgeDeletionRecords,

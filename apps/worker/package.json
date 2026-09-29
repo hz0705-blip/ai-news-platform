@@ -13,7 +13,8 @@
     "gdelt:run": "node --env-file-if-exists=../../.env scripts/gdelt-run.ts",
     "sources:sync": "node --env-file-if-exists=../../.env scripts/sources-sync.ts",
     "source:set-tier": "node --env-file-if-exists=../../.env scripts/source-set-tier.ts",
-    "accounts:replay-deletions": "node --env-file-if-exists=../../.env scripts/replay-account-deletions.ts"
+    "accounts:replay-deletions": "node --env-file-if-exists=../../.env scripts/replay-account-deletions.ts",
+    "accounts:export-deletions": "node --env-file-if-exists=../../.env scripts/export-account-deletions.ts"
   },
   "dependencies": {
     "@newsplatform/db": "workspace:*",
