@@ -2,7 +2,7 @@
   "id": "demo-4-figures:rev-2",
   "storyId": "story-demo-4-figures",
   "revisionNumber": 2,
-  "title": "태풍 리스 상륙으로 손홀트 항만 작업 중단과 피해 발생",
+  "title": "태풍 리스 상륙으로 손홀트 항구 컨테이너 작업 중단",
   "publishedAt": "2026-09-17T00:30:00.000Z",
   "contradictionStatus": "단일 출처",
   "promptVersions": {
@@ -15,7 +15,7 @@
   "claims": [
     {
       "id": "demo-4-figures:c-1",
-      "text": "태풍 리스는 월요일 손홀트 인근에 상륙해 항구가 모든 컨테이너 작업을 중단했다고 보도됐다.",
+      "text": "태풍 리스는 월요일 손홀트 인근에 상륙해 항구의 모든 컨테이너 작업을 중단시켰다.",
       "claimType": "보도된 사실",
       "modality": "단정",
       "order": 0,
@@ -76,16 +76,16 @@
       ]
     },
     {
-      "id": "demo-4-figures:c-2@rev-2",
-      "text": "손홀트 항만청은 월요일 저녁 항만 시설 피해를 4,200만 달러로 추정한다고 말했다.",
+      "id": "demo-4-figures:c-2",
+      "text": "손홀트 항구 당국은 월요일 저녁 항구 시설 피해를 4,200만 달러로 추산한다고 밝혔다.",
       "claimType": "귀속 입장",
       "modality": "단정",
       "order": 1,
       "contradictionStatus": "복수 출처 일치",
       "evidence": [
         {
-          "id": "demo-4-figures:rev-2/demo-4-figures:c-2@rev-2:q-ad0d04-2",
-          "claimId": "demo-4-figures:c-2@rev-2",
+          "id": "demo-4-figures:rev-2/demo-4-figures:c-2:q-ad0d04-2",
+          "claimId": "demo-4-figures:c-2",
           "articleId": "article-meridian-liss",
           "articleVersionId": "av-meridian-liss-1",
           "sourceId": "source-meridian-wire",
@@ -110,8 +110,8 @@
           "verifiedAt": "2026-09-17T00:30:00.000Z"
         },
         {
-          "id": "demo-4-figures:rev-2/demo-4-figures:c-2@rev-2:q-1a07e7-2",
-          "claimId": "demo-4-figures:c-2@rev-2",
+          "id": "demo-4-figures:rev-2/demo-4-figures:c-2:q-1a07e7-2",
+          "claimId": "demo-4-figures:c-2",
           "articleId": "article-harbor-liss",
           "articleVersionId": "av-harbor-liss-1",
           "sourceId": "source-harbor-ledger",
@@ -134,29 +134,39 @@
           },
           "sourceUrl": "https://harborledger.example/sonholt-typhoon-cranes",
           "verifiedAt": "2026-09-17T00:30:00.000Z"
-        },
+        }
+      ]
+    },
+    {
+      "id": "demo-4-figures:c-3@rev-2",
+      "text": "손홀트 항구 당국은 화요일 검사 이후 부두 두 곳의 균열이 발견돼 손상액 추정치를 4,200만 달러에서 9,500만 달러로 상향했다고 밝혔다.",
+      "claimType": "귀속 입장",
+      "modality": "단정",
+      "order": 2,
+      "contradictionStatus": "단일 출처",
+      "evidence": [
         {
-          "id": "demo-4-figures:rev-2/demo-4-figures:c-2@rev-2:q-dff2f3-2",
-          "claimId": "demo-4-figures:c-2@rev-2",
+          "id": "demo-4-figures:rev-2/demo-4-figures:c-3@rev-2:q-dff2f3-1",
+          "claimId": "demo-4-figures:c-3@rev-2",
           "articleId": "article-meridian-liss-followup",
           "articleVersionId": "av-meridian-liss-followup-1",
           "sourceId": "source-meridian-wire",
           "span": {
-            "start": 155,
-            "end": 271
+            "start": 0,
+            "end": 230
           },
           "offsetUnit": "code-point",
           "normalizationVersion": 1,
-          "spanText": "The Sonholt Port Authority said on Monday evening that it estimated damage to port facilities at 42 million dollars.",
-          "spanHash": "d0158fe4eda517717880474458e4a846bc0bdc88cd1ba30ec518adc0e98ef30c",
-          "excerpt": "The Sonholt Port Authority said on Monday evening that it estimated damage to port facilities at 42 million dollars.",
+          "spanText": "The Sonholt Port Authority said on Tuesday that it had raised its estimate of damage to port facilities to 95 million dollars, from the 42 million dollars it announced on Monday evening, after inspectors found cracks in two quays.",
+          "spanHash": "67f298ed5f2f5b9c74d08bf32bd4bf0d0107f16dd64825b83beaf7b7c9958f3f",
+          "excerpt": "The Sonholt Port Authority said on Tuesday that it had raised its estimate of damage to port facilities to 95 million dollars, from the 42 million dollars it announced on Monday evening, after inspectors found cracks in two quays.",
           "excerptSpan": {
-            "start": 155,
-            "end": 271
+            "start": 0,
+            "end": 230
           },
           "highlightInExcerpt": {
             "start": 0,
-            "end": 116
+            "end": 230
           },
           "sourceUrl": "https://meridianwire.example/sonholt-damage-estimate-raised",
           "verifiedAt": "2026-09-17T00:30:00.000Z"
@@ -164,22 +174,84 @@
       ]
     },
     {
-      "id": "demo-4-figures:c-5@rev-2",
-      "text": "손홀트 항만청은 화요일 점검에서 네 번째 선박-육상 크레인이 손상된 것으로 발견되었다고 말했다.",
+      "id": "demo-4-figures:c-3",
+      "text": "항구 당국은 폭풍으로 세 대의 선박-육상 크레인이 레일에서 벗어났다고 밝혔다.",
       "claimType": "귀속 입장",
       "modality": "단정",
-      "order": 2,
+      "order": 3,
+      "contradictionStatus": "복수 출처 일치",
+      "evidence": [
+        {
+          "id": "demo-4-figures:rev-2/demo-4-figures:c-3:q-ad0d04-3",
+          "claimId": "demo-4-figures:c-3",
+          "articleId": "article-meridian-liss",
+          "articleVersionId": "av-meridian-liss-1",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 223,
+            "end": 311
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The authority said three ship-to-shore cranes were knocked off their rails by the storm.",
+          "spanHash": "ae23ceefba0d6436ead9cf8214348013de54120e0f2ad188077ccd952ae7f23d",
+          "excerpt": "The authority said three ship-to-shore cranes were knocked off their rails by the storm.",
+          "excerptSpan": {
+            "start": 223,
+            "end": 311
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 88
+          },
+          "sourceUrl": "https://meridianwire.example/typhoon-liss-sonholt",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        },
+        {
+          "id": "demo-4-figures:rev-2/demo-4-figures:c-3:q-1a07e7-3",
+          "claimId": "demo-4-figures:c-3",
+          "articleId": "article-harbor-liss",
+          "articleVersionId": "av-harbor-liss-1",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 223,
+            "end": 311
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The authority said three ship-to-shore cranes were knocked off their rails by the storm.",
+          "spanHash": "ae23ceefba0d6436ead9cf8214348013de54120e0f2ad188077ccd952ae7f23d",
+          "excerpt": "The authority said three ship-to-shore cranes were knocked off their rails by the storm.",
+          "excerptSpan": {
+            "start": 223,
+            "end": 311
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 88
+          },
+          "sourceUrl": "https://harborledger.example/sonholt-typhoon-cranes",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "demo-4-figures:c-5@rev-2",
+      "text": "항구 당국은 화요일 검사에서 네 번째 선박-육상 크레인이 손상된 것으로 확인됐다고 말했다.",
+      "claimType": "귀속 입장",
+      "modality": "단정",
+      "order": 4,
       "contradictionStatus": "단일 출처",
       "evidence": [
         {
-          "id": "demo-4-figures:rev-2/demo-4-figures:c-5@rev-2:q-dff2f3-3",
+          "id": "demo-4-figures:rev-2/demo-4-figures:c-5@rev-2:q-dff2f3-2",
           "claimId": "demo-4-figures:c-5@rev-2",
           "articleId": "article-meridian-liss-followup",
           "articleVersionId": "av-meridian-liss-followup-1",
           "sourceId": "source-meridian-wire",
           "span": {
-            "start": 273,
-            "end": 367
+            "start": 232,
+            "end": 326
           },
           "offsetUnit": "code-point",
           "normalizationVersion": 1,
@@ -187,8 +259,8 @@
           "spanHash": "7f163846548c83c7b06c42743d05fdbee47b4b7ec092eb493cf783dde7e53783",
           "excerpt": "The authority said a fourth ship-to-shore crane was found damaged during Tuesday's inspection.",
           "excerptSpan": {
-            "start": 273,
-            "end": 367
+            "start": 232,
+            "end": 326
           },
           "highlightInExcerpt": {
             "start": 0,

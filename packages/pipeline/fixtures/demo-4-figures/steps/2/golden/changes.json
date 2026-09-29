@@ -2,27 +2,14 @@
   {
     "kind": "주장 추가·삭제·수정",
     "claimChange": "추가",
-    "claimId": "demo-4-figures:c-2@rev-2",
-    "currentText": "손홀트 항만청은 월요일 저녁 항만 시설 피해를 4,200만 달러로 추정한다고 말했다.",
-    "lineageClaimId": "demo-4-figures:c-2"
+    "claimId": "demo-4-figures:c-3@rev-2",
+    "currentText": "손홀트 항구 당국은 화요일 검사 이후 부두 두 곳의 균열이 발견돼 손상액 추정치를 4,200만 달러에서 9,500만 달러로 상향했다고 밝혔다."
   },
   {
     "kind": "주장 추가·삭제·수정",
     "claimChange": "추가",
     "claimId": "demo-4-figures:c-5@rev-2",
-    "currentText": "손홀트 항만청은 화요일 점검에서 네 번째 선박-육상 크레인이 손상된 것으로 발견되었다고 말했다."
-  },
-  {
-    "kind": "주장 추가·삭제·수정",
-    "claimChange": "삭제",
-    "claimId": "demo-4-figures:c-2",
-    "previousText": "손홀트 항만청은 월요일 저녁 항만 시설 피해액을 4,200만 달러로 추산했다고 밝혔다."
-  },
-  {
-    "kind": "주장 추가·삭제·수정",
-    "claimChange": "삭제",
-    "claimId": "demo-4-figures:c-3",
-    "previousText": "항만청은 폭풍으로 인해 세 대의 선박-육상 크레인이 레일에서 탈선했다고 말했다."
+    "currentText": "항구 당국은 화요일 검사에서 네 번째 선박-육상 크레인이 손상된 것으로 확인됐다고 말했다."
   },
   {
     "kind": "주장 추가·삭제·수정",
