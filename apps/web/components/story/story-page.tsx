@@ -42,7 +42,7 @@ export function StoryPage({ view }: { view: StoryView }) {
         )}
       />
       <SourceSection sources={view.sources} />
-      <ChangeSection />
+      <ChangeSection view={view} />
     </main>
   );
 }

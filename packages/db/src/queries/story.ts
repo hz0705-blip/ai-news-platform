@@ -1,15 +1,24 @@
-import type { CodePointSpan, ContradictionStatus, Source, Topic } from "@newsplatform/domain";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import type {
+  ChangeKind,
+  CodePointSpan,
+  ContradictionStatus,
+  RevisionChange,
+  Source,
+  Topic,
+} from "@newsplatform/domain";
+import { and, asc, count, desc, eq, inArray, lte } from "drizzle-orm";
 import { type RevisionSourceRow, toDomainRevision, toDomainSource } from "../mappers.ts";
 import type { RuntimeDb } from "../runtime.ts";
 import {
   articles,
   claimRevisions,
   evidence,
+  revisionChanges,
   sources,
   stories,
   storyRevisions,
 } from "../schema/index.ts";
+import { loadRevisionChanges } from "./revision.ts";
 
 /**
  * 사건 페이지가 그리는 데이터 전부. 근거는 허용 발췌(`excerpt`)와 그 발췌 안의 코드 포인트
@@ -50,6 +59,7 @@ export interface StoryPageData {
     }[];
   }[];
   readonly sources: readonly (Source & {
+    readonly articleId: string;
     readonly articleTitle: string;
     readonly articleUrl: string;
     readonly publishedAt: Date;
@@ -58,7 +68,35 @@ export interface StoryPageData {
     /** GDELT가 기사를 본 시각(`seendate`). GDELT에 나온 적 없는 기사는 null. */
     readonly observedAt: Date | null;
   })[];
+  /**
+   * 보도량 추이가 세는 기사: 이 개정판의 출처 집합(`source_article_ids`)에 든 기사뿐이다. 발행 뒤 사건에 배정된
+   * 기사는 넣지 않는다 — 개정판 화면(차트 포함)은 그 개정판에 고정된다(스펙 "렌더링·캐시").
+   */
+  readonly coverageArticles: readonly {
+    readonly publishedAt: Date;
+    readonly isLinkOnly: boolean;
+    readonly observedAt: Date | null;
+  }[];
+  /** 이 개정판과 직전 개정판 사이 변화(#85, 저장 순서). 첫 개정판은 비어 있다. */
+  readonly changes: readonly RevisionChange[];
+  /**
+   * 이 개정판까지의 개정판(개정판 번호 오름차순)과 각 개정판의 변화 종류별 개수. 개정판 띠가 쓴다.
+   * 이 개정판보다 뒤의 개정판은 싣지 않는다 — 개정판 화면 캐시는 불변이고 발행은 최신 태그만 만료하기 때문이다.
+   */
+  readonly revisions: readonly {
+    readonly id: string;
+    readonly revisionNumber: number;
+    readonly publishedAt: Date;
+    readonly changeCounts: Readonly<Record<ChangeKind, number>>;
+  }[];
 }
+
+const emptyChangeCounts = (): Record<ChangeKind, number> => ({
+  "주장 추가·삭제·수정": 0,
+  "상충 상태 변화": 0,
+  "원문 변경": 0,
+  "출처 추가": 0,
+});
 
 /**
  * 사건 페이지가 쓰는 유일한 질의. 사건은 `slug`로 찾고, `revisionId`가 없으면 최신 발행
@@ -142,6 +180,56 @@ export async function loadPublishedStory(
     sources: revisionSources,
   });
 
+  const changes = await loadRevisionChanges(db, { revisionId: revision.id });
+
+  const coverageArticles =
+    revision.source_article_ids.length === 0
+      ? []
+      : await db
+          .select({
+            publishedAt: articles.published_at,
+            isLinkOnly: articles.is_link_only,
+            observedAt: articles.observed_at,
+          })
+          .from(articles)
+          .where(inArray(articles.id, revision.source_article_ids))
+          .orderBy(articles.published_at, articles.id);
+
+  const revisionListRows = await db
+    .select({
+      id: storyRevisions.id,
+      revisionNumber: storyRevisions.revision_number,
+      publishedAt: storyRevisions.published_at,
+    })
+    .from(storyRevisions)
+    .where(
+      and(
+        eq(storyRevisions.story_id, story.id),
+        lte(storyRevisions.revision_number, revision.revision_number),
+      ),
+    )
+    .orderBy(asc(storyRevisions.revision_number));
+  const countRows = await db
+    .select({
+      revisionId: revisionChanges.story_revision_id,
+      kind: revisionChanges.kind,
+      count: count(),
+    })
+    .from(revisionChanges)
+    .where(
+      inArray(
+        revisionChanges.story_revision_id,
+        revisionListRows.map((r) => r.id),
+      ),
+    )
+    .groupBy(revisionChanges.story_revision_id, revisionChanges.kind);
+  const countsOf = new Map<string, Record<ChangeKind, number>>();
+  for (const row of countRows) {
+    const counts = countsOf.get(row.revisionId) ?? emptyChangeCounts();
+    counts[row.kind] = row.count;
+    countsOf.set(row.revisionId, counts);
+  }
+
   const articleOf = new Map(
     evidenceRows.map((r) => [
       r.evidence.id,
@@ -186,11 +274,18 @@ export async function loadPublishedStory(
     })),
     sources: sourceRows.map((r) => ({
       ...toDomainSource(r.source),
+      articleId: r.articleId,
       articleTitle: r.articleTitle,
       articleUrl: r.articleUrl,
       publishedAt: r.publishedAt,
       isLinkOnly: r.isLinkOnly,
       observedAt: r.observedAt,
+    })),
+    coverageArticles,
+    changes,
+    revisions: revisionListRows.map((r) => ({
+      ...r,
+      changeCounts: countsOf.get(r.id) ?? emptyChangeCounts(),
     })),
   };
 }

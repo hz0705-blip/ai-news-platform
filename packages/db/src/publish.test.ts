@@ -211,6 +211,91 @@ maybe("변화 저장(#85)", () => {
     }
   });
 
+  it("사건 페이지 데이터는 그 개정판의 변화와 그 개정판까지의 개정판별 변화 종류 개수를 싣는다", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      await publishRevision(db, fixture);
+      const next = revisionWithSources(fixture.revision, fixture.revision.sources, {
+        revisionNumber: 2,
+        publishedAt: new Date("2026-09-18T00:30:00.000Z"),
+      });
+      const changes: RevisionChange[] = [
+        {
+          kind: "주장 추가·삭제·수정",
+          claimChange: "수정",
+          claimId: "demo-1-agreement:c-1",
+          previousText: "이전 문장",
+          currentText: "현재 문장",
+        },
+        { kind: "출처 추가", articleId: "a-meridian" },
+        { kind: "출처 추가", articleId: "a-atlas" },
+      ];
+      await publishRevision(db, { ...fixture, revision: next, changes });
+
+      const latest = await loadPublishedStory(db, { slug: fixture.story.slug });
+      expect(latest?.changes).toEqual(changes);
+      expect(latest?.revisions).toEqual([
+        {
+          id: fixture.revision.id,
+          revisionNumber: 1,
+          publishedAt: fixture.revision.publishedAt,
+          changeCounts: {
+            "주장 추가·삭제·수정": 0,
+            "상충 상태 변화": 0,
+            "원문 변경": 0,
+            "출처 추가": 0,
+          },
+        },
+        {
+          id: next.id,
+          revisionNumber: 2,
+          publishedAt: next.publishedAt,
+          changeCounts: {
+            "주장 추가·삭제·수정": 1,
+            "상충 상태 변화": 0,
+            "원문 변경": 0,
+            "출처 추가": 2,
+          },
+        },
+      ]);
+      expect(latest?.sources.map((s) => s.articleId)).toContain("a-meridian");
+
+      const first = await loadPublishedStory(db, {
+        slug: fixture.story.slug,
+        revisionId: fixture.revision.id,
+      });
+      expect(first?.changes).toEqual([]);
+      expect(first?.revisions.map((r) => r.id)).toEqual([fixture.revision.id]);
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("옛 개정판의 보도량 추이는 발행 뒤 배정된 기사를 세지 않는다", async () => {
+    const { db, sql, cleanup } = await createMigrationDb(url as string);
+    try {
+      await publishRevision(db, fixture);
+      // 발행 뒤 같은 사건에 배정된 링크만 기사(GDELT 관측 등). 이 개정판의 출처 집합에는 없다.
+      await sql`insert into articles (id, source_id, story_id, url, normalized_url, title, published_at, topics, is_link_only, observed_at)
+        values ('a-late', 'src-meridian', ${fixture.story.id}, 'https://late.invalid/1', 'https://late.invalid/1', 'Late',
+          '2026-09-20T00:00:00Z', '{}', true, '2026-09-20T00:00:00Z')`;
+      const page = await loadPublishedStory(db, {
+        slug: fixture.story.slug,
+        revisionId: fixture.revision.id,
+      });
+      expect(page?.coverageArticles.map((a) => a.publishedAt)).toEqual(
+        fixture.revision.sources
+          .map((s) => s.publishedAt)
+          .sort((a, b) => a.getTime() - b.getTime()),
+      );
+      expect(page?.coverageArticles.some((a) => a.isLinkOnly)).toBe(false);
+      // 출처 구획의 기존 동작(사건의 기사 전부)은 그대로다.
+      expect(page?.sources.map((s) => s.articleId)).toContain("a-late");
+    } finally {
+      await cleanup();
+    }
+  });
+
   it("migration keeps existing revisions with no changes", async () => {
     const { db, sql, cleanup } = await createMigrationDb(url as string);
     try {
