@@ -216,6 +216,8 @@ export async function loadSpendBetween(
 export type BatchArticle = Article & {
   readonly articleVersionId: string;
   readonly rawBody: string;
+  /** 마지막 버전이 재수집의 정정 후보(#86)면 참. 아니면 없다. */
+  readonly correctionCandidate?: boolean;
 };
 
 export interface BatchStory {
@@ -225,6 +227,11 @@ export interface BatchStory {
   readonly deferredSince?: Date;
   /** 붙은 링크만 기사(#77, 본문 버전 없음)의 출처 구획 줄. 발행 시각·기사 식별자 순. */
   readonly linkOnlySources?: readonly RevisionSource[];
+  /** 마지막 개정판 근거가 가리키는 옛 기사 버전(지금 버전과 다른 것)의 본문 — 좌표 정렬용(#86). */
+  readonly previousVersionBodies?: readonly {
+    readonly articleVersionId: string;
+    readonly body: string;
+  }[];
 }
 
 /**
@@ -269,6 +276,7 @@ export async function loadBatchStories(
             id: articleVersions.id,
             article_id: articleVersions.article_id,
             body: articleVersions.body,
+            correction_candidate: articleVersions.correction_candidate,
           })
           .from(articleVersions)
           .where(
@@ -317,10 +325,27 @@ export async function loadBatchStories(
         topics: article.topics,
         articleVersionId: version.id,
         rawBody: version.body,
+        ...(version.correction_candidate ? { correctionCandidate: true } : {}),
       });
     }
     if (batchArticles.length === 0) continue;
     const latestRevision = await loadLatestRevision(db, { slug: row.slug });
+    const currentVersionIds = new Set(batchArticles.map((a) => a.articleVersionId));
+    const oldVersionIds = [
+      ...new Set(
+        (latestRevision?.claims ?? [])
+          .flatMap((c) => c.evidence.map((e) => e.articleVersionId))
+          .filter((id) => !currentVersionIds.has(id)),
+      ),
+    ];
+    const previousVersionBodies =
+      oldVersionIds.length === 0
+        ? []
+        : await db
+            .select({ articleVersionId: articleVersions.id, body: articleVersions.body })
+            .from(articleVersions)
+            .where(inArray(articleVersions.id, oldVersionIds))
+            .orderBy(articleVersions.id);
     result.push({
       story: {
         id: row.id,
@@ -334,6 +359,7 @@ export async function loadBatchStories(
       ...(latestRevision === undefined ? {} : { latestRevision }),
       ...(row.deferred_at === null ? {} : { deferredSince: row.deferred_at }),
       ...(linkOnlySources.length === 0 ? {} : { linkOnlySources }),
+      ...(previousVersionBodies.length === 0 ? {} : { previousVersionBodies }),
     });
   }
   return { stories: result, sources: sourceRows.map(toDomainSource) };

@@ -23,6 +23,8 @@ export const InputSchema = z.object({
   claimKey: z.string(),
   claimText: z.string(),
   previous: z.enum(CONTRADICTION_STATUSES).optional(),
+  /** 이 주장의 근거 중 정정 후보 기사 버전(#86 재수집)이 있다 — 상태 규칙 ③의 "명시 정정" 입력. */
+  explicitCorrection: z.boolean().exactOptional(),
   evidence: z.array(
     z.object({
       quoteId: z.string(),
@@ -133,9 +135,8 @@ export async function runContradictionLabel(
     conflictingOrigins,
     // 에피소드 기록은 M3가 채운다. 사건 단위의 열린 에피소드는 batch-run이 `openEpisodes`로 넘긴다.
     openEpisode: false,
-    // 아래 두 플래그는 "이번 패스에서 관찰했다"가 아니라 "이전 개정판 이후 명시 정정·해소가
-    // 기록되었다"는 뜻이다. 에피소드 기록이 생기는 M3가 채운다.
-    explicitCorrection: false,
+    // 명시 정정: 근거가 재수집의 정정 후보 기사 버전을 쓴다(#86). 명시 해소는 에피소드 기록이 생기면 채운다.
+    explicitCorrection: input.explicitCorrection ?? false,
     explicitResolution: false,
   });
 

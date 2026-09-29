@@ -1,5 +1,6 @@
 import {
   addBatchRunSpend,
+  addGnewsRequests,
   clearStoriesDeferred,
   confirmRevision,
   finishBatchRun,
@@ -11,6 +12,7 @@ import {
   type RuntimeDb,
   startBatchRun,
 } from "@newsplatform/db";
+import { gnewsLedgerDate } from "@newsplatform/domain";
 import { kstDayRange, slotAtOf } from "@newsplatform/domain/batch-slot";
 import {
   type BatchReport,
@@ -25,6 +27,7 @@ import { assignStories } from "./assign.ts";
 import { DAILY_PIPELINE_BUDGET_TOKENS, DAILY_PIPELINE_BUDGET_USD } from "./budget.ts";
 import { type CollectResult, collectFromGnews } from "./collect.ts";
 import { type GdeltStageReport, runGdeltStage } from "./gdelt.ts";
+import { type RecheckStageReport, runRecheckStage } from "./recheck.ts";
 
 /** 활성 잡 만료 = DB 리스 90분(스펙 "배포와 운영" 스케줄러). */
 export const BATCH_LEASE_MS = 90 * 60 * 1000;
@@ -58,6 +61,8 @@ export interface BatchSlotReport {
         readonly savedVersions: number;
         readonly failures: CollectResult["failures"];
       };
+  /** 원문 재수집(#86). 수집을 건너뛰면 건너뛴다. 단계 자체가 던지면 `error`만 남기고 배치는 계속한다. */
+  readonly recheck: { readonly skipped: true } | { readonly error: string } | RecheckStageReport;
   readonly assignment: {
     readonly processed: number;
     readonly assigned: number;
@@ -66,6 +71,8 @@ export interface BatchSlotReport {
     readonly usage: { readonly tokens: number; readonly spend: number };
   };
   readonly pipeline: BatchReport;
+  /** 근거 구간 좌표 정렬 비율(#86) = 성공 / 시도. 시도가 없으면 null. */
+  readonly spanRealignmentRatio: number | null;
   readonly published: number;
   readonly confirmed: number;
   readonly deferred: number;
@@ -112,7 +119,7 @@ class UnknownSlotError extends Error {
 }
 
 /**
- * 슬롯 하나의 배치(#55): 원장·리스 → 수집(#52) → 배정(#53) → 입력이 바뀐 사건만 `runBatch`(#54) → 발행 →
+ * 슬롯 하나의 배치(#55): 원장·리스 → 수집(#52) → 원문 재수집(#86) → 배정(#53) → 입력이 바뀐 사건만 `runBatch`(#54) → 발행 →
  * GDELT 링크(#77) → 캐시 무효화 → 리포트. 예산은 같은 KST 날짜의 앞선 지출(임베딩 포함)을 뺀 잔액이다.
  * 같은 슬롯이 이미 완료됐거나 다른 배치의 리스가 살아 있으면 아무것도 하지 않는다.
  * 단계가 던지면 원장에 실패로 적고 다시 던진다(pg-boss가 재시도한다). OpenAI 호출 중에는 DB 트랜잭션이 없다.
@@ -178,6 +185,30 @@ export async function runBatchSlot(
         failures: collected.failures,
       };
       stageLog("collect", { result: "ok", ...collection });
+      // 발견(정규 수집)도 GNews 요청 원장에 기록한다(#86).
+      await addGnewsRequests(deps.db, {
+        utcDate: gnewsLedgerDate(deps.clock()),
+        purpose: "discovery",
+        count: collected.requestCount,
+      });
+    }
+
+    // 1-2. 원문 재수집(#86): 일정에 든 기사를 정확 제목으로 다시 찾아 새 버전이면 저장하고 그 사건을 재처리 대상으로 올린다.
+    let recheck: BatchSlotReport["recheck"] = { skipped: true };
+    if (deps.gnews !== undefined) {
+      try {
+        const rechecked = await runRecheckStage(
+          { now: deps.clock() },
+          { db: deps.db, gnews: deps.gnews, clock: deps.clock },
+        );
+        recheck = rechecked;
+        stageLog("recheck", { result: "ok", ...rechecked });
+      } catch (recheckError) {
+        recheck = {
+          error: recheckError instanceof Error ? recheckError.message : String(recheckError),
+        };
+        stageLog("recheck", { result: "failed", ...recheck });
+      }
     }
 
     // 2. 배정: 수집이 돌려준 기사(수집을 건너뛰면 사건 없는 기사 전부).
@@ -212,11 +243,12 @@ export async function runBatchSlot(
         dailyBudget: { tokens: budget.tokens, spend: remainingUsd },
         sources,
         existingStories: stories.map(
-          ({ story, latestRevision, deferredSince, linkOnlySources }) => ({
+          ({ story, latestRevision, deferredSince, linkOnlySources, previousVersionBodies }) => ({
             story,
             ...(latestRevision === undefined ? {} : { latestRevision }),
             ...(deferredSince === undefined ? {} : { deferredSince }),
             ...(linkOnlySources === undefined ? {} : { linkOnlySources }),
+            ...(previousVersionBodies === undefined ? {} : { previousVersionBodies }),
           }),
         ),
         deadline: new Date(startedAt.getTime() + BATCH_MODEL_DEADLINE_MS),
@@ -329,8 +361,13 @@ export async function runBatchSlot(
       finishedAt: finishedAt.toISOString(),
       durationMs: finishedAt.getTime() - startedAt.getTime(),
       collection,
+      recheck,
       assignment,
       pipeline: result.report,
+      spanRealignmentRatio:
+        result.report.spanRealignment.attempted === 0
+          ? null
+          : result.report.spanRealignment.aligned / result.report.spanRealignment.attempted,
       published: publishedStoryIds.length,
       confirmed: result.confirmed.length,
       deferred: result.report.deferred,

@@ -1,3 +1,4 @@
+import type { Claim } from "./claim.ts";
 import { classifyMatch } from "./claim-matching.ts";
 import type { ContradictionStatus } from "./contradiction-status.ts";
 import type { Revision } from "./revision.ts";
@@ -65,6 +66,11 @@ export interface ComputeChangesOptions {
     readonly articleId: string;
     readonly articleVersionId: string;
   }[];
+  /**
+   * 근거 구간을 새 기사 버전 좌표로 옮긴 이전 주장들(#86, `createSpanAligner`). 있으면 불변·표현만 변경·실질 변경
+   * 분류를 이것과 비교한다 — 기사 버전만 바뀐 같은 근거를 실질 변경으로 세지 않기 위해서다.
+   */
+  readonly alignedClaims?: readonly Claim[];
 }
 
 /**
@@ -80,6 +86,7 @@ export function computeChanges(
   if (previous === undefined) return [];
   const changes: RevisionChange[] = [];
   const previousById = new Map(previous.claims.map((c) => [c.id, c]));
+  const alignedById = new Map((options.alignedClaims ?? []).map((c) => [c.id, c]));
   const nextIds = new Set(next.claims.map((c) => c.id));
   const nextClaims = [...next.claims].sort((a, b) => a.order - b.order);
   const previousClaims = [...previous.claims].sort((a, b) => a.order - b.order);
@@ -95,7 +102,7 @@ export function computeChanges(
         currentText: claim.text,
         ...(lineage === undefined ? {} : { lineageClaimId: lineage }),
       });
-    } else if (classifyMatch(before, claim) === "실질 변경") {
+    } else if (classifyMatch(alignedById.get(claim.id) ?? before, claim) === "실질 변경") {
       changes.push({
         kind: "주장 추가·삭제·수정",
         claimChange: "수정",

@@ -15,6 +15,11 @@ import type { z } from "zod";
 export type ArticleInput = Article & {
   readonly articleVersionId: string;
   readonly rawBody: string;
+  /**
+   * 이 기사 버전이 재수집에서 정정 표지가 새로 생긴 정정 후보인가(#86). 참이면 이 버전을 근거로 쓰는 주장의
+   * 상충 판정에 "명시 정정"으로 들어가고(상태 규칙 ③), 변화는 원문 변경으로 세지 않는다.
+   */
+  readonly correctionCandidate?: boolean;
 };
 
 /** 하루 비용 상한(docs/spec/v1.md "배치와 비용"). */
@@ -35,6 +40,14 @@ export interface StoryState {
    * 들어가야 한다 — 빠지면 출처 추가 개정판 뒤의 같은 내용 재처리가 매번 새 개정판이 된다(개정판 생성 조건).
    */
   readonly linkOnlySources?: readonly RevisionSource[];
+  /**
+   * 마지막 개정판 근거가 가리키는 기사 버전 중 지금 입력 버전과 다른 것의 본문(#86). 근거 구간을 새 버전 좌표로
+   * 옮기는(`createSpanAligner`) 데 쓴다. 없는 버전의 근거는 "이전 본문 없음"으로 정렬 실패다.
+   */
+  readonly previousVersionBodies?: readonly {
+    readonly articleVersionId: string;
+    readonly body: string;
+  }[];
 }
 
 /** 가드 ①로 이번 개정판에서 빠진 주장 하나(#22 Ruling 22-4). */
@@ -152,6 +165,11 @@ export interface BatchReport {
   readonly budgetReached: boolean;
   /** 배치 기한에 닿아 사건을 미뤘는가. */
   readonly deadlineReached: boolean;
+  /**
+   * 근거 구간 좌표 정렬(#86): 이전 개정판 근거 중 기사 버전이 바뀐 것의 시도·성공 수. 정렬 비율 = aligned / attempted
+   * (시도가 0이면 비율 없음). 실패한 근거는 주장 매칭에서 겹침 0이다.
+   */
+  readonly spanRealignment: { readonly attempted: number; readonly aligned: number };
 }
 
 export interface BatchResult {

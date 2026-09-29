@@ -4,6 +4,7 @@ import {
   CLAIM_TYPES,
   CONTRADICTION_STATUSES,
   MODALITIES,
+  RECHECK_SLOTS,
   RIGHTS_TIERS,
   STORY_LIFECYCLES,
   TOPICS,
@@ -15,6 +16,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   unique,
@@ -126,6 +128,8 @@ export const articleVersions = pgTable(
     body_hash: text().notNull(),
     captured_at: timestamptz("captured_at").notNull(),
     body_expires_at: timestamptz("body_expires_at").notNull(),
+    // 원문 재수집(#86)이 만든 버전 중 정정 표지가 새로 생긴 것(정정 후보). 수집·마이그레이션 전 버전은 false다.
+    correction_candidate: boolean("correction_candidate").notNull().default(false),
   },
   // 같은 기사의 같은 본문은 한 버전이다(#52, 스펙 "정확 중복 제거").
   (t) => [unique().on(t.article_id, t.body_hash)],
@@ -282,6 +286,40 @@ export const batchRuns = pgTable("batch_runs", {
   error: text(),
 });
 
+/**
+ * GNews 요청 원장(#86, 스펙 "개발 중 결정 항목" GNews 요청 원장). 행 하나 = UTC 날짜 하나(`YYYY-MM-DD`)이고
+ * 용도별로 실제로 보낸 요청 수(재시도 포함)를 더한다. 발견 = 정규 수집, 재수집 = 원문 재수집 조회.
+ */
+export const gnewsRequestLedger = pgTable("gnews_request_ledger", {
+  utc_date: text("utc_date").primaryKey(),
+  discovery: integer().notNull().default(0),
+  recheck: integer().notNull().default(0),
+});
+
+/** 재수집 결과. 찾음 = 정규화 URL이 같은 결과가 있었다, 미확인 = 없었다(변경 아님). */
+export const RECHECK_OUTCOMES = ["찾음", "미확인"] as const;
+
+/**
+ * 원문 재수집 기록(#86): 기사 하나의 일정(`slot`, 12h·60h·7d·14d·28d) 하나를 한 번 했다. 같은 일정은 다시 하지 않는다.
+ * `article_version_id`는 그 재수집이 만든 새 기사 버전(찾음이고 본문 해시가 달랐을 때만).
+ */
+export const articleRechecks = pgTable(
+  "article_rechecks",
+  {
+    article_id: text()
+      .notNull()
+      .references(() => articles.id),
+    slot: text({ enum: RECHECK_SLOTS }).notNull(),
+    checked_at: timestamptz("checked_at").notNull(),
+    outcome: text({ enum: RECHECK_OUTCOMES }).notNull(),
+    article_version_id: text().references(() => articleVersions.id),
+  },
+  (t) => [
+    primaryKey({ columns: [t.article_id, t.slot] }),
+    index("article_rechecks_checked_at_idx").on(t.checked_at),
+  ],
+);
+
 export type SourceRow = typeof sources.$inferSelect;
 export type StoryRow = typeof stories.$inferSelect;
 export type ArticleRow = typeof articles.$inferSelect;
@@ -292,3 +330,4 @@ export type ClaimRevisionRow = typeof claimRevisions.$inferSelect;
 export type EvidenceRow = typeof evidence.$inferSelect;
 export type RevisionChangeRow = typeof revisionChanges.$inferSelect;
 export type BatchRunRow = typeof batchRuns.$inferSelect;
+export type ArticleRecheckRow = typeof articleRechecks.$inferSelect;
