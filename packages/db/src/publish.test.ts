@@ -1,8 +1,12 @@
 import { readFileSync } from "node:fs";
-import { type RevisionChange, revisionWithSources } from "@newsplatform/domain";
+import { type Revision, type RevisionChange, revisionWithSources } from "@newsplatform/domain";
 import { describe, expect, it } from "vitest";
 import { confirmRevision, publishRevision } from "./publish.ts";
-import { loadLatestRevision, loadRevisionChanges } from "./queries/revision.ts";
+import {
+  loadLatestRevision,
+  loadOpenEpisodeClaims,
+  loadRevisionChanges,
+} from "./queries/revision.ts";
 import { loadPublishedStory } from "./queries/story.ts";
 import { createMigrationDb, readTestDbUrl } from "./test-db.ts"; // DATABASE_TEST_URL로 연결하고 테스트 끝에 truncate
 // revision·story·articles·articleVersions·sources 픽스처는 mappers.test.ts와 같은 값을 공유한다.
@@ -317,6 +321,67 @@ maybe("변화 저장(#85)", () => {
       const latest = await loadLatestRevision(db, { slug: fixture.story.slug });
       expect(latest).toEqual(fixture.revision);
       expect(await loadRevisionChanges(db, { revisionId: fixture.revision.id })).toEqual([]);
+    } finally {
+      await cleanup();
+    }
+  });
+});
+
+maybe("열린 상충 에피소드(#90)", () => {
+  it("마지막 기록이 보도 상충이고 마지막 개정판에 없는 주장만 그 기록으로 돌려준다", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      // 개정판 1: c-1 보도 상충. 개정판 2·3: c-1이 요약에서 빠졌다(요약 제외로는 닫히지 않는다).
+      const [c1, c2] = fixture.revision.claims;
+      if (c1 === undefined || c2 === undefined) throw new Error("픽스처 주장이 둘이어야 한다");
+      const disputed = { ...c1, contradictionStatus: "보도 상충" as const };
+      const first: Revision = {
+        ...fixture.revision,
+        contradictionStatus: "보도 상충" as const,
+        claims: [disputed, c2],
+      };
+      await publishRevision(db, { ...fixture, revision: first });
+      let previous = first;
+      for (const revisionNumber of [2, 3]) {
+        const next = revisionWithSources(previous, previous.sources, {
+          revisionNumber,
+          publishedAt: new Date(`2026-09-18T0${revisionNumber}:00:00.000Z`),
+        });
+        previous = { ...next, claims: next.claims.filter((c) => c.id !== disputed.id) };
+        await publishRevision(db, { ...fixture, revision: previous });
+      }
+      const storyId = fixture.story.id;
+      expect(await loadOpenEpisodeClaims(db, { storyId, latestClaimIds: [c2.id] })).toEqual([
+        disputed,
+      ]);
+      // 마지막 개정판에 있으면 그 주장의 상태가 정하므로 에피소드 목록에 없다.
+      expect(
+        await loadOpenEpisodeClaims(db, { storyId, latestClaimIds: [c2.id, disputed.id] }),
+      ).toEqual([]);
+
+      // 명시 정정으로 정정됨이 된 기록이 가장 늦으면 에피소드는 닫혀 있다.
+      const corrected = revisionWithSources(previous, previous.sources, {
+        revisionNumber: 4,
+        publishedAt: new Date("2026-09-18T04:00:00.000Z"),
+      });
+      await publishRevision(db, {
+        ...fixture,
+        revision: {
+          ...corrected,
+          claims: [
+            ...corrected.claims,
+            {
+              ...disputed,
+              contradictionStatus: "정정됨",
+              evidence: disputed.evidence.map((e) => ({
+                ...e,
+                id: e.id.replace(first.id, corrected.id),
+              })),
+            },
+          ],
+        },
+      });
+      expect(await loadOpenEpisodeClaims(db, { storyId, latestClaimIds: [c2.id] })).toEqual([]);
     } finally {
       await cleanup();
     }

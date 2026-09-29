@@ -1,6 +1,11 @@
-import type { Revision, RevisionChange } from "@newsplatform/domain";
+import type { Claim, Revision, RevisionChange } from "@newsplatform/domain";
 import { asc, desc, eq, inArray } from "drizzle-orm";
-import { type RevisionSourceRow, toDomainChange, toDomainRevision } from "../mappers.ts";
+import {
+  type RevisionSourceRow,
+  toDomainChange,
+  toDomainClaim,
+  toDomainRevision,
+} from "../mappers.ts";
 import type { RuntimeDb } from "../runtime.ts";
 import {
   articles,
@@ -92,6 +97,48 @@ export async function loadLatestRevision(
     evidence: evidenceRows,
     sources: revisionSources,
   });
+}
+
+/**
+ * 마지막 개정판에 없는 열린 상충 에피소드의 주장(#90, 스펙 "상충 상태"). 별도 표 없이 `claim_revisions`에서 파생한다:
+ * 사건의 주장마다 가장 늦은 개정판의 기록을 보고, 그 상태가 보도 상충이고 마지막 개정판에 없는 주장만 그 기록 그대로
+ * 돌려준다. 보도 상충은 명시 정정·해소 입력으로만 벗어나므로(전이 가드 ②) 마지막 기록이 보도 상충이면 에피소드가
+ * 열려 있다. 주장 순서(`claim_id`)대로.
+ */
+export async function loadOpenEpisodeClaims(
+  db: RuntimeDb["db"],
+  params: { readonly storyId: string; readonly latestClaimIds: readonly string[] },
+): Promise<Claim[]> {
+  const rows = await db
+    .select({ claimRevision: claimRevisions })
+    .from(claimRevisions)
+    .innerJoin(storyRevisions, eq(storyRevisions.id, claimRevisions.story_revision_id))
+    .where(eq(storyRevisions.story_id, params.storyId))
+    .orderBy(claimRevisions.claim_id, desc(storyRevisions.revision_number));
+  const latestIds = new Set(params.latestClaimIds);
+  const seen = new Set<string>();
+  const open: (typeof claimRevisions.$inferSelect)[] = [];
+  for (const { claimRevision } of rows) {
+    if (seen.has(claimRevision.claim_id)) continue;
+    seen.add(claimRevision.claim_id);
+    if (
+      claimRevision.contradiction_status === "보도 상충" &&
+      !latestIds.has(claimRevision.claim_id)
+    ) {
+      open.push(claimRevision);
+    }
+  }
+  if (open.length === 0) return [];
+  const evidenceRows = await db
+    .select()
+    .from(evidence)
+    .where(
+      inArray(
+        evidence.claim_revision_id,
+        open.map((cr) => cr.id),
+      ),
+    );
+  return open.map((cr) => toDomainClaim(cr, evidenceRows));
 }
 
 /** 개정판 하나에 저장된 변화(#85)를 순서대로 읽는다. 첫 개정판·마이그레이션 전 개정판은 빈 목록이다. */

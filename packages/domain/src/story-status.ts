@@ -18,7 +18,7 @@ export function countClaimStatuses(claims: readonly StoryStatusInput[]): StatusC
 /**
  * 사건 개정판 상태 파생(스펙 133행, ADR-0009). 열린 에피소드(현재 주장에서 빠진 것 포함) → 보도 상충
  * → 정정됨 → 상충 해소 → 모든 표시 주장이 원점 둘 이상 → 복수 출처 일치 → 아니면 단일 출처.
- * `openEpisodes`는 현재 주장 밖의 열린 상충 에피소드 수(#22는 0, M3가 채운다 — Ruling 22-8).
+ * `openEpisodes`는 현재 주장 밖의 열린 상충 에피소드 수(Ruling 22-8, #90: 앞 개정판에서 빠진 에피소드 포함).
  */
 export function deriveStoryStatus(
   claims: readonly StoryStatusInput[],
