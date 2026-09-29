@@ -190,6 +190,7 @@ export const ArticleInputSchema: z.ZodType<ArticleInput> = z.object({
   articleVersionId: z.string(),
   rawBody: z.string(),
   correctionCandidate: z.boolean().exactOptional(),
+  correctionFirstReprocess: z.boolean().exactOptional(),
 });
 
 export const BudgetSchema: z.ZodType<Budget> = z.object({

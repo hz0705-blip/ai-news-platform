@@ -3,7 +3,7 @@ import { createArticleVersion, planRechecks } from "@newsplatform/domain";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { loadBatchStories } from "./batch.ts";
-import { publishRevision } from "./publish.ts";
+import { confirmRevision, publishRevision } from "./publish.ts";
 import {
   addGnewsRequests,
   loadDormantSampledToday,
@@ -127,10 +127,26 @@ maybe("원문 재수집 저장(#86, 실 DB)", () => {
       expect(meridian).toMatchObject({
         articleVersionId: "av-meridian-2",
         correctionCandidate: true,
+        correctionFirstReprocess: true,
       });
       expect(batch[0]?.previousVersionBodies?.map((v) => v.articleVersionId)).toEqual([
         "av-meridian",
       ]);
+
+      // 정정 후보 버전은 다음 배치 재처리에서 다시 명시 정정을 주지 않는다(#94): 그 배치가 확인(또는 발행)한 뒤
+      // 다른 입력으로 사건이 다시 올라와도 정정 후보 표시만 남고 첫 재처리 표시는 없다.
+      await confirmRevision(db, {
+        revisionId: fixture.revision.id,
+        checkedAt: new Date(now.getTime() + HOUR),
+      });
+      await db
+        .update(stories)
+        .set({ last_processed_at: new Date(now.getTime() + 2 * HOUR) })
+        .where(eq(stories.id, fixture.story.id));
+      const { stories: later } = await loadBatchStories(db);
+      const again = later[0]?.articles.find((a) => a.id === "a-meridian");
+      expect(again).toMatchObject({ articleVersionId: "av-meridian-2", correctionCandidate: true });
+      expect(again?.correctionFirstReprocess).toBeUndefined();
     } finally {
       await cleanup();
     }

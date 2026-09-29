@@ -313,13 +313,13 @@ describe("배치 실행", () => {
 
   it("열린 상충 에피소드는 명시 정정·해소 입력으로만 닫힌다(#90)", async () => {
     const { latest, disputed } = await episodeAbsentFromLatest();
-    const run = (articles: ReturnType<typeof input>["articles"]) =>
+    const run = (articles: ReturnType<typeof input>["articles"], episode: Claim = disputed) =>
       runBatch(
         {
           ...input(),
           articles,
           existingStories: [
-            { story: fixture.story, latestRevision: latest, openEpisodeClaims: [disputed] },
+            { story: fixture.story, latestRevision: latest, openEpisodeClaims: [episode] },
           ],
         },
         deps(),
@@ -330,13 +330,24 @@ describe("배치 실행", () => {
     expect(back?.contradictionStatus).toBe("보도 상충");
     expect(silent?.contradictionStatus).toBe("보도 상충");
 
-    // 그 주장의 근거 기사가 정정 후보(명시 정정 입력)면 에피소드가 닫힌다.
-    const correctedArticles = new Set(disputed.evidence.map((e) => e.articleId));
+    // 그 주장의 근거 기사 하나가 정정 후보 새 버전이고 그 근거가 바뀌었으면(좌표 정렬 실패, 명시 정정 입력) 에피소드가 닫힌다.
+    const correctedArticle = disputed.evidence[0]?.articleId;
+    const onOldVersion = {
+      ...disputed,
+      evidence: disputed.evidence.map((e) =>
+        e.articleId === correctedArticle
+          ? { ...e, articleVersionId: `${e.articleVersionId}-old` }
+          : e,
+      ),
+    };
     const corrected = (
       await run(
         input().articles.map((a) =>
-          correctedArticles.has(a.id) ? { ...a, correctionCandidate: true } : a,
+          a.id === correctedArticle
+            ? { ...a, correctionCandidate: true, correctionFirstReprocess: true }
+            : a,
         ),
+        onOldVersion,
       )
     ).revisions[0];
     expect(corrected?.claims.find((c) => c.id === disputed.id)?.contradictionStatus).toBe("정정됨");
