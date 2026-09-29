@@ -7,8 +7,8 @@ import { requestBudgets, requestCounters, requestLeases } from "./schema/index.t
 /**
  * 익명 요청(번역·검색) 남용 방지 카운터와 일일 예산(#125, 스펙 "배치와 비용" 익명 요청 남용 방지·"개발 중 결정 항목"
  * 익명 요청 한도 숫자). 한 요청의 입장(`admitAnonymousRequest`)은 트랜잭션 하나다: 고정 창 카운터를 올리고, 동시 한도를
- * 세고, 예산에서 최대 비용을 예약한다. 하나라도 걸리면 트랜잭션 전체를 되돌려 아무것도 세지 않는다. 트랜잭션은
- * `statement_timeout`으로 제한하며(기본 200ms) 그 밖의 오류와 함께 호출자에게 던진다 — 호출자는 503으로 새 유료 작업을 거부한다.
+ * 세고, 예산에서 최대 비용을 예약한다. 하나라도 걸리면 트랜잭션 전체를 되돌려 아무것도 세지 않는다. 트랜잭션 전체를
+ * 연결 획득 포함 기본 200ms로 끊고(`CounterTimeoutError`) 그 밖의 오류와 함께 호출자에게 던진다 — 호출자는 503으로 새 유료 작업을 거부한다.
  * 끝나면 `settleAnonymousRequest`가 동시 행을 지우고 예약을 실제 비용으로 정산한다.
  */
 
@@ -74,16 +74,63 @@ class Rejected extends Error {
   }
 }
 
+/** 입장 트랜잭션이 제한 시간(연결 획득 포함)을 넘겼다. 호출자는 503으로 새 유료 작업을 거부한다. */
+export class CounterTimeoutError extends Error {
+  constructor() {
+    super("카운터 트랜잭션 제한 시간 초과");
+    this.name = "CounterTimeoutError";
+  }
+}
+
+/**
+ * 입장 트랜잭션 전체(연결 획득·모든 문장·커밋)를 `timeoutMs`로 끊는다. 타이머가 먼저 끝나면 `CounterTimeoutError`로
+ * 바로 거부하고, 늦게 도는 트랜잭션은 커밋 전 기한 검사에서 스스로 되돌린다(각 문장도 `statement_timeout`으로 남은 시간 안에
+ * 끝난다). 검사 뒤 커밋만 늦어 입장이 기록된 드문 경우에는 그 입장을 곧바로 정산(동시 행 삭제·예약 반환)한다.
+ */
 export async function admitAnonymousRequest(
   db: RuntimeDb["db"],
   input: AdmitInput,
 ): Promise<AdmitResult> {
+  const timeoutMs = input.timeoutMs ?? 200;
+  const deadline = Date.now() + timeoutMs;
+  let timedOut = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const work = admitWithin(db, input, deadline);
+  const expired = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      timedOut = true;
+      reject(new CounterTimeoutError());
+    }, timeoutMs);
+  });
+  work.then(
+    (result) => {
+      if (timedOut && result.admitted) void settleAnonymousRequest(db, result, 0).catch(() => {});
+    },
+    () => {},
+  );
+  try {
+    return await Promise.race([work, expired]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function admitWithin(
+  db: RuntimeDb["db"],
+  input: AdmitInput,
+  deadline: number,
+): Promise<AdmitResult> {
   const { now } = input;
   const leaseId = randomUUID();
   const kstDate = kstDateOf(now);
+  const remaining = () => {
+    const ms = deadline - Date.now();
+    if (ms <= 0) throw new CounterTimeoutError();
+    return ms;
+  };
   try {
     await db.transaction(async (tx) => {
-      await tx.execute(sql.raw(`set local statement_timeout = ${input.timeoutMs ?? 200}`));
+      await tx.execute(sql.raw(`set local statement_timeout = ${Math.ceil(remaining())}`));
       // 같은 동시 키의 입장을 한 줄로 세운다(두 요청이 함께 1을 세고 둘 다 들어오는 경합 방지).
       await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${input.concurrency.key}))`);
 
@@ -152,6 +199,8 @@ export async function admitAnonymousRequest(
           retryAfterSeconds: secondsUntil(kstDayRange(now).to, now),
         });
       }
+      // 기한을 넘겼으면 커밋하지 않고 되돌린다(호출자는 이미 503을 받았다).
+      remaining();
     });
   } catch (error) {
     if (error instanceof Rejected) return error.result;

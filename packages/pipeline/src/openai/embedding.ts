@@ -19,12 +19,18 @@ export const EMBEDDING_BATCH_SIZE = 100;
 export interface OpenAiEmbeddingOptions {
   readonly apiKey: string;
   readonly fetch?: typeof fetch;
+  /** 요청 하나의 제한 시간(ms). 비우면 SDK 기본(600초) — 배치용. 웹 검색은 짧게 준다(#125). */
+  readonly timeoutMs?: number;
+  /** SDK 재시도 횟수. 비우면 SDK 기본(2). */
+  readonly maxRetries?: number;
 }
 
 export function createOpenAiEmbeddingClient(options: OpenAiEmbeddingOptions): EmbeddingClient {
   const client = new OpenAI({
     apiKey: options.apiKey,
     ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
+    ...(options.timeoutMs === undefined ? {} : { timeout: options.timeoutMs }),
+    ...(options.maxRetries === undefined ? {} : { maxRetries: options.maxRetries }),
   });
   return {
     async embed(texts): Promise<EmbeddingResult> {

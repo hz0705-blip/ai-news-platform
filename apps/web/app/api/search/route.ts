@@ -10,6 +10,8 @@ import {
   ANON_COOKIE_MAX_AGE_SECONDS,
   clientIp,
   issueAnonCookie,
+  SEARCH_EMBEDDING_MAX_RETRIES,
+  SEARCH_EMBEDDING_TIMEOUT_MS,
   searchAdmission,
   verifyAnonCookie,
 } from "../../../lib/search/guard.ts";
@@ -103,12 +105,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
   }
 
-  // 모델 호출이 실패하면 과금 여부를 모르므로 예약액을 지출로 센다.
+  // 모델 호출이 실패하거나 제한 시간(8초, 재시도 없음)을 넘기면 과금 여부를 모르므로 예약액을 지출로 센다.
   let spentUsd = admission.reservedUsd;
   try {
     const search = createStorySearch({
       db,
-      embeddingClient: createOpenAiEmbeddingClient({ apiKey }),
+      embeddingClient: createOpenAiEmbeddingClient({
+        apiKey,
+        timeoutMs: SEARCH_EMBEDDING_TIMEOUT_MS,
+        maxRetries: SEARCH_EMBEDDING_MAX_RETRIES,
+      }),
     });
     const outcome = await search.search(query);
     spentUsd = outcome.spendUsd;

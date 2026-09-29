@@ -25,6 +25,12 @@ export const SEARCH_LIMITS = {
 export const SEARCH_DAILY_BUDGET_USD = 0.1;
 /** 동시 한도 행의 수명. 죽은 요청의 행은 이 시간이 지나면 세지 않는다. */
 export const SEARCH_LEASE_MS = 30_000;
+/**
+ * 질의 임베딩 호출 제한 시간과 SDK 재시도(#125). 재시도 없이 8초면 동시 행 수명(30초)과 함수 제한 시간 안에서 정산이
+ * 반드시 돈다. 넘기면 503이고 예약액을 지출로 센다.
+ */
+export const SEARCH_EMBEDDING_TIMEOUT_MS = 8_000;
+export const SEARCH_EMBEDDING_MAX_RETRIES = 0;
 
 function hmac(key: string | Buffer, data: string): Buffer {
   return createHmac("sha256", key).update(data).digest();

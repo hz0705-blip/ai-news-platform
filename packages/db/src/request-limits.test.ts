@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   type AdmitInput,
   admitAnonymousRequest,
+  CounterTimeoutError,
   kstDateOf,
   purgeRequestCounters,
   settleAnonymousRequest,
@@ -14,10 +15,10 @@ const url = readTestDbUrl();
 const maybe = url === undefined ? describe.skip : describe;
 if (url === undefined) process.stderr.write("DATABASE_TEST_URL 없음 — 실 DB 테스트 건너뜀\n");
 
-async function withDb(run: (db: RuntimeDb["db"]) => Promise<void>) {
-  const { db, cleanup } = await createMigrationDb(url as string);
+async function withDb(run: (db: RuntimeDb["db"], sql: RuntimeDb["sql"]) => Promise<void>) {
+  const { db, sql, cleanup } = await createMigrationDb(url as string);
   try {
-    await run(db);
+    await run(db, sql);
   } finally {
     await cleanup();
   }
@@ -191,6 +192,48 @@ maybe("익명 요청 카운터·예산", () => {
         "search:cookie:c1:day",
         "search:ip:i1:day",
       ]);
+    });
+  });
+
+  it("counter transaction over 200ms including connection wait returns timeout and records nothing", async () => {
+    await withDb(async (db, sql) => {
+      // 테스트 연결은 하나(max 1)다. 그 연결을 0.5초 붙잡아 두면 입장은 연결 획득부터 기다린다.
+      const busy = sql`select pg_sleep(0.5)`.execute();
+      const started = Date.now();
+      await expect(admitAnonymousRequest(db, input())).rejects.toBeInstanceOf(CounterTimeoutError);
+      expect(Date.now() - started).toBeLessThan(450);
+      await busy;
+      // 늦게 연결을 얻은 트랜잭션은 기한 검사에서 되돌린다 — 카운터·동시 행·예약이 남지 않는다.
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(await db.select().from(requestCounters)).toEqual([]);
+      expect(await db.select().from(requestLeases)).toEqual([]);
+      expect(await db.select().from(requestBudgets)).toEqual([]);
+    });
+  });
+
+  it("slow statement inside the counter transaction is cut at the transaction limit", async () => {
+    await withDb(async (db) => {
+      // 문장 하나(동시 한도 잠금)를 다른 연결이 붙잡는다 — 문장별이 아니라 트랜잭션 남은 시간 안에 끊긴다.
+      const other = (await import("postgres")).default(url as string, {
+        max: 1,
+        onnotice: () => undefined,
+      });
+      try {
+        const key = input().concurrency.key;
+        const held = other.begin(async (tx) => {
+          await tx`select pg_advisory_xact_lock(hashtext(${key}))`;
+          await tx`select pg_sleep(0.6)`;
+        });
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        const started = Date.now();
+        await expect(admitAnonymousRequest(db, input())).rejects.toThrow();
+        expect(Date.now() - started).toBeLessThan(450);
+        await held;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        expect(await db.select().from(requestLeases)).toEqual([]);
+      } finally {
+        await other.end();
+      }
     });
   });
 });

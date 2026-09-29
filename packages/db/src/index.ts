@@ -96,6 +96,7 @@ export {
   type AdmitResult,
   admitAnonymousRequest,
   type CounterLimits,
+  CounterTimeoutError,
   kstDateOf,
   purgeRequestCounters,
   type RateLimit,

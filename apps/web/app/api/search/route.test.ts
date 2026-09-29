@@ -2,11 +2,12 @@ import type { AdmitInput, AdmitResult, StorySearchHit } from "@newsplatform/db";
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { admit, settle, searchDb, embed } = vi.hoisted(() => ({
+const { admit, settle, searchDb, embed, clientOptions } = vi.hoisted(() => ({
   admit: vi.fn<(db: unknown, input: AdmitInput) => Promise<AdmitResult>>(),
   settle: vi.fn<(db: unknown, admitted: unknown, spent: number) => Promise<void>>(),
   searchDb: vi.fn<() => Promise<StorySearchHit[]>>(),
   embed: vi.fn(),
+  clientOptions: [] as unknown[],
 }));
 
 vi.mock("@newsplatform/db", async (importOriginal) => ({
@@ -18,7 +19,10 @@ vi.mock("@newsplatform/db", async (importOriginal) => ({
 }));
 vi.mock("@newsplatform/pipeline/embedding", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@newsplatform/pipeline/embedding")>()),
-  createOpenAiEmbeddingClient: () => ({ embed }),
+  createOpenAiEmbeddingClient: (options: unknown) => {
+    clientOptions.push(options);
+    return { embed };
+  },
 }));
 
 const { POST } = await import("./route.ts");
@@ -237,5 +241,18 @@ describe("POST /api/search", () => {
     } finally {
       for (const spy of spies) spy.mockRestore();
     }
+  });
+
+  it("질의 임베딩이 제한 시간(8초, 재시도 없음)을 넘기면 503이고 예약액으로 정산해 동시 행을 푼다", async () => {
+    // 느린 스텁: SDK가 제한 시간에 요청을 끊는 것처럼 늦게 실패한다.
+    embed.mockImplementation(
+      () =>
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out.")), 30)),
+    );
+    const response = await POST(post({ query: QUERY }));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ state: "unavailable" });
+    expect(clientOptions.at(-1)).toMatchObject({ timeoutMs: 8000, maxRetries: 0 });
+    expect(settle).toHaveBeenCalledWith({}, ADMITTED, ADMITTED.reservedUsd);
   });
 });
