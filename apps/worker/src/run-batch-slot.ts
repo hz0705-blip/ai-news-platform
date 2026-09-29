@@ -1,14 +1,10 @@
 import {
   addBatchRunSpend,
   addGnewsRequests,
-  clearStoriesDeferred,
-  confirmRevision,
   finishBatchRun,
   loadBatchStories,
   loadLastCompletedSlot,
   loadSpendBetween,
-  markStoriesDeferred,
-  publishRevision,
   type RuntimeDb,
   startBatchRun,
 } from "@newsplatform/db";
@@ -23,6 +19,7 @@ import {
   type ModelClient,
   runBatch,
 } from "@newsplatform/pipeline";
+import { applyBatchResult } from "./apply-batch-result.ts";
 import { assignStories } from "./assign.ts";
 import { DAILY_PIPELINE_BUDGET_TOKENS, DAILY_PIPELINE_BUDGET_USD } from "./budget.ts";
 import { type CollectResult, collectFromGnews } from "./collect.ts";
@@ -287,47 +284,8 @@ export async function runBatchSlot(
     });
 
     // 4. 발행(사건마다 한 트랜잭션) · 확인 · 미룸 표시.
-    const storyById = new Map(stories.map((s) => [s.story.id, s]));
-    const changesByRevision = new Map(result.changes.map((c) => [c.revisionId, c.changes]));
-    const publishFailures: { storyId: string; reason: string }[] = [];
-    const publishedStoryIds: string[] = [];
-    for (const revision of result.revisions) {
-      const state = storyById.get(revision.storyId);
-      if (state === undefined) continue;
-      try {
-        // 출처·기사·기사 버전은 수집·배정이 이미 저장했다. 개정판·주장·근거·변화만 새로 쓴다.
-        await publishRevision(deps.db, {
-          story: state.story,
-          revision,
-          articles: [],
-          articleVersions: [],
-          sources: [],
-          changes: changesByRevision.get(revision.id) ?? [],
-        });
-        publishedStoryIds.push(revision.storyId);
-      } catch (error) {
-        publishFailures.push({
-          storyId: revision.storyId,
-          reason: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
-    for (const confirmed of result.confirmed) {
-      await confirmRevision(deps.db, {
-        revisionId: confirmed.revisionId,
-        checkedAt: confirmed.checkedAt,
-      });
-    }
-    // 실패한 사건도 표시를 지운다 — 영구히 실패하는 사건이 매 배치 맨 앞에서 예산을 먹지 않게(다음 배치에서는 보통 순서).
-    await clearStoriesDeferred(deps.db, [
-      ...publishedStoryIds,
-      ...result.confirmed.map((c) => c.storyId),
-      ...result.report.failures.map((f) => f.storyId),
-    ]);
-    await markStoriesDeferred(deps.db, {
-      storyIds: result.report.deferredStories,
-      at: batchStartedAt,
-    });
+    const applied = await applyBatchResult(deps.db, result, { deferredAt: batchStartedAt });
+    const publishedStoryIds = applied.published.map((p) => p.storyId);
 
     // 5. GDELT(#77): 이번 배치에서 발행된 사건에 링크만 기사를 붙이고 출처 추가 개정판을 낸다(모델 호출 없음).
     // 429·오류는 그 사건만 건너뛰고, 단계가 통째로 던져도 이미 발행한 배치를 실패로 만들지 않는다.
@@ -379,8 +337,8 @@ export async function runBatchSlot(
       published: publishedStoryIds.length,
       confirmed: result.confirmed.length,
       deferred: result.report.deferred,
-      failed: result.report.failed + publishFailures.length,
-      publishFailures,
+      failed: result.report.failed + applied.publishFailures.length,
+      publishFailures: applied.publishFailures,
       gdelt,
       spend: {
         budgetUsd: budget.spend,

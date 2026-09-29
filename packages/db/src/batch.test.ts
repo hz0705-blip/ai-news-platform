@@ -11,10 +11,10 @@ import {
   markStoriesDeferred,
   startBatchRun,
 } from "./batch.ts";
-import { confirmRevision, publishRevision } from "./publish.ts";
+import { confirmRevision } from "./publish.ts";
 import { articles, articleVersions, sources, stories } from "./schema/index.ts";
 import { createMigrationDb, readTestDbUrl } from "./test-db.ts";
-import { fixture } from "./test-fixtures.ts";
+import { fixture, publishFixture } from "./test-fixtures.ts";
 
 const url = readTestDbUrl();
 const maybe = url === undefined ? describe.skip : describe;
@@ -194,7 +194,7 @@ maybe("배치 대상 사건", () => {
       expect(first.stories[0]?.deferredSince).toBeUndefined();
 
       // 개정판을 발행(확인 시각 = 처리 시각)하면 입력이 바뀌지 않은 한 다시 고르지 않는다.
-      await publishRevision(db, {
+      await publishFixture(db, {
         ...fixture,
         story: { ...fixture.story, id: "story-live", slug: "story-live", isDemo: false },
         revision: {

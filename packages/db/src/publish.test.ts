@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { type Revision, type RevisionChange, revisionWithSources } from "@newsplatform/domain";
 import { describe, expect, it } from "vitest";
-import { confirmRevision, publishRevision } from "./publish.ts";
+import { commitRevision, confirmRevision, saveDemoStoryRecords } from "./publish.ts";
 import {
   loadLatestRevision,
   loadOpenEpisodeClaims,
@@ -10,19 +10,19 @@ import {
 import { loadPublishedStory } from "./queries/story.ts";
 import { createMigrationDb, readTestDbUrl } from "./test-db.ts"; // DATABASE_TEST_URL로 연결하고 테스트 끝에 truncate
 // revision·story·articles·articleVersions·sources 픽스처는 mappers.test.ts와 같은 값을 공유한다.
-import { fixture, UNPUBLISHED_BODY_SENTENCE } from "./test-fixtures.ts";
+import { fixture, publishFixture, UNPUBLISHED_BODY_SENTENCE } from "./test-fixtures.ts";
 
 const url = readTestDbUrl();
 const maybe = url === undefined ? describe.skip : describe;
 // Vitest는 테스트가 전부 건너뛰어진 파일의 console 출력을 보고하지 않으므로 stderr에 직접 쓴다.
 if (url === undefined) process.stderr.write("DATABASE_TEST_URL 없음 — 실 DB 테스트 건너뜀\n");
 
-maybe("publishRevision", () => {
+maybe("commitRevision", () => {
   it("같은 개정판을 두 번 발행하면 두 번째는 아무것도 쓰지 않는다", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {
-      const first = await publishRevision(db, fixture);
-      const second = await publishRevision(db, fixture);
+      const first = await publishFixture(db, fixture);
+      const second = await publishFixture(db, fixture);
       expect(first.inserted).toBe(true);
       expect(second).toEqual({ inserted: false, revisionId: first.revisionId });
     } finally {
@@ -43,11 +43,32 @@ maybe("publishRevision", () => {
           })),
         },
       };
-      await expect(publishRevision(db, broken)).rejects.toThrow();
+      await expect(publishFixture(db, broken)).rejects.toThrow();
       const rows = await sql<
         { count: number }[]
       >`select count(*)::int as count from story_revisions`;
       expect(rows[0]?.count).toBe(0);
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("개정판 커밋은 사건 행 없이 개정판의 사건 식별자로 발행한다", async () => {
+    const { db, sql, cleanup } = await createMigrationDb(url as string);
+    try {
+      await saveDemoStoryRecords(db, { ...fixture });
+      const committed = await commitRevision(db, { revision: fixture.revision });
+      expect(committed).toEqual({ inserted: true, revisionId: fixture.revision.id });
+      const rows = await sql<{ story_id: string }[]>`
+        select story_id from story_revisions where id = ${fixture.revision.id}
+      `;
+      expect(rows.map((r) => r.story_id)).toEqual([fixture.revision.storyId]);
+      const page = await loadPublishedStory(db, { slug: fixture.story.slug });
+      expect(page?.revision.id).toBe(fixture.revision.id);
+      expect(await commitRevision(db, { revision: fixture.revision })).toEqual({
+        inserted: false,
+        revisionId: fixture.revision.id,
+      });
     } finally {
       await cleanup();
     }
@@ -58,7 +79,7 @@ maybe("loadPublishedStory", () => {
   it("사건 slug로 최신 개정판을 읽고, 근거는 허용 발췌와 발췌 안 강조 구간만 담는다", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {
-      const { revisionId } = await publishRevision(db, fixture);
+      const { revisionId } = await publishFixture(db, fixture);
       const page = await loadPublishedStory(db, { slug: fixture.story.slug });
 
       expect(page?.story).toEqual({
@@ -104,7 +125,7 @@ maybe("loadPublishedStory", () => {
   it("revisionId를 주면 그 개정판을, 모르는 slug면 undefined를 준다", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {
-      const { revisionId } = await publishRevision(db, fixture);
+      const { revisionId } = await publishFixture(db, fixture);
       const page = await loadPublishedStory(db, { slug: fixture.story.slug, revisionId });
       expect(page?.revision.id).toBe(revisionId);
       expect(
@@ -120,7 +141,7 @@ maybe("loadPublishedStory", () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {
       const titled = { ...fixture, revision: { ...fixture.revision, title: "개정판 제목" } };
-      await publishRevision(db, titled);
+      await publishFixture(db, titled);
       const page = await loadPublishedStory(db, { slug: fixture.story.slug });
       expect(page?.revision.title).toBe("개정판 제목");
       expect(page?.claims.flatMap((c) => c.evidence).map((e) => e.differsIn)).toEqual(
@@ -139,7 +160,7 @@ maybe("confirmRevision", () => {
   it("confirmRevision은 확인 시각만 갱신하고 개정판 수는 그대로", async () => {
     const { db, sql, cleanup } = await createMigrationDb(url as string);
     try {
-      await publishRevision(db, fixture);
+      await publishFixture(db, fixture);
       const checkedAt = new Date("2026-09-18T00:30:00.000Z");
       expect(await confirmRevision(db, { revisionId: fixture.revision.id, checkedAt })).toEqual({
         updated: true,
@@ -164,7 +185,7 @@ maybe("변화 저장(#85)", () => {
   it("changes persist and load", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {
-      await publishRevision(db, fixture);
+      await publishFixture(db, fixture);
       // 이번 개정판은 c-2가 빠지고 출처 구획에서 Atlas가 빠진 것으로 둔다(출처 구획은 개정판마다 저장된다).
       const withoutAtlas = fixture.revision.sources.filter((s) => s.articleId !== "a-atlas");
       const second = revisionWithSources(fixture.revision, withoutAtlas, {
@@ -203,7 +224,7 @@ maybe("변화 저장(#85)", () => {
         { kind: "원문 변경", articleId: "a-meridian", articleVersionId: "av-meridian" },
         { kind: "출처 추가", articleId: "a-harbor" },
       ];
-      await publishRevision(db, { ...fixture, revision: next, changes });
+      await publishFixture(db, { ...fixture, revision: next, changes });
 
       expect(await loadRevisionChanges(db, { revisionId: next.id })).toEqual(changes);
       expect(await loadRevisionChanges(db, { revisionId: fixture.revision.id })).toEqual([]);
@@ -218,7 +239,7 @@ maybe("변화 저장(#85)", () => {
   it("사건 페이지 데이터는 그 개정판의 변화와 그 개정판까지의 개정판별 변화 종류 개수를 싣는다", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {
-      await publishRevision(db, fixture);
+      await publishFixture(db, fixture);
       const next = revisionWithSources(fixture.revision, fixture.revision.sources, {
         revisionNumber: 2,
         publishedAt: new Date("2026-09-18T00:30:00.000Z"),
@@ -234,7 +255,7 @@ maybe("변화 저장(#85)", () => {
         { kind: "출처 추가", articleId: "a-meridian" },
         { kind: "출처 추가", articleId: "a-atlas" },
       ];
-      await publishRevision(db, { ...fixture, revision: next, changes });
+      await publishFixture(db, { ...fixture, revision: next, changes });
 
       const latest = await loadPublishedStory(db, { slug: fixture.story.slug });
       expect(latest?.changes).toEqual(changes);
@@ -278,7 +299,7 @@ maybe("변화 저장(#85)", () => {
   it("옛 개정판의 보도량 추이는 발행 뒤 배정된 기사를 세지 않는다", async () => {
     const { db, sql, cleanup } = await createMigrationDb(url as string);
     try {
-      await publishRevision(db, fixture);
+      await publishFixture(db, fixture);
       // 발행 뒤 같은 사건에 배정된 링크만 기사(GDELT 관측 등). 이 개정판의 출처 집합에는 없다.
       await sql`insert into articles (id, source_id, story_id, url, normalized_url, title, published_at, topics, is_link_only, observed_at)
         values ('a-late', 'src-meridian', ${fixture.story.id}, 'https://late.invalid/1', 'https://late.invalid/1', 'Late',
@@ -308,7 +329,7 @@ maybe("변화 저장(#85)", () => {
         "utf8",
       );
       expect(migration).not.toMatch(/\bDELETE\s+FROM\b|\bDROP\b/i);
-      await publishRevision(db, fixture);
+      await publishFixture(db, fixture);
       // 마이그레이션 전 모양(출처 목록 없음)으로 되돌린 뒤 마이그레이션의 UPDATE를 다시 적용한다.
       await sql`update story_revisions set source_article_ids = '{}'`;
       const updates = migration
@@ -343,7 +364,7 @@ maybe("개정판에 고정된 출처 구획(#98)", () => {
   it("개정판 발행 뒤 배정된 기사는 그 개정판 페이지의 출처 구획에 나오지 않는다", async () => {
     const { db, sql, cleanup } = await createMigrationDb(url as string);
     try {
-      await publishRevision(db, fixture);
+      await publishFixture(db, fixture);
       await lateArticle(sql);
       const latest = await loadPublishedStory(db, { slug: fixture.story.slug });
       const pinned = await loadPublishedStory(db, {
@@ -360,7 +381,7 @@ maybe("개정판에 고정된 출처 구획(#98)", () => {
   it("과거 개정판 페이지는 그 개정판의 출처 집합만 보인다", async () => {
     const { db, sql, cleanup } = await createMigrationDb(url as string);
     try {
-      await publishRevision(db, fixture);
+      await publishFixture(db, fixture);
       await lateArticle(sql);
       // 개정판 2는 늦게 온 링크만 기사를 출처 구획에 더한다("출처 추가").
       const next = revisionWithSources(
@@ -378,7 +399,7 @@ maybe("개정판에 고정된 출처 구획(#98)", () => {
         ],
         { revisionNumber: 2, publishedAt: new Date("2026-09-20T01:00:00.000Z") },
       );
-      await publishRevision(db, {
+      await publishFixture(db, {
         ...fixture,
         revision: next,
         changes: [{ kind: "출처 추가", articleId: "a-late" }],
@@ -407,7 +428,7 @@ maybe("개정판에 고정된 출처 구획(#98)", () => {
   it("loadLatestRevision과 사건 페이지 질의가 같은 출처 집합을 낸다", async () => {
     const { db, sql, cleanup } = await createMigrationDb(url as string);
     try {
-      await publishRevision(db, fixture);
+      await publishFixture(db, fixture);
       await lateArticle(sql);
       const latest = await loadLatestRevision(db, { slug: fixture.story.slug });
       const page = await loadPublishedStory(db, { slug: fixture.story.slug });
@@ -441,7 +462,7 @@ maybe("열린 상충 에피소드(#90)", () => {
         contradictionStatus: "보도 상충" as const,
         claims: [disputed, c2],
       };
-      await publishRevision(db, { ...fixture, revision: first });
+      await publishFixture(db, { ...fixture, revision: first });
       let previous = first;
       for (const revisionNumber of [2, 3]) {
         const next = revisionWithSources(previous, previous.sources, {
@@ -449,7 +470,7 @@ maybe("열린 상충 에피소드(#90)", () => {
           publishedAt: new Date(`2026-09-18T0${revisionNumber}:00:00.000Z`),
         });
         previous = { ...next, claims: next.claims.filter((c) => c.id !== disputed.id) };
-        await publishRevision(db, { ...fixture, revision: previous });
+        await publishFixture(db, { ...fixture, revision: previous });
       }
       const storyId = fixture.story.id;
       expect(await loadOpenEpisodeClaims(db, { storyId, latestClaimIds: [c2.id] })).toEqual([
@@ -465,7 +486,7 @@ maybe("열린 상충 에피소드(#90)", () => {
         revisionNumber: 4,
         publishedAt: new Date("2026-09-18T04:00:00.000Z"),
       });
-      await publishRevision(db, {
+      await publishFixture(db, {
         ...fixture,
         revision: {
           ...corrected,

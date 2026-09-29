@@ -1,10 +1,9 @@
 import { fileURLToPath } from "node:url";
 import {
-  confirmRevision,
   createRuntimeDb,
   loadLatestRevision,
   loadPublishedStory,
-  publishRevision,
+  saveDemoStoryRecords,
 } from "@newsplatform/db";
 import { createArticleVersion } from "@newsplatform/domain";
 import {
@@ -14,11 +13,12 @@ import {
   loadDemoStorySteps,
   runBatch,
 } from "@newsplatform/pipeline";
+import { applyBatchResult } from "../src/apply-batch-result.ts";
 
 /**
  * 데모 사건 적재 명령(#21 Ruling 6, #22 Ruling 22-15, #88): 픽스처 단계마다 배치(기록된 응답, 단계 시각
- * 시계) → 발행(변화 포함). 도메인·DB·파이프라인을 잇는 자리는 워커뿐이다. 멱등은 `publishRevision`이
- * 한 트랜잭션에서 보장한다. 재실행은 개정판을 만들지 않고 `checked_at`만 갱신한다(스펙 134행).
+ * 시계) → 데모 사건·출처·기사·기사 버전 저장 → 배치 결과 반영(워커 슬롯과 같은 `applyBatchResult`). 도메인·DB·
+ * 파이프라인을 잇는 자리는 워커뿐이다. 멱등은 개정판 커밋이 한 트랜잭션에서 보장한다. 재실행은 개정판을 만들지 않고 `checked_at`만 갱신한다(스펙 134행).
  *
  * 실행: pnpm --filter @newsplatform/worker demo:load [slug] (DATABASE_MIGRATION_URL 필요, 인자
  * 없으면 골든셋 전체)
@@ -77,24 +77,19 @@ export async function loadDemoStory(params: {
               capturedAt: now,
             }),
           );
-        const published = await publishRevision(db, {
+        await saveDemoStoryRecords(db, {
           story,
-          revision,
+          sources,
           articles: step.articles.map((a) => a.meta),
           articleVersions,
-          sources,
-          changes: result.changes[0]?.changes ?? [],
         });
-        inserted ||= published.inserted;
-        latestRevision = revision;
       }
-      if (confirmedRevision !== undefined) {
-        await confirmRevision(db, {
-          revisionId: confirmedRevision.revisionId,
-          checkedAt: confirmedRevision.checkedAt,
-        });
-        confirmed = true;
-      }
+      const applied = await applyBatchResult(db, result, { deferredAt: now });
+      const failure = applied.publishFailures[0];
+      if (failure !== undefined) throw new Error(`데모 사건을 발행하지 못했다: ${failure.reason}`);
+      inserted ||= applied.published.some((p) => p.inserted);
+      if (revision !== undefined) latestRevision = revision;
+      if (confirmedRevision !== undefined) confirmed = true;
     }
 
     // `sql`는 `drizzle(sql)`과 연결을 공유하므로(런타임 시각 열의 파싱을 drizzle이 가져간다) 시각 열은

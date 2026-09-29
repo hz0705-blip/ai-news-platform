@@ -1,4 +1,4 @@
-import type { Revision, Source, Story } from "@newsplatform/domain";
+import type { Revision, Source } from "@newsplatform/domain";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { toSourceRow } from "./mappers.ts";
 import { loadLatestRevision } from "./queries/revision.ts";
@@ -120,14 +120,14 @@ export async function saveLinkOnlyArticle(
 }
 
 /**
- * 출처 추가 개정판의 바탕: 사건과 최신 개정판(출처 구획은 현재 기사들). 개정판이 없거나, 미뤄졌거나,
+ * 출처 추가 개정판의 바탕: 사건의 최신 개정판(출처 구획은 현재 기사들). 개정판이 없거나, 미뤄졌거나,
  * 마지막 처리 시각이 최신 확인 시각보다 늦어(입력이 바뀌어) 모델 재처리를 기다리는 사건이면 undefined다 —
  * 그때 출처 추가 개정판을 내면 확인 시각이 앞서 재처리가 빠진다.
  */
 export async function loadRevisionToExtend(
   db: RuntimeDb["db"],
   storyId: string,
-): Promise<{ story: Story; revision: Revision } | undefined> {
+): Promise<Revision | undefined> {
   const latestChecked = sql`(select max(${storyRevisions.checked_at}) from ${storyRevisions} where ${storyRevisions.story_id} = ${stories.id})`;
   const [row] = await db
     .select()
@@ -142,17 +142,5 @@ export async function loadRevisionToExtend(
     )
     .limit(1);
   if (row === undefined) return undefined;
-  const revision = await loadLatestRevision(db, { slug: row.slug });
-  if (revision === undefined) return undefined;
-  return {
-    story: {
-      id: row.id,
-      slug: row.slug,
-      title: row.title,
-      topics: row.topics,
-      isDemo: row.is_demo,
-      lifecycle: row.lifecycle,
-    },
-    revision,
-  };
+  return loadLatestRevision(db, { slug: row.slug });
 }
