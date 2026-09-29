@@ -15,6 +15,16 @@ export {
   type Modality,
 } from "./claim.ts";
 export {
+  CLAIM_MATCH_THRESHOLDS,
+  type ClaimMatch,
+  type ClaimMatchThresholds,
+  classifyMatch,
+  continuityScore,
+  type MatchableClaim,
+  type MatchKind,
+  matchClaims,
+} from "./claim-matching.ts";
+export {
   type ClaimStatusGuard,
   type ClaimStatusInput,
   type ClaimStatusResult,
@@ -49,6 +59,15 @@ export {
   reportingOrigins,
 } from "./reporting-origin.ts";
 export type { Revision, RevisionSource } from "./revision.ts";
+export {
+  CHANGE_KINDS,
+  type ChangeKind,
+  CLAIM_CHANGES,
+  type ClaimChange,
+  type ComputeChangesOptions,
+  computeChanges,
+  type RevisionChange,
+} from "./revision-changes.ts";
 export { isSameRevisionContent } from "./revision-equality.ts";
 export { revisionWithSources } from "./revision-sources.ts";
 export { RIGHTS_TIERS, type RightsTier } from "./rights.ts";

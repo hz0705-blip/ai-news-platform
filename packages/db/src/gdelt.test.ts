@@ -82,11 +82,19 @@ maybe("GDELT 링크만 기사 저장", () => {
       const [query] = await loadGdeltStories(db, [fixture.story.id]);
       expect(query?.title).not.toBe(link.title);
 
-      // 출처 구획에 링크가 들어오고, 출처 추가 개정판이 발행된다.
+      // 확장할 개정판의 출처 구획은 발행 때의 것이다(링크 없음, #85). 링크를 더한 출처 추가 개정판이 발행된다.
       const found = await loadRevisionToExtend(db, fixture.story.id);
       if (found === undefined) throw new Error("확장할 개정판 없음");
-      expect(found.revision.sources.map((s) => s.articleId)).toContain(link.articleId);
-      const next = revisionWithSources(found.revision, found.revision.sources, {
+      expect(found.revision.sources.map((s) => s.articleId)).not.toContain(link.articleId);
+      const linkSource = {
+        sourceId: gdeltSource.id,
+        articleId: link.articleId,
+        articleTitle: link.title,
+        articleUrl: link.url,
+        publishedAt: link.observedAt,
+        rightsTier: gdeltSource.rightsTier,
+      };
+      const next = revisionWithSources(found.revision, [...found.revision.sources, linkSource], {
         revisionNumber: 2,
         publishedAt: new Date("2026-09-17T06:00:00.000Z"),
       });

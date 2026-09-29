@@ -105,9 +105,6 @@ export {
   type BatchResult,
   type Budget,
   BudgetExceededError,
-  CHANGE_KINDS,
-  type Change,
-  type ChangeKind,
   type ConfirmedRevision,
   type DroppedClaim,
   type EmbeddingClient,
@@ -119,6 +116,7 @@ export {
   ModelTransportError,
   type ModelUsage,
   type ReasoningEffort,
+  type RevisionChanges,
   StageFailure,
   type StoryState,
 } from "./types.ts";

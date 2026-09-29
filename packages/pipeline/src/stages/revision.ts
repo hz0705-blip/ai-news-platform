@@ -33,6 +33,8 @@ export const InputSchema = z.object({
   modelId: z.string(),
   claims: z.array(
     claimDraft.omit({ quoteIds: true }).extend({
+      /** 주장 매칭이 정한 식별자(#85). 없으면 `claimId(slug, claimKey)`. */
+      id: z.string().optional(),
       contradictionStatus: z.enum(CONTRADICTION_STATUSES),
       evidence: z.array(
         z.object({
@@ -63,14 +65,17 @@ export function idempotencyKey(input: RevisionInput): string {
   return `${input.story.id}:rev:${input.revisionNumber}`;
 }
 
-/** 주장 식별자 `<slug>:<claimKey>`(Ruling 22-2). */
-export function claimId(slug: string, claimKey: string): string {
-  return `${slug}:${claimKey}`;
+/**
+ * 새 주장 식별자(Ruling 22-2, #85). 첫 개정판은 `<slug>:<claimKey>`, 그 뒤 개정판에서 이전 주장과 매칭되지 않은
+ * 주장은 `<slug>:<claimKey>@rev-<번호>` — 매칭된 주장이 이어받은 식별자·삭제된 주장의 식별자와 겹치지 않는다.
+ */
+export function claimId(slug: string, claimKey: string, revisionNumber = 1): string {
+  return revisionNumber === 1 ? `${slug}:${claimKey}` : `${slug}:${claimKey}@rev-${revisionNumber}`;
 }
 
 /**
  * 개정판을 만든다. 사건 상충 상태는 `deriveStoryStatus`가 주장들과 열린 에피소드 수에서 파생한다.
- * 식별자(Ruling 22-2): 개정판 `<slug>:rev-<번호>`, 주장 `<slug>:<claimKey>`,
+ * 식별자(Ruling 22-2): 개정판 `<slug>:rev-<번호>`, 주장은 입력의 `id`(매칭 결과) 또는 `claimId`,
  * 근거 `<개정판 id>/<주장 id>:<quoteId>`. 근거 검증 시각은 개정판 발행 시각과 같다.
  */
 export function runRevision(input: RevisionInput): Revision {
@@ -78,7 +83,7 @@ export function runRevision(input: RevisionInput): Revision {
   const revisionId = `${slug}:rev-${input.revisionNumber}`;
 
   const claims = input.claims.map((draft, order) => {
-    const id = claimId(slug, draft.claimKey);
+    const id = draft.id ?? claimId(slug, draft.claimKey, input.revisionNumber);
     return {
       id,
       text: draft.text,

@@ -248,19 +248,21 @@ export async function runBatchSlot(
 
     // 4. 발행(사건마다 한 트랜잭션) · 확인 · 미룸 표시.
     const storyById = new Map(stories.map((s) => [s.story.id, s]));
+    const changesByRevision = new Map(result.changes.map((c) => [c.revisionId, c.changes]));
     const publishFailures: { storyId: string; reason: string }[] = [];
     const publishedStoryIds: string[] = [];
     for (const revision of result.revisions) {
       const state = storyById.get(revision.storyId);
       if (state === undefined) continue;
       try {
-        // 출처·기사·기사 버전은 수집·배정이 이미 저장했다. 개정판·주장·근거만 새로 쓴다.
+        // 출처·기사·기사 버전은 수집·배정이 이미 저장했다. 개정판·주장·근거·변화만 새로 쓴다.
         await publishRevision(deps.db, {
           story: state.story,
           revision,
           articles: [],
           articleVersions: [],
           sources: [],
+          changes: changesByRevision.get(revision.id) ?? [],
         });
         publishedStoryIds.push(revision.storyId);
       } catch (error) {
