@@ -17,7 +17,7 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 
 ## 도메인 규칙
 
-- 산출물(이슈 제목, PR, 테스트 이름, 코드 식별자)의 도메인 개념은 `CONTEXT.md` 용어를 쓴다. 필요한 개념이 용어집에 없으면 만들어 쓰지 말고 티켓 코멘트로 묻는다.
+- 산출물(이슈 제목, PR, 테스트 이름, 코드 식별자)의 도메인 개념은 `CONTEXT.md` 용어를 쓴다. 필요한 개념이 용어집에 없으면 Claude는 `CONTEXT.md`에 추가해 쓰고(`CLAUDE.md` "Ruling"), Codex는 만들어 쓰지 말고 티켓 코멘트로 묻는다.
 - 산출물이 ADR과 충돌하면 조용히 덮어쓰지 않고 "ADR-000N과 충돌한다. 이유는 …"으로 드러낸다.
 - 기사 본문은 30일 뒤 삭제한다(`article_versions.body_expires_at`, 기사 발행 시각 기준·불명이면 수집 시각). 삭제 대상은 본문(`body`)이며, 근거(`evidence`)가 기사 버전을 FK로 참조하므로 행과 근거 구간·해시·URL·메타데이터는 남는다.
 
@@ -46,10 +46,10 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 - 테스트 `pnpm test`(Vitest). 패키지 하나는 `pnpm test --project <domain|db|pipeline|worker|web>`(**`--`를 넣으면 pnpm 12가 필터를 버리고 전체가 돈다**). E2E `pnpm --filter @newsplatform/web test:e2e`(Playwright).
 - 실 DB 테스트 `pnpm test:db`(`scripts/test-db`, docker 필요) — 로컬 컨테이너 `newsplatform-test-db`(CI와 같은 `pgvector/pgvector:0.8.6-pg17` image@digest, `127.0.0.1:54329`)를 없으면 만들고 있으면 시작해 마이그레이션을 적용한 뒤 `db`·`worker` 프로젝트만 돈다(파일들이 advisory lock으로 직렬화되므로 두 프로젝트의 `testTimeout`은 60초). 테스트는 `DATABASE_TEST_URL`만 읽고(없으면 skip) 그 DB를 truncate한다. 호스트가 `localhost`·`127.0.0.1`이 아니거나 `supabase`를 담은 URL은 비우기 전에 거부한다. 컨테이너를 지우려면 `docker rm -f newsplatform-test-db`.
 - 마이그레이션 `pnpm db:migrate`, pgvector 게이트 `pnpm db:gate`.
-- 출처 표(#76): `pnpm --filter @newsplatform/worker sources:sync`(`packages/db/sources/sources.json` → `sources` upsert + 옛 `gnews:*` 기사 재지정 + 등급이 바뀐 출처의 사건 캐시 즉시 만료, `DATABASE_MIGRATION_URL`, 마이그레이션 뒤), `pnpm --filter @newsplatform/worker source:set-tier <출처 식별자> <등급>`(#78: 표의 출처는 파일 행을 고치고 동기화 — 고친 파일은 커밋한다, 표에 없는 `gnews:*`·`gdelt:*`는 DB 행만; 영향받는 사건의 최신·모든 개정판 태그를 즉시 만료, `WEB_REVALIDATE_URL`·`REVALIDATE_SECRET` 없으면 아무것도 쓰지 않고 거부, 등급이 같아도 다시 만료하므로 만료 실패는 같은 명령으로 재시도). `sources:sync`는 등급이 바뀌었는데 무효화 경로가 없으면 종료 코드 1, `pnpm --filter @newsplatform/db sources:wikidata <도메인…>`(Wikidata 초안과 파일의 차이만 출력, 파일 불변).
-- 배치(#55): 수동 슬롯 실행 `pnpm --filter @newsplatform/worker batch:run <슬롯 키> [--skip-collect]`(예 `2026-09-27T17:00+09:00`, `DATABASE_MIGRATION_URL`·`OPENAI_API_KEY`·수집 시 `GNEWS_API_KEY`), 워커 데몬 `pnpm --filter @newsplatform/worker start`(`WORKER_DATABASE_URL` 세션 풀러 5432, pg-boss 스키마 `pgboss`는 시작 시 만든다). 발행 뒤 캐시 무효화는 `WEB_REVALIDATE_URL`·`REVALIDATE_SECRET`이 있을 때만(웹 `POST /api/revalidate`, 웹 환경변수 `REVALIDATE_SECRET`).
-- GDELT(#77): 배치가 발행 뒤 단계로 돈다(키 없음). 수동 실행 `pnpm --filter @newsplatform/worker gdelt:run [N]`(최근 발행 사건 N개, 기본 5, `DATABASE_MIGRATION_URL`·`OPENAI_API_KEY`, DB에 쓴다). GDELT는 5초에 1회를 넘기면 429이고, 간격을 30초 넘게 두어도 결과가 많은 쿼리나 혼잡한 시간에는 429·연결 시간 초과가 이어질 수 있다(2026-09-29 실측) — 단계는 그 사건을 실패로 리포트에 남긴다. 픽스처 기록은 `packages/pipeline/scripts/record-gdelt.ts`.
-- 원문 재수집(#86): 배치가 수집 뒤·배정 전 단계로 돈다(`GNEWS_API_KEY`, 수집을 건너뛰면 건너뜀). GNews 요청은 UTC 날짜 원장 `gnews_request_ledger`에 발견·재수집으로 쌓이고, 재수집은 몫 600을 넘기지 않는다. 마이그레이션 0009 적용 직후 첫 배치는 이미 12시간이 지난 활성 기사 전부(2026-09-29 실측 370건)를 한 번에 조회한다. 조회 픽스처 기록은 `packages/pipeline/scripts/record-gnews-recheck.ts`(요청 1회).
+- 출처 표: `pnpm --filter @newsplatform/worker sources:sync`(`packages/db/sources/sources.json` → `sources` upsert + 옛 `gnews:*` 기사 재지정 + 등급이 바뀐 출처의 사건 캐시 즉시 만료, `DATABASE_MIGRATION_URL`, 마이그레이션 뒤), `pnpm --filter @newsplatform/worker source:set-tier <출처 식별자> <등급>`(표의 출처는 파일 행을 고치고 동기화 — 고친 파일은 커밋한다, 표에 없는 `gnews:*`·`gdelt:*`는 DB 행만; 영향받는 사건의 최신·모든 개정판 태그를 즉시 만료, `WEB_REVALIDATE_URL`·`REVALIDATE_SECRET` 없으면 아무것도 쓰지 않고 거부, 등급이 같아도 다시 만료하므로 만료 실패는 같은 명령으로 재시도). `sources:sync`는 등급이 바뀌었는데 무효화 경로가 없으면 종료 코드 1, `pnpm --filter @newsplatform/db sources:wikidata <도메인…>`(Wikidata 초안과 파일의 차이만 출력, 파일 불변).
+- 배치: 수동 슬롯 실행 `pnpm --filter @newsplatform/worker batch:run <슬롯 키> [--skip-collect]`(예 `2026-09-27T17:00+09:00`, `DATABASE_MIGRATION_URL`·`OPENAI_API_KEY`·수집 시 `GNEWS_API_KEY`), 워커 데몬 `pnpm --filter @newsplatform/worker start`(`WORKER_DATABASE_URL` 세션 풀러 5432, pg-boss 스키마 `pgboss`는 시작 시 만든다). 발행 뒤 캐시 무효화는 `WEB_REVALIDATE_URL`·`REVALIDATE_SECRET`이 있을 때만(웹 `POST /api/revalidate`, 웹 환경변수 `REVALIDATE_SECRET`).
+- GDELT: 배치가 발행 뒤 단계로 돈다(키 없음). 수동 실행 `pnpm --filter @newsplatform/worker gdelt:run [N]`(최근 발행 사건 N개, 기본 5, `DATABASE_MIGRATION_URL`·`OPENAI_API_KEY`, DB에 쓴다). GDELT는 5초에 1회를 넘기면 429이고, 간격을 30초 넘게 두어도 결과가 많은 쿼리나 혼잡한 시간에는 429·연결 시간 초과가 이어질 수 있다 — 단계는 그 사건을 실패로 리포트에 남긴다. 픽스처 기록은 `packages/pipeline/scripts/record-gdelt.ts`.
+- 원문 재수집: 배치가 수집 뒤·배정 전 단계로 돈다(`GNEWS_API_KEY`, 수집을 건너뛰면 건너뜀). GNews 요청은 UTC 날짜 원장 `gnews_request_ledger`에 발견·재수집으로 쌓이고, 재수집은 몫 600을 넘기지 않는다. 조회 픽스처 기록은 `packages/pipeline/scripts/record-gnews-recheck.ts`(요청 1회).
 - CI(`.github/workflows/ci.yml`)는 위 명령을 그대로 실행하므로 명령을 바꾸면 워크플로도 함께 고친다. `packages/db/scripts/ci-workflow.test.ts`에는 보안 계약(SHA 고정·권한·시크릿) 단언만 있다.
 
 ## 컨벤션
