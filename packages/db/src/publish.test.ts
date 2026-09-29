@@ -293,8 +293,8 @@ maybe("변화 저장(#85)", () => {
           .sort((a, b) => a.getTime() - b.getTime()),
       );
       expect(page?.coverageArticles.some((a) => a.isLinkOnly)).toBe(false);
-      // 출처 구획의 기존 동작(사건의 기사 전부)은 그대로다.
-      expect(page?.sources.map((s) => s.articleId)).toContain("a-late");
+      // 출처 구획도 같은 출처 집합이다(#98).
+      expect(page?.sources.map((s) => s.articleId)).not.toContain("a-late");
     } finally {
       await cleanup();
     }
@@ -321,6 +321,107 @@ maybe("변화 저장(#85)", () => {
       const latest = await loadLatestRevision(db, { slug: fixture.story.slug });
       expect(latest).toEqual(fixture.revision);
       expect(await loadRevisionChanges(db, { revisionId: fixture.revision.id })).toEqual([]);
+    } finally {
+      await cleanup();
+    }
+  });
+});
+
+maybe("개정판에 고정된 출처 구획(#98)", () => {
+  /** 발행 뒤 같은 사건에 배정된 링크만 기사. 출처 추가 개정판을 기다리는 GDELT 관측 같은 것이다. */
+  const lateArticle = (sql: Awaited<ReturnType<typeof createMigrationDb>>["sql"]) =>
+    sql`insert into articles (id, source_id, story_id, url, normalized_url, title, published_at, topics, is_link_only, observed_at)
+      values ('a-late', 'src-meridian', ${fixture.story.id}, 'https://late.invalid/1', 'https://late.invalid/1', 'Late',
+        '2026-09-20T00:00:00Z', '{}', true, '2026-09-20T00:00:00Z')`;
+  const fixtureArticleIds = [...fixture.revision.sources]
+    .sort(
+      (a, b) =>
+        a.publishedAt.getTime() - b.publishedAt.getTime() || (a.articleId < b.articleId ? -1 : 1),
+    )
+    .map((s) => s.articleId);
+
+  it("개정판 발행 뒤 배정된 기사는 그 개정판 페이지의 출처 구획에 나오지 않는다", async () => {
+    const { db, sql, cleanup } = await createMigrationDb(url as string);
+    try {
+      await publishRevision(db, fixture);
+      await lateArticle(sql);
+      const latest = await loadPublishedStory(db, { slug: fixture.story.slug });
+      const pinned = await loadPublishedStory(db, {
+        slug: fixture.story.slug,
+        revisionId: fixture.revision.id,
+      });
+      expect(latest?.sources.map((s) => s.articleId)).toEqual(fixtureArticleIds);
+      expect(pinned?.sources.map((s) => s.articleId)).toEqual(fixtureArticleIds);
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("과거 개정판 페이지는 그 개정판의 출처 집합만 보인다", async () => {
+    const { db, sql, cleanup } = await createMigrationDb(url as string);
+    try {
+      await publishRevision(db, fixture);
+      await lateArticle(sql);
+      // 개정판 2는 늦게 온 링크만 기사를 출처 구획에 더한다("출처 추가").
+      const next = revisionWithSources(
+        fixture.revision,
+        [
+          ...fixture.revision.sources,
+          {
+            sourceId: "src-meridian",
+            articleId: "a-late",
+            articleTitle: "Late",
+            articleUrl: "https://late.invalid/1",
+            publishedAt: new Date("2026-09-20T00:00:00Z"),
+            rightsTier: "본문 처리 + 발췌 표시",
+          },
+        ],
+        { revisionNumber: 2, publishedAt: new Date("2026-09-20T01:00:00.000Z") },
+      );
+      await publishRevision(db, {
+        ...fixture,
+        revision: next,
+        changes: [{ kind: "출처 추가", articleId: "a-late" }],
+      });
+
+      const first = await loadPublishedStory(db, {
+        slug: fixture.story.slug,
+        revisionId: fixture.revision.id,
+      });
+      expect(first?.sources.map((s) => s.articleId)).toEqual(fixtureArticleIds);
+      expect(first?.coverageArticles).toHaveLength(fixtureArticleIds.length);
+
+      const second = await loadPublishedStory(db, { slug: fixture.story.slug });
+      expect(second?.revision.id).toBe(next.id);
+      expect(second?.sources.map((s) => s.articleId)).toEqual([...fixtureArticleIds, "a-late"]);
+      expect(second?.sources.at(-1)).toMatchObject({
+        id: "src-meridian",
+        isLinkOnly: true,
+        observedAt: new Date("2026-09-20T00:00:00Z"),
+      });
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("loadLatestRevision과 사건 페이지 질의가 같은 출처 집합을 낸다", async () => {
+    const { db, sql, cleanup } = await createMigrationDb(url as string);
+    try {
+      await publishRevision(db, fixture);
+      await lateArticle(sql);
+      const latest = await loadLatestRevision(db, { slug: fixture.story.slug });
+      const page = await loadPublishedStory(db, { slug: fixture.story.slug });
+      expect(latest?.id).toBe(page?.revision.id);
+      expect(
+        page?.sources.map((s) => ({
+          sourceId: s.id,
+          articleId: s.articleId,
+          articleTitle: s.articleTitle,
+          articleUrl: s.articleUrl,
+          publishedAt: s.publishedAt,
+          rightsTier: s.rightsTier,
+        })),
+      ).toEqual(latest?.sources);
     } finally {
       await cleanup();
     }

@@ -6,19 +6,11 @@ import type {
   Source,
   Topic,
 } from "@newsplatform/domain";
-import { and, asc, count, desc, eq, inArray, lte } from "drizzle-orm";
-import { type RevisionSourceRow, toDomainRevision, toDomainSource } from "../mappers.ts";
+import { and, asc, count, eq, inArray, lte } from "drizzle-orm";
+import { toDomainSource } from "../mappers.ts";
 import type { RuntimeDb } from "../runtime.ts";
-import {
-  articles,
-  claimRevisions,
-  evidence,
-  revisionChanges,
-  sources,
-  stories,
-  storyRevisions,
-} from "../schema/index.ts";
-import { loadRevisionChanges } from "./revision.ts";
+import { articles, revisionChanges, sources, stories, storyRevisions } from "../schema/index.ts";
+import { loadRevision, loadRevisionChanges } from "./revision.ts";
 
 /**
  * 사건 페이지가 그리는 데이터 전부. 근거는 허용 발췌(`excerpt`)와 그 발췌 안의 코드 포인트
@@ -102,7 +94,10 @@ const emptyChangeCounts = (): Record<ChangeKind, number> => ({
  * 사건 페이지가 쓰는 유일한 질의. 사건은 `slug`로 찾고, `revisionId`가 없으면 최신 발행
  * 개정판(`revision_number`가 가장 큰 것)을 준다. 사건이나 개정판이 없으면 `undefined`.
  *
- * 출처 구획은 그 사건에 배정된 기사와 출처를 이어 만든다(링크만 기사 포함, 발행 시각·기사 식별자 순).
+ * 개정판(주장·근거·출처 구획)은 `loadRevision`이 읽는다 — 워커의 `loadLatestRevision`과 같은 읽기다. 출처 구획은
+ * 그 개정판의 출처 집합(`source_article_ids`)에 든 기사와 출처뿐이다(링크만 기사 포함, 발행 시각·기사 식별자 순).
+ * 발행 뒤 사건에 배정된 기사는 싣지 않는다(스펙 "렌더링·캐시"). 이 질의는 페이지 전용 부가 정보(기사 제목·URL·
+ * 관측 시각·링크만 여부, 개정판 띠, 변화 개수)만 더한다.
  */
 export async function loadPublishedStory(
   db: RuntimeDb["db"],
@@ -112,88 +107,43 @@ export async function loadPublishedStory(
   const story = storyRows[0];
   if (story === undefined) return undefined;
 
-  const revisionRows = await db
-    .select()
-    .from(storyRevisions)
-    .where(
-      params.revisionId === undefined
-        ? eq(storyRevisions.story_id, story.id)
-        : and(eq(storyRevisions.story_id, story.id), eq(storyRevisions.id, params.revisionId)),
-    )
-    .orderBy(desc(storyRevisions.revision_number))
-    .limit(1);
-  const revision = revisionRows[0];
-  if (revision === undefined) return undefined;
-
-  const claimRevisionRows = await db
-    .select()
-    .from(claimRevisions)
-    .where(eq(claimRevisions.story_revision_id, revision.id));
-
-  const evidenceRows =
-    claimRevisionRows.length === 0
-      ? []
-      : await db
-          .select({
-            evidence,
-            articleTitle: articles.title,
-            articlePublishedAt: articles.published_at,
-          })
-          .from(evidence)
-          .innerJoin(articles, eq(articles.id, evidence.article_id))
-          .where(
-            inArray(
-              evidence.claim_revision_id,
-              claimRevisionRows.map((cr) => cr.id),
-            ),
-          );
-
-  const sourceRows = await db
-    .select({
-      source: sources,
-      articleId: articles.id,
-      articleTitle: articles.title,
-      articleUrl: articles.url,
-      publishedAt: articles.published_at,
-      isLinkOnly: articles.is_link_only,
-      observedAt: articles.observed_at,
-    })
-    .from(articles)
-    .innerJoin(sources, eq(sources.id, articles.source_id))
-    .where(eq(articles.story_id, story.id))
-    .orderBy(articles.published_at, articles.id);
-
-  const revisionSources: RevisionSourceRow[] = sourceRows.map((r) => ({
-    source_id: r.source.id,
-    article_id: r.articleId,
-    article_title: r.articleTitle,
-    article_url: r.articleUrl,
-    published_at: r.publishedAt,
-    rights_tier: r.source.rights_tier,
-  }));
-
-  const domain = toDomainRevision({
-    revision,
-    claims: [],
-    claimRevisions: claimRevisionRows,
-    evidence: evidenceRows.map((r) => r.evidence),
-    sources: revisionSources,
+  const loaded = await loadRevision(db, {
+    storyId: story.id,
+    ...(params.revisionId === undefined ? {} : { revisionId: params.revisionId }),
   });
+  if (loaded === undefined) return undefined;
+  const domain = loaded.revision;
 
-  const changes = await loadRevisionChanges(db, { revisionId: revision.id });
-
-  const coverageArticles =
-    revision.source_article_ids.length === 0
+  // 출처 구획과 근거가 가리키는 기사의 페이지 전용 정보(출처 전체 행, 링크만 여부, 관측 시각, 근거 기사 제목).
+  const articleIds = [
+    ...new Set([
+      ...domain.sources.map((s) => s.articleId),
+      ...domain.claims.flatMap((c) => c.evidence.map((e) => e.articleId)),
+    ]),
+  ];
+  const articleRows =
+    articleIds.length === 0
       ? []
       : await db
           .select({
+            source: sources,
+            articleId: articles.id,
+            articleTitle: articles.title,
             publishedAt: articles.published_at,
             isLinkOnly: articles.is_link_only,
             observedAt: articles.observed_at,
           })
           .from(articles)
-          .where(inArray(articles.id, revision.source_article_ids))
-          .orderBy(articles.published_at, articles.id);
+          .innerJoin(sources, eq(sources.id, articles.source_id))
+          .where(inArray(articles.id, articleIds));
+  const articleOf = new Map(articleRows.map((r) => [r.articleId, r]));
+  const pageArticle = (articleId: string) => {
+    const article = articleOf.get(articleId);
+    if (article === undefined) throw new Error(`기사를 찾지 못했다: ${articleId}`);
+    return article;
+  };
+
+  const changes = await loadRevisionChanges(db, { revisionId: domain.id });
 
   const revisionListRows = await db
     .select({
@@ -205,7 +155,7 @@ export async function loadPublishedStory(
     .where(
       and(
         eq(storyRevisions.story_id, story.id),
-        lte(storyRevisions.revision_number, revision.revision_number),
+        lte(storyRevisions.revision_number, domain.revisionNumber),
       ),
     )
     .orderBy(asc(storyRevisions.revision_number));
@@ -230,13 +180,6 @@ export async function loadPublishedStory(
     countsOf.set(row.revisionId, counts);
   }
 
-  const articleOf = new Map(
-    evidenceRows.map((r) => [
-      r.evidence.id,
-      { title: r.articleTitle, publishedAt: r.articlePublishedAt },
-    ]),
-  );
-
   return {
     story: {
       id: story.id,
@@ -250,7 +193,7 @@ export async function loadPublishedStory(
       revisionNumber: domain.revisionNumber,
       title: domain.title,
       publishedAt: domain.publishedAt,
-      checkedAt: revision.checked_at,
+      checkedAt: loaded.checkedAt,
       contradictionStatus: domain.contradictionStatus,
     },
     claims: domain.claims.map((claim) => ({
@@ -259,11 +202,10 @@ export async function loadPublishedStory(
       text: claim.text,
       contradictionStatus: claim.contradictionStatus,
       evidence: claim.evidence.map((item) => {
-        const article = articleOf.get(item.id);
-        if (article === undefined) throw new Error(`근거의 기사를 찾지 못했다: ${item.id}`);
+        const article = pageArticle(item.articleId);
         return {
           sourceId: item.sourceId,
-          articleTitle: article.title,
+          articleTitle: article.articleTitle,
           publishedAt: article.publishedAt,
           sourceUrl: item.sourceUrl,
           excerpt: item.excerpt,
@@ -272,16 +214,26 @@ export async function loadPublishedStory(
         };
       }),
     })),
-    sources: sourceRows.map((r) => ({
-      ...toDomainSource(r.source),
-      articleId: r.articleId,
-      articleTitle: r.articleTitle,
-      articleUrl: r.articleUrl,
-      publishedAt: r.publishedAt,
-      isLinkOnly: r.isLinkOnly,
-      observedAt: r.observedAt,
-    })),
-    coverageArticles,
+    sources: domain.sources.map((s) => {
+      const article = pageArticle(s.articleId);
+      return {
+        ...toDomainSource(article.source),
+        articleId: s.articleId,
+        articleTitle: s.articleTitle,
+        articleUrl: s.articleUrl,
+        publishedAt: s.publishedAt,
+        isLinkOnly: article.isLinkOnly,
+        observedAt: article.observedAt,
+      };
+    }),
+    coverageArticles: domain.sources.map((s) => {
+      const article = pageArticle(s.articleId);
+      return {
+        publishedAt: s.publishedAt,
+        isLinkOnly: article.isLinkOnly,
+        observedAt: article.observedAt,
+      };
+    }),
     changes,
     revisions: revisionListRows.map((r) => ({
       ...r,
