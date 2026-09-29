@@ -1,8 +1,8 @@
 import { matchSourceByDomain, type RightsTier, type Source } from "@newsplatform/domain";
-import { and, eq, inArray, like, sql } from "drizzle-orm";
+import { and, eq, inArray, like, ne, type SQLWrapper, sql } from "drizzle-orm";
 import { toDomainSource, toSourceRow } from "./mappers.ts";
 import type { RuntimeDb } from "./runtime.ts";
-import { articles, sources, storyRevisions } from "./schema/index.ts";
+import { articles, claimRevisions, evidence, sources, storyRevisions } from "./schema/index.ts";
 
 /** 권리 등급이 바뀐 출처 하나(#78). 새로 만든 출처 행은 넣지 않는다. */
 export interface SourceTierChange {
@@ -15,6 +15,11 @@ export interface SyncSourceRegistryResult {
   readonly synced: number;
   /** 미등록 `gnews:*` 출처에서 등록 출처로 옮긴 기사 수. */
   readonly repointedArticles: number;
+  /** 옛 `gnews:*` 출처에서 기사의 현재 출처로 옮긴 근거 수(#115). */
+  readonly repointedEvidence: number;
+  /** 근거를 옮긴 사건(식별자 순)과 근거가 옮겨 간 출처(식별자 순). 워커가 그 사건 캐시를 만료한다. */
+  readonly repointedEvidenceStories: readonly string[];
+  readonly repointedEvidenceSources: readonly string[];
   /** 이번 동기화로 권리 등급이 바뀐 기존 출처(식별자 순). 워커가 영향받는 사건 캐시를 만료한다. */
   readonly tierChanges: readonly SourceTierChange[];
 }
@@ -24,14 +29,26 @@ export interface SyncSourceRegistryResult {
  * `wire_id`·`external_id`·`is_fictional`은 건드리지 않는다. 표에서 지운 행은 DB에 남는다(기사가 참조한다).
  * (2) 미등록 `gnews:*` 출처의 기사 중 URL 호스트가 등록 출처의 도메인에 맞는 것을 그 출처로 옮긴다 —
  * 같은 발행사가 옛 `gnews:<id>`와 등록 식별자로 갈라져 보도 원점이 둘로 세이지 않게(#76 리뷰). 제외 출처도
- * 옮긴다(이미 저장된 기사는 두고 새 수집만 버린다). 옛 출처 행은 남긴다. 발행된 개정판의 출처 참조는 고치지 않는다.
- * 두 번째 실행은 옮길 기사가 없다. upsert 전 등급과 비교해 등급이 바뀐 기존 출처를 `tierChanges`로 돌려준다.
+ * 옮긴다(이미 저장된 기사는 두고 새 수집만 버린다). 옛 출처 행은 남긴다. (3) 미등록 `gnews:*` 출처를 가리키는 근거 중
+ * 기사의 현재 출처와 다른 것의 출처 식별자를 기사의 출처로 옮긴다(#115) — 사건 페이지는 출처 구획을 기사의 현재
+ * 출처로 만들므로 근거가 옛 출처에 남으면 그 사건을 그리지 못한다. 근거 구간·해시·URL은 그대로다. 이 단계는 (2)가
+ * 이번에 옮긴 기사뿐 아니라 예전 실행이 이미 옮긴 기사의 근거도 고친다. 두 번째 실행은 옮길 기사·근거가 없다.
+ * upsert 전 등급과 비교해 등급이 바뀐 기존 출처를 `tierChanges`로 돌려준다.
  */
 export async function syncSourceRegistry(
   db: RuntimeDb["db"],
   registry: readonly Source[],
 ): Promise<SyncSourceRegistryResult> {
-  if (registry.length === 0) return { synced: 0, repointedArticles: 0, tierChanges: [] };
+  if (registry.length === 0) {
+    return {
+      synced: 0,
+      repointedArticles: 0,
+      repointedEvidence: 0,
+      repointedEvidenceStories: [],
+      repointedEvidenceSources: [],
+      tierChanges: [],
+    };
+  }
   return db.transaction(async (tx) => {
     const before = await tx
       .select({ id: sources.id, tier: sources.rights_tier })
@@ -81,7 +98,44 @@ export async function syncSourceRegistry(
       await tx.update(articles).set({ source_id: sourceId }).where(inArray(articles.id, ids));
       repointedArticles += ids.length;
     }
-    return { synced: registry.length, repointedArticles, tierChanges };
+
+    const oldSources = tx
+      .select({ id: sources.id })
+      .from(sources)
+      .where(and(like(sources.id, "gnews:%"), sql`cardinality(${sources.domains}) = 0`));
+    const moved = await tx
+      .update(evidence)
+      .set({ source_id: sql`${articles.source_id}` })
+      .from(articles)
+      .where(
+        and(
+          eq(evidence.article_id, articles.id),
+          ne(evidence.source_id, articles.source_id),
+          inArray(evidence.source_id, oldSources),
+        ),
+      )
+      .returning({ claimRevisionId: evidence.claim_revision_id, sourceId: evidence.source_id });
+    const storyRows =
+      moved.length === 0
+        ? []
+        : await tx
+            .selectDistinct({ storyId: storyRevisions.story_id })
+            .from(claimRevisions)
+            .innerJoin(storyRevisions, eq(storyRevisions.id, claimRevisions.story_revision_id))
+            .where(
+              inArray(
+                claimRevisions.id,
+                moved.map((m) => m.claimRevisionId),
+              ),
+            );
+    return {
+      synced: registry.length,
+      repointedArticles,
+      repointedEvidence: moved.length,
+      repointedEvidenceStories: storyRows.map((r) => r.storyId).sort(),
+      repointedEvidenceSources: [...new Set(moved.map((m) => m.sourceId))].sort(),
+      tierChanges,
+    };
   });
 }
 
@@ -123,10 +177,26 @@ export async function loadStoryRevisionsForSources(
     .selectDistinct({ storyId: articles.story_id })
     .from(articles)
     .where(inArray(articles.source_id, [...sourceIds]));
+  return loadStoryRevisions(db, affected);
+}
+
+/** 사건들의 모든 개정판 식별자(#115, 근거를 옮긴 사건). 사건 식별자 순, 개정판은 번호 순. */
+export async function loadStoryRevisionsForStories(
+  db: RuntimeDb["db"],
+  storyIds: readonly string[],
+): Promise<{ storyId: string; revisionIds: string[] }[]> {
+  if (storyIds.length === 0) return [];
+  return loadStoryRevisions(db, [...storyIds]);
+}
+
+async function loadStoryRevisions(
+  db: RuntimeDb["db"],
+  storyIds: string[] | SQLWrapper,
+): Promise<{ storyId: string; revisionIds: string[] }[]> {
   const rows = await db
     .select({ storyId: storyRevisions.story_id, revisionId: storyRevisions.id })
     .from(storyRevisions)
-    .where(inArray(storyRevisions.story_id, affected))
+    .where(inArray(storyRevisions.story_id, storyIds))
     .orderBy(storyRevisions.story_id, storyRevisions.revision_number);
   const byStory = new Map<string, string[]>();
   for (const row of rows)

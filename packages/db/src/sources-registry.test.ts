@@ -3,9 +3,12 @@ import { fileURLToPath } from "node:url";
 import type { Source } from "@newsplatform/domain";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { articles, sources } from "./schema/index.ts";
+import { publishRevision } from "./publish.ts";
+import { loadPublishedStory } from "./queries/story.ts";
+import { articles, evidence, sources } from "./schema/index.ts";
 import { loadSourceRegistry, syncSourceRegistry } from "./sources-registry.ts";
 import { createMigrationDb, readTestDbUrl } from "./test-db.ts";
+import { fixture } from "./test-fixtures.ts";
 
 const url = readTestDbUrl();
 const maybe = url === undefined ? describe.skip : describe;
@@ -45,6 +48,9 @@ maybe("출처 표 동기화", () => {
       expect(await syncSourceRegistry(db, [yonhap, reuters])).toEqual({
         synced: 2,
         repointedArticles: 0,
+        repointedEvidence: 0,
+        repointedEvidenceStories: [],
+        repointedEvidenceSources: [],
         tierChanges: [],
       });
       const first = await db.select().from(sources).orderBy(sources.id);
@@ -123,6 +129,9 @@ maybe("출처 표 동기화", () => {
       expect(await syncSourceRegistry(db, [koreaTimes, reuters])).toEqual({
         synced: 2,
         repointedArticles: 2,
+        repointedEvidence: 0,
+        repointedEvidenceStories: [],
+        repointedEvidenceSources: [],
         tierChanges: [],
       });
       const bySource = Object.fromEntries(
@@ -143,7 +152,83 @@ maybe("출처 표 동기화", () => {
       expect(await syncSourceRegistry(db, [koreaTimes, reuters])).toEqual({
         synced: 2,
         repointedArticles: 0,
+        repointedEvidence: 0,
+        repointedEvidenceStories: [],
+        repointedEvidenceSources: [],
         tierChanges: [],
+      });
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("sync moves evidence of remapped articles to the article source, including already-remapped articles", async () => {
+    const { db, sql, cleanup } = await createMigrationDb(url as string);
+    try {
+      await publishRevision(db, fixture);
+      // 결함 상태 재현: a-harbor는 옛 GNews 출처(재지정 전), a-meridian은 이미 등록 출처로 옮겨졌는데 근거만 옛 출처.
+      await sql`insert into sources (id, name, rights_tier, region, ownership, language, is_fictional, external_id, domains) values
+        ('gnews:h1', 'Harbor', '본문 처리 + 발췌 표시', 'us', 'unknown', 'en', false, 'h1', '{}'),
+        ('gnews:m1', 'Meridian', '본문 처리 + 발췌 표시', 'us', 'unknown', 'en', false, 'm1', '{}'),
+        ('meridian.example', 'Meridian', '본문 처리 + 발췌 표시', 'us', 'private', 'en', false, null, '{meridian.example}')`;
+      await sql`update articles set source_id = 'gnews:h1', url = 'https://www.harbor.example/ports' where id = 'a-harbor'`;
+      await sql`update evidence set source_id = 'gnews:h1' where article_id = 'a-harbor'`;
+      await sql`update articles set source_id = 'meridian.example' where id = 'a-meridian'`;
+      await sql`update evidence set source_id = 'gnews:m1' where article_id = 'a-meridian'`;
+      const snapshot = async () =>
+        (await db.select().from(evidence).orderBy(evidence.id)).map(
+          ({ source_id, ...rest }) => rest,
+        );
+      const before = await snapshot();
+      const evidenceSourcesMissing = async () => {
+        const page = await loadPublishedStory(db, { slug: fixture.story.slug });
+        const ids = new Set(page?.sources.map((s) => s.id));
+        return (page?.claims ?? []).flatMap((c) => c.evidence).filter((e) => !ids.has(e.sourceId));
+      };
+      expect(await evidenceSourcesMissing()).not.toEqual([]);
+
+      const harbor: Source = {
+        ...yonhap,
+        id: "harbor.example",
+        domains: ["harbor.example"],
+        isExcluded: false,
+      };
+      const meridian: Source = {
+        ...yonhap,
+        id: "meridian.example",
+        domains: ["meridian.example"],
+        isExcluded: false,
+      };
+      const evidenceCount = before.length;
+      const result = await syncSourceRegistry(db, [harbor, meridian]);
+      expect(result).toMatchObject({
+        repointedArticles: 1,
+        repointedEvidence: evidenceCount,
+        repointedEvidenceStories: [fixture.story.id],
+        repointedEvidenceSources: ["harbor.example", "meridian.example"],
+      });
+      expect(evidenceCount).toBeGreaterThan(1);
+
+      // 출처 식별자만 옮기고 나머지(구간·해시·URL)는 그대로다. 기사와 근거가 같은 출처를 가리킨다.
+      expect(await snapshot()).toEqual(before);
+      const mismatched =
+        await sql`select e.id from evidence e join articles a on a.id = e.article_id
+        where e.source_id is distinct from a.source_id`;
+      expect(mismatched).toEqual([]);
+      const bySource = Object.fromEntries(
+        (await db.select({ a: evidence.article_id, s: evidence.source_id }).from(evidence)).map(
+          (r) => [r.a, r.s],
+        ),
+      );
+      expect(bySource).toEqual({ "a-harbor": "harbor.example", "a-meridian": "meridian.example" });
+
+      // 사건 페이지의 모든 근거 출처가 출처 구획에 있다(사건 뷰가 그릴 수 있다).
+      expect(await evidenceSourcesMissing()).toEqual([]);
+
+      expect(await syncSourceRegistry(db, [harbor, meridian])).toMatchObject({
+        repointedArticles: 0,
+        repointedEvidence: 0,
+        repointedEvidenceStories: [],
       });
     } finally {
       await cleanup();
