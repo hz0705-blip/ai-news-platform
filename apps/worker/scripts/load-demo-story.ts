@@ -5,7 +5,7 @@ import {
   loadPublishedStory,
   saveDemoStoryRecords,
 } from "@newsplatform/db";
-import { createArticleVersion } from "@newsplatform/domain";
+import { canProcessBody, createArticleVersion } from "@newsplatform/domain";
 import {
   createDemoStepModelClient,
   demoStepBatchInput,
@@ -68,7 +68,10 @@ export async function loadDemoStory(params: {
         // 본문을 처리할 수 있는 출처의 기사만 기사 버전을 저장한다. 링크만 기사는 메타데이터만 남긴다(Ruling 15).
         const rightsOf = new Map(sources.map((s) => [s.id, s.rightsTier]));
         const articleVersions = step.articles
-          .filter((a) => rightsOf.get(a.meta.sourceId) === "본문 처리 + 발췌 표시")
+          .filter((a) => {
+            const tier = rightsOf.get(a.meta.sourceId);
+            return tier !== undefined && canProcessBody(tier);
+          })
           .map((a) =>
             createArticleVersion({
               id: a.meta.articleVersionId,
