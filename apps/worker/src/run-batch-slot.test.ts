@@ -8,11 +8,13 @@ import {
 import {
   articles,
   articleVersions,
+  claimEmbeddings,
   createMigrationDb,
   EMBEDDING_DIMENSIONS,
   readTestDbUrl,
   sources,
   stories,
+  storyEmbeddings,
   toSourceRow,
   toStoryRow,
 } from "@newsplatform/db/testing";
@@ -228,6 +230,93 @@ maybe("슬롯 배치(수집 건너뜀, 기록된 응답)", () => {
       const done = await runBatchSlot({ slotKey: SLOT_05 }, deps(db, []));
       expect(done.kind).toBe("completed");
       expect(await findMissedSlotKeys(db, { now })).toEqual([SLOT_17]);
+    } finally {
+      await cleanup();
+    }
+  });
+});
+
+maybe("검색 임베딩 단계(#124)", () => {
+  /** 문장마다 1536차원 벡터를 돌려주고 받은 문장 수를 센다. */
+  function countingEmbeddingClient() {
+    const texts: string[] = [];
+    return {
+      texts,
+      embed: async (input: readonly string[]) => {
+        texts.push(...input);
+        return {
+          vectors: input.map((_, i) => axis(i % EMBEDDING_DIMENSIONS)),
+          usage: { tokens: input.length, spend: 0 },
+        };
+      },
+    };
+  }
+
+  it("stores story title and claim embeddings after publish", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      await seedLiveStory(db);
+      const client = countingEmbeddingClient();
+      const result = await runBatchSlot(
+        { slotKey: SLOT_17 },
+        { ...deps(db, []), embeddingClient: client },
+      );
+      expect(result).toMatchObject({
+        kind: "completed",
+        report: {
+          published: 1,
+          searchEmbedding: { targets: 1 + live.golden.claims.length, reused: 0 },
+        },
+      });
+      const page = await loadPublishedStory(db, { slug: live.story.slug });
+      const storyRows = await db.select().from(storyEmbeddings);
+      expect(storyRows.map((r) => [r.story_id, r.text])).toEqual([
+        [live.story.id, page?.revision.title],
+      ]);
+      const claimRows = await db.select().from(claimEmbeddings);
+      expect(claimRows.map((r) => r.text).sort()).toEqual(
+        (page?.claims ?? []).map((c) => c.text).sort(),
+      );
+      expect(claimRows[0]?.embedding).toHaveLength(EMBEDDING_DIMENSIONS);
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("publishes even when embedding fails and leaves embeddings empty", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      await seedLiveStory(db);
+      const result = await runBatchSlot(
+        { slotKey: SLOT_17 },
+        {
+          ...deps(db, []),
+          embeddingClient: {
+            embed: async () => {
+              throw new Error("embedding down");
+            },
+          },
+        },
+      );
+      expect(result).toMatchObject({
+        kind: "completed",
+        report: { published: 1, searchEmbedding: { embedded: 0, failure: "embedding down" } },
+      });
+      expect(await db.select().from(storyEmbeddings)).toEqual([]);
+      expect(await db.select().from(claimEmbeddings)).toEqual([]);
+
+      // 다음 배치가 빈 임베딩을 채운다(발행할 것이 없어도).
+      const client = countingEmbeddingClient();
+      const next = await runBatchSlot(
+        { slotKey: "2026-09-28T05:00+09:00" },
+        { ...deps(db, []), embeddingClient: client },
+      );
+      expect(next).toMatchObject({
+        kind: "completed",
+        report: { searchEmbedding: { embedded: 1 + live.golden.claims.length } },
+      });
+      expect(await db.select().from(storyEmbeddings)).toHaveLength(1);
+      expect(await db.select().from(claimEmbeddings)).toHaveLength(live.golden.claims.length);
     } finally {
       await cleanup();
     }

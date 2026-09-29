@@ -99,6 +99,13 @@
       "when": 1790671519117,
       "tag": "0013_public_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790687877984,
+      "tag": "0014_search_embeddings",
+      "breakpoints": true
     }
   ]
 }
