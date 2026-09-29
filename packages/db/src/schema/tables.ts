@@ -198,6 +198,41 @@ export const claimRevisions = pgTable(
 ).enableRLS();
 
 /**
+ * 검색 임베딩(#124, 스펙 "화면과 경험" 검색·"데이터 보존"): 사건 제목과 주장 문장의 임베딩(`text-embedding-3-small`).
+ * `text`는 임베딩한 입력 그대로다 — 사건은 최신 발행 개정판의 제목, 주장은 최신 발행 개정판의 주장 문장. 행이 없거나 `text`가
+ * 지금 문장과 다르면 빈 것으로 보고 다음 배치·백필(`search:backfill-embeddings`)이 채운다. 같은 문장이면 다시 임베딩하지 않는다.
+ * 기사 임베딩(`articles.embedding`)과 달리 사건이 종료돼도 지우지 않는다(검색용 보존).
+ */
+export const storyEmbeddings = pgTable(
+  "story_embeddings",
+  {
+    story_id: text()
+      .primaryKey()
+      .references(() => stories.id),
+    text: text().notNull(),
+    embedding: vector({ dimensions: EMBEDDING_DIMENSIONS }).notNull(),
+  },
+  (t) => [
+    index("story_embeddings_embedding_hnsw_idx").using("hnsw", t.embedding.op("vector_cosine_ops")),
+  ],
+).enableRLS();
+
+/** 주장 문장의 검색 임베딩(`storyEmbeddings` 설명과 같다). 주장 식별자는 개정판을 넘어 유지되므로 주장당 한 행이다. */
+export const claimEmbeddings = pgTable(
+  "claim_embeddings",
+  {
+    claim_id: text()
+      .primaryKey()
+      .references(() => claims.id),
+    text: text().notNull(),
+    embedding: vector({ dimensions: EMBEDDING_DIMENSIONS }).notNull(),
+  },
+  (t) => [
+    index("claim_embeddings_embedding_hnsw_idx").using("hnsw", t.embedding.op("vector_cosine_ops")),
+  ],
+).enableRLS();
+
+/**
  * 근거(CONTEXT.md "근거"). 기사 본문이 지워진 뒤에도 화면을 그릴 값을 전부 영구 보존한다:
  * 강조 구간(`span_*`, 원문·해시), 허용 발췌 창 원문과 그 본문 기준 구간(`excerpt*`),
  * 발췌 안 강조 지역 구간(`highlight_*`), 원문 URL(#21 Ruling 11). 오프셋은 코드 포인트다.

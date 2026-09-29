@@ -25,6 +25,7 @@ import { DAILY_PIPELINE_BUDGET_TOKENS, DAILY_PIPELINE_BUDGET_USD } from "./budge
 import { type CollectResult, collectFromGnews } from "./collect.ts";
 import { type GdeltStageReport, runGdeltStage } from "./gdelt.ts";
 import { type RecheckStageReport, runRecheckStage } from "./recheck.ts";
+import { fillSearchEmbeddings, type SearchEmbeddingReport } from "./search-embedding.ts";
 
 /** 활성 잡 만료 = DB 리스 90분(스펙 "배포와 운영" 스케줄러). */
 export const BATCH_LEASE_MS = 90 * 60 * 1000;
@@ -77,6 +78,14 @@ export interface BatchSlotReport {
   readonly publishFailures: readonly { readonly storyId: string; readonly reason: string }[];
   /** GDELT 단계(#77). 단계 자체가 던지면 `error`만 남기고 배치는 완료한다. */
   readonly gdelt: { readonly skipped: true } | { readonly error: string } | GdeltStageReport;
+  /**
+   * 검색 임베딩(#124). 일일 상한에 이미 닿았으면 건너뛰고, 실패(`failure`·`error`)해도 발행을 되돌리지 않는다 —
+   * 빈 임베딩은 다음 배치·백필이 채운다.
+   */
+  readonly searchEmbedding:
+    | { readonly skipped: "budget-reached" }
+    | { readonly error: string }
+    | SearchEmbeddingReport;
   readonly spend: {
     readonly budgetUsd: number;
     readonly previousTodayUsd: number;
@@ -117,7 +126,7 @@ class UnknownSlotError extends Error {
 
 /**
  * 슬롯 하나의 배치(#55): 원장·리스 → 수집(#52) → 원문 재수집(#86) → 배정(#53) → 입력이 바뀐 사건만 `runBatch`(#54) → 발행 →
- * GDELT 링크(#77) → 캐시 무효화 → 리포트. 예산은 같은 KST 날짜의 앞선 지출(임베딩 포함)을 뺀 잔액이다.
+ * GDELT 링크(#77) → 검색 임베딩(#124) → 캐시 무효화 → 리포트. 예산은 같은 KST 날짜의 앞선 지출(임베딩 포함)을 뺀 잔액이다.
  * 같은 슬롯이 이미 완료됐거나 다른 배치의 리스가 살아 있으면 아무것도 하지 않는다.
  * 단계가 던지면 원장에 실패로 적고 다시 던진다(pg-boss가 재시도한다). OpenAI 호출 중에는 DB 트랜잭션이 없다.
  */
@@ -318,6 +327,33 @@ export async function runBatchSlot(
       }
     }
 
+    // 5-2. 검색 임베딩(#124): 발행·GDELT 뒤 임베딩이 빈 사건 제목·주장 문장을 채운다(앞선 배치에서 빈 것 포함).
+    // 비용은 임베딩 지출로 원장에 더하고, 오늘 지출이 이미 상한이면 건너뛴다.
+    let searchEmbedding: BatchSlotReport["searchEmbedding"];
+    if ((await loadSpendBetween(deps.db, kstDayRange(startedAt))) >= budget.spend) {
+      searchEmbedding = { skipped: "budget-reached" };
+      stageLog("search-embedding", { result: "skipped", ...searchEmbedding });
+    } else {
+      try {
+        const filled = await fillSearchEmbeddings({
+          db: deps.db,
+          embeddingClient: deps.embeddingClient,
+        });
+        embeddingUsd += filled.usage.spend;
+        await addBatchRunSpend(deps.db, { slotKey: input.slotKey, spendUsd: filled.usage.spend });
+        searchEmbedding = filled;
+        stageLog("search-embedding", {
+          result: filled.failure === undefined ? "ok" : "failed",
+          ...filled,
+        });
+      } catch (searchError) {
+        searchEmbedding = {
+          error: searchError instanceof Error ? searchError.message : String(searchError),
+        };
+        stageLog("search-embedding", { result: "failed", ...searchEmbedding });
+      }
+    }
+
     const finishedAt = deps.clock();
     const totalUsd = embeddingUsd + modelUsd;
     const report: BatchSlotReport = {
@@ -340,6 +376,7 @@ export async function runBatchSlot(
       failed: result.report.failed + applied.publishFailures.length,
       publishFailures: applied.publishFailures,
       gdelt,
+      searchEmbedding,
       spend: {
         budgetUsd: budget.spend,
         previousTodayUsd,
