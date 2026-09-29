@@ -6,7 +6,7 @@ revised: 2026-09-27
 
 # 구현 티켓은 Claude 컨트롤러가 티켓 생성부터 자동 머지까지 사람 개입 없이 돌리고, 리뷰는 PR당 1회, Codex는 리서치만 맡는다
 
-목표는 제품 완성이다. 구현 → 테스트 → 리뷰 → 머지를 사람이 경계마다 큐를 넘기지 않고 한 사이클로 돌리기 위해, Claude Code 컨트롤러가 스펙 마일스톤에서 티켓을 만들고, `ready-for-agent` 큐를 번호순으로 순회하며, 티켓마다 구현 서브에이전트 하나와 리뷰 서브에이전트 하나로 PR을 만들어 CI 초록이면 머지한다. Codex는 `research` 이슈만 맡고 저장소를 바꾸지 않는다. superpowers는 SessionStart 훅의 `using-superpowers` 주입으로만 남고, 그 본문이 CLAUDE.md 우선을 명시하므로 스킬 원문과 다른 규칙은 `CLAUDE.md`에 두고 값은 `docs/agents/project.md`에 둔다.
+목표는 제품 완성이다. 구현 → 테스트 → 리뷰 → 머지를 사람이 경계마다 큐를 넘기지 않고 한 사이클로 돌리기 위해, Claude Code 컨트롤러가 스펙 마일스톤에서 티켓을 만들고, `ready-for-agent` 큐를 번호순으로 순회하며, 티켓마다 구현 서브에이전트 하나와 리뷰 서브에이전트 하나로 PR을 만들어 CI 초록이면 머지한다. Codex는 `research` 이슈만 맡고 저장소를 바꾸지 않는다. superpowers 플러그인은 끈다. SessionStart 훅의 `using-superpowers` 주입이 이 사이클에서 쓰지 않는 스킬(brainstorming·writing-plans 등)을 유도하기 때문이다. 규칙은 `CLAUDE.md`에, 값은 `docs/agents/project.md`에 둔다.
 
 12개 PR(#14~#25)과 그 사이 절차 개정 3회(#45, #46, 이번)의 실측으로 사이클을 다음과 같이 고정한다(2026-09-27 2차 개정. 이 ADR은 이전의 0011 서브에이전트 모델 티어, 0012 리뷰 게이트 차등, 0013 UI 티켓 통합을 흡수했다. 원문은 git 이력).
 

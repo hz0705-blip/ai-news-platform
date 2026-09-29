@@ -77,7 +77,7 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 규칙은 `CLAUDE.md` "구현 사이클". 여기는 경로와 형식.
 
 - **스크립트**: 착수 `scripts/cycle-start <이슈> [--check-only]`, 마무리 `scripts/cycle-finish <PR> [--wait-only]`(CI 대기 → 스쿼시 머지 → 로컬 정리 → main 갱신 → 다음 티켓 출력), 인계 상태 `scripts/handoff-state`. 머리말이 사용법.
-- **superpowers**: 프로젝트 스코프 플러그인(`.claude/settings.json` `enabledPlugins`), 마켓플레이스 자동 갱신 끔. 쓰는 것은 SessionStart 주입뿐이다.
+- **superpowers**: 끔(`.claude/settings.json` `enabledPlugins`의 값 `false`). 다시 켜질 때를 대비해 `permissions.deny`의 superpowers 스킬 거부 규칙은 남긴다.
 - **브리프**(구현자·리뷰어 프롬프트 첫 블록): 이슈 번호와 본문 전문, 스펙 절 경로, 파일 후보, 테스트 이름, 위 커밋 트레일러 한 줄. 테스트 명령은 저장소 루트에서 `pnpm test`, `pnpm lint`, `pnpm typecheck`(`pnpm test:db`는 로컬 컨테이너, 위 "명령어" 참고). 규격은 이 파일 "스택"·"컨벤션"·"테스트"·"도메인 규칙", 용어는 `CONTEXT.md`. `ui` 티켓이면 스킬 원문 경로와 "스펙이 스킬보다 우선" 한 줄. 보고는 판정 한 줄 + 근거마다 1~2줄과 `파일:행`, diff·로그 원문 없음.
 - **PR 생성**은 구현자가 한다: `gh pr create --base main --body-file <파일>`, 본문 형식은 "컨벤션".
 - **Explore·조사 보조** 서브에이전트는 haiku.
