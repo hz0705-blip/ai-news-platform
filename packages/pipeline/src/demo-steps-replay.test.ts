@@ -1,6 +1,12 @@
 import type { Revision, RevisionChange } from "@newsplatform/domain";
 import { describe, expect, it } from "vitest";
 import { runBatch } from "./batch-run.ts";
+import { createRecordedModelClient } from "./recorded.ts";
+
+type RecordedOverride = NonNullable<
+  NonNullable<Parameters<typeof createRecordedModelClient>[1]>["override"]
+>;
+
 import {
   createDemoStepModelClient,
   demoStepBatchInput,
@@ -112,6 +118,64 @@ describe("데모 사건 ③④ 시나리오", () => {
     // c-5@rev-2: 정정 후보 버전에서 새로 생긴 주장은 명시 정정을 받지 않는다.
     expect(status("demo-3-correction:c-5@rev-2")).toBeDefined();
     expect(status("demo-3-correction:c-5@rev-2")).not.toBe("정정됨");
+  });
+
+  /** 데모 ③ 2단계 입력을 rev-2 정답 위에서 첫 재처리 표시 없이 다시 처리한다(이후 배치). */
+  async function reprocessAfterCorrection(override?: RecordedOverride) {
+    const demo = loadDemoStorySteps("demo-3-correction");
+    const step = demo.steps[1];
+    if (step === undefined) throw new Error("단계 없음");
+    const input = demoStepBatchInput(demo, 1, {
+      latestRevision: loadDemoStepGolden("demo-3-correction", 2).revision,
+    });
+    return runBatch(
+      {
+        ...input,
+        articles: input.articles.map(({ correctionFirstReprocess: _, ...article }) => article),
+      },
+      {
+        modelClient: createRecordedModelClient(step.recordedSlug, {
+          modelId: step.modelId,
+          ...(override === undefined ? {} : { override }),
+        }),
+        embeddingClient: { embed: async () => ({ vectors: [], usage: { tokens: 0, spend: 0 } }) },
+        clock: () => step.at,
+      },
+    );
+  }
+
+  it("정정됨 주장은 첫 재처리 표시 없이 다시 처리돼도 정정됨으로 남고 상태 변화가 없다", async () => {
+    const result = await reprocessAfterCorrection();
+    // 같은 내용이라 새 개정판 없이 확인만 한다 — c-1은 rev-2 정답의 정정됨 그대로다.
+    expect(result.revisions).toEqual([]);
+    expect(result.confirmed.map((c) => c.revisionId)).toEqual(["demo-3-correction:rev-2"]);
+  });
+
+  it("정정됨 주장에 새 상충이 생기면 보도 상충으로 재개된다", async () => {
+    const result = await reprocessAfterCorrection({
+      "contradiction-label": {
+        "story-demo-3-correction:c-1": {
+          pairs: [
+            {
+              a: "q-395b22-1",
+              b: "q-af6e5b-1",
+              label: "양립 불가",
+              differsIn: { "q-395b22-1": "가결", "q-af6e5b-1": "연기" },
+            },
+          ],
+        },
+      },
+    });
+    const revision = result.revisions[0];
+    expect(
+      revision?.claims.find((c) => c.id === "demo-3-correction:c-1")?.contradictionStatus,
+    ).toBe("보도 상충");
+    expect(result.changes[0]?.changes).toContainEqual({
+      kind: "상충 상태 변화",
+      claimId: "demo-3-correction:c-1",
+      previousStatus: "정정됨",
+      currentStatus: "보도 상충",
+    });
   });
 
   it("정정 후보 버전은 다음 배치 재처리에서 다시 명시 정정을 주지 않는다", async () => {
