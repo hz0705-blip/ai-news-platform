@@ -1,0 +1,135 @@
+{
+  "id": "live-korea-pow-transfer:rev-1",
+  "storyId": "story-live-korea-pow-transfer",
+  "revisionNumber": 1,
+  "title": "젤렌스키 공개에 한국 정부 강력 반발",
+  "publishedAt": "2026-09-27T08:00:00.000Z",
+  "contradictionStatus": "단일 출처",
+  "promptVersions": {
+    "evidenceExtract": "evidence-extract@1",
+    "claimGenerate": "claim-generate@1",
+    "gate": "gate@1",
+    "contradictionLabel": "contradiction-label@1"
+  },
+  "modelId": "gpt-5-mini-2025-08-07",
+  "claims": [
+    {
+      "id": "live-korea-pow-transfer:c-1",
+      "text": "성기홍 홍보수석은 우크라이나 측이 양국 간 비공개 합의를 위반하고 일방적으로 공개한 것은 매우 심각한 문제라고 말했다.",
+      "claimType": "귀속 입장",
+      "modality": "단정",
+      "order": 0,
+      "contradictionStatus": "단일 출처",
+      "evidence": [
+        {
+          "id": "live-korea-pow-transfer:rev-1/live-korea-pow-transfer:c-1:q-6e93e9-1",
+          "claimId": "live-korea-pow-transfer:c-1",
+          "articleId": "article-korea-pow-1",
+          "articleVersionId": "av-korea-pow-1",
+          "sourceId": "gnews:eaeeaeaa1e329f65d3a921c9c867fd7b",
+          "span": {
+            "start": 0,
+            "end": 253
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "“It is in itself a very serious matter that the Ukrainian side violated the confidentiality agreement between the two countries and made the disclosure unilaterally,” Seong Ghi-hong, senior presidential secretary for public relations, said Sunday night.",
+          "spanHash": "da1202bf131d086aea66accaea6d884edd4a0ea86b4e1e1271e5ee5b111f1a2c",
+          "excerpt": "“It is in itself a very serious matter that the Ukrainian side violated the confidentiality agreement between the two countries and made the disclosure unilaterally,” Seong Ghi-hong, senior presidential secretary for public relations, said Sunday night.",
+          "excerptSpan": {
+            "start": 0,
+            "end": 253
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 253
+          },
+          "sourceUrl": "https://www.washingtonexaminer.com/news/world/4745534/south-korea-outraged-zelensky-revealing-north-korea-pow-transfer/",
+          "verifiedAt": "2026-09-27T08:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "live-korea-pow-transfer:c-2",
+      "text": "우크라이나 대사가 월요일 외교부로 소환됐고, 서울이 공식 사과와 경위 설명을 요구했다고 보도됐다.",
+      "claimType": "보도된 사실",
+      "modality": "단정",
+      "order": 1,
+      "contradictionStatus": "단일 출처",
+      "evidence": [
+        {
+          "id": "live-korea-pow-transfer:rev-1/live-korea-pow-transfer:c-2:q-6e93e9-4",
+          "claimId": "live-korea-pow-transfer:c-2",
+          "articleId": "article-korea-pow-1",
+          "articleVersionId": "av-korea-pow-1",
+          "sourceId": "gnews:eaeeaeaa1e329f65d3a921c9c867fd7b",
+          "span": {
+            "start": 675,
+            "end": 850
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The Ukrainian ambassador to South Korea was summoned to the Ministry of Foreign Affairs on Monday as Seoul demands an official apology and an explanation of how this happened.",
+          "spanHash": "ed276fce7cf805fcecf6f834cbe2fbc8e9cf8550528582a7f8bc2bf0234f4fad",
+          "excerpt": "The Ukrainian ambassador to South Korea was summoned to the Ministry of Foreign Affairs on Monday as Seoul demands an official apology and an explanation of how this happened.",
+          "excerptSpan": {
+            "start": 675,
+            "end": 850
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 175
+          },
+          "sourceUrl": "https://www.washingtonexaminer.com/news/world/4745534/south-korea-outraged-zelensky-revealing-north-korea-pow-transfer/",
+          "verifiedAt": "2026-09-27T08:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "live-korea-pow-transfer:c-4",
+      "text": "스티몬센터 한국프로그램 책임자 제임스 김은 젤렌스키의 공개가 이와 그의 정부를 심각한 곤경에 빠뜨려 대북 관계 정상화 노력을 타협하게 하거나 국내 반발을 초래할 것이라고 예상했다.",
+      "claimType": "귀속 입장",
+      "modality": "예상",
+      "order": 2,
+      "contradictionStatus": "단일 출처",
+      "evidence": [
+        {
+          "id": "live-korea-pow-transfer:rev-1/live-korea-pow-transfer:c-4:q-6e93e9-7",
+          "claimId": "live-korea-pow-transfer:c-4",
+          "articleId": "article-korea-pow-1",
+          "articleVersionId": "av-korea-pow-1",
+          "sourceId": "gnews:eaeeaeaa1e329f65d3a921c9c867fd7b",
+          "span": {
+            "start": 1437,
+            "end": 1733
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "James Kim, director of the Korea Program at the Stimson Center, told the Washington Examiner that Zelensky’s disclosure has put Lee and his government in a terrible situation that will likely force them to compromise their campaign to normalize relations with the North or face domestic backlash.",
+          "spanHash": "67aa230847bd1c74c26c47b63760b9300bd47122f2e913cbe4ece081eb359db2",
+          "excerpt": "James Kim, director of the Korea Program at the Stimson Center, told the Washington Examiner that Zelensky’s disclosure has put Lee and his government in a terrible situation that will likely force them to compromise their campaign to normalize relations with the North or face domestic backlash.",
+          "excerptSpan": {
+            "start": 1437,
+            "end": 1733
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 296
+          },
+          "sourceUrl": "https://www.washingtonexaminer.com/news/world/4745534/south-korea-outraged-zelensky-revealing-north-korea-pow-transfer/",
+          "verifiedAt": "2026-09-27T08:00:00.000Z"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "sourceId": "gnews:eaeeaeaa1e329f65d3a921c9c867fd7b",
+      "articleId": "article-korea-pow-1",
+      "articleTitle": "South Korea outraged by Zelensky revealing North Korean POW transfer",
+      "articleUrl": "https://www.washingtonexaminer.com/news/world/4745534/south-korea-outraged-zelensky-revealing-north-korea-pow-transfer/",
+      "publishedAt": "2026-09-28T19:41:58.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    }
+  ]
+}

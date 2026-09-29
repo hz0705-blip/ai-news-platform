@@ -1,0 +1,52 @@
+{
+  "story-live-korea-pow-transfer:gate:c-1": {
+    "judgments": [
+      {
+        "quoteId": "q-6e93e9-1",
+        "label": "뒷받침",
+        "reason": "인용문이 성기홍 홍보수석의 발언을 직접 전하며 우크라이나의 비공개 합의 위반과 일방적 공개를 '매우 심각한 문제'라고 표현함."
+      }
+    ]
+  },
+  "story-live-korea-pow-transfer:gate:c-2": {
+    "judgments": [
+      {
+        "quoteId": "q-6e93e9-4",
+        "label": "뒷받침",
+        "reason": "문장이 주장과 일치함: 우크라이나 대사가 월요일 외교부로 소환됐고 서울이 공식 사과와 경위 설명을 요구했다고 직접 명시함."
+      }
+    ]
+  },
+  "story-live-korea-pow-transfer:gate:c-3": {
+    "judgments": [
+      {
+        "quoteId": "q-6e93e9-2",
+        "label": "부분 뒷받침",
+        "reason": "문장 내용은 주장과 일치하나, 인용문에 발화자가 명시되어 있지 않아 ‘성기홍 홍보수석이 말했다’는 귀속 부분은 확인되지 않음."
+      }
+    ]
+  },
+  "story-live-korea-pow-transfer:gate:c-4": {
+    "judgments": [
+      {
+        "quoteId": "q-6e93e9-7",
+        "label": "뒷받침",
+        "reason": "인용문은 스티몬센터 한국프로그램 책임자 제임스 김이 젤렌스키의 공개로 이와 그의 정부가 심각한 곤경에 처해 북과의 관계 정상화 노력 타협 또는 국내 반발을 초래할 것이라고 '말했다'고 명확히 귀속·예상하고 있음."
+      }
+    ]
+  },
+  "story-live-korea-pow-transfer:gate:c-5": {
+    "judgments": [
+      {
+        "quoteId": "q-6e93e9-11",
+        "label": "부분 뒷받침",
+        "reason": "송환이 인권 침해로 볼 수 있고 북한이 탈북 의사자에 관용하지 않다는 가능성을 말하고 있으나, 발화자(제임스 김) 표기가 인용문에 없다."
+      },
+      {
+        "quoteId": "q-6e93e9-12",
+        "label": "부분 뒷받침",
+        "reason": "김이 송환할 경우 고문·종신수감·사형 등의 결과가 있을 수 있다고 설명하는 내용은 있으나, 그 근거로 북한이 탈북 의사자에게 관용하지 않는다는 문장은 포함되어 있지 않다."
+      }
+    ]
+  }
+}

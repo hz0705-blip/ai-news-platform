@@ -47,6 +47,16 @@ export { confirmRevision, type PublishRevisionInput, publishRevision } from "./p
 export { loadLatestRevision, loadRevisionChanges } from "./queries/revision.ts";
 export { loadPublishedStory, type StoryPageData } from "./queries/story.ts";
 export { loadPublishedToday, type TodayData, type TodayStoryCard } from "./queries/today.ts";
+export {
+  addGnewsRequests,
+  loadDormantSampledToday,
+  loadGnewsLedgerDay,
+  loadRecheckCandidates,
+  loadRecheckTargets,
+  type RecheckTargetRow,
+  type SaveRecheckInput,
+  saveRecheckResult,
+} from "./recheck.ts";
 export { createRuntimeDb, type RuntimeDb } from "./runtime.ts";
 export { type BatchRunRow, batchRuns } from "./schema/index.ts";
 export {

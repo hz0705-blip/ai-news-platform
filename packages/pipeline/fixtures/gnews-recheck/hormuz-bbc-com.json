@@ -1,0 +1,18 @@
+{
+  "request": {
+    "path": "/api/v4/search",
+    "params": {
+      "q": "\"Iran says it will wait for official US response after Trump rejects Strait of Hormuz proposal\"",
+      "in": "title",
+      "lang": "en",
+      "max": "10",
+      "from": "2026-09-26T02:16:52Z",
+      "to": "2026-09-28T02:16:52Z"
+    }
+  },
+  "status": 200,
+  "body": {
+    "totalArticles": 0,
+    "articles": []
+  }
+}

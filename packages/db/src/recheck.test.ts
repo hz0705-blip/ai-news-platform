@@ -1,0 +1,165 @@
+import { readFileSync } from "node:fs";
+import { createArticleVersion, planRechecks } from "@newsplatform/domain";
+import { eq } from "drizzle-orm";
+import { describe, expect, it } from "vitest";
+import { loadBatchStories } from "./batch.ts";
+import { publishRevision } from "./publish.ts";
+import {
+  addGnewsRequests,
+  loadDormantSampledToday,
+  loadGnewsLedgerDay,
+  loadRecheckCandidates,
+  loadRecheckTargets,
+  saveRecheckResult,
+} from "./recheck.ts";
+import { articleRechecks, articleVersions, stories } from "./schema/index.ts";
+import { createMigrationDb, readTestDbUrl } from "./test-db.ts";
+import { fixture } from "./test-fixtures.ts";
+
+const url = readTestDbUrl();
+const maybe = url === undefined ? describe.skip : describe;
+if (url === undefined) process.stderr.write("DATABASE_TEST_URL 없음 — 실 DB 테스트 건너뜀\n");
+
+const HOUR = 60 * 60 * 1000;
+// 픽스처 기사 버전의 수집 시각 + 12시간.
+const now = new Date(fixture.revision.publishedAt.getTime() + 12 * HOUR);
+
+/** 픽스처(데모·종료 사건)를 발행하고 재수집 대상이 되도록 라이브·활성 사건으로 바꾼다. */
+async function seedLiveStory(db: Awaited<ReturnType<typeof createMigrationDb>>["db"]) {
+  await publishRevision(db, fixture);
+  await db
+    .update(stories)
+    .set({
+      is_demo: false,
+      lifecycle: "활성",
+      last_new_report_at: fixture.revision.publishedAt,
+      last_processed_at: fixture.revision.publishedAt,
+    })
+    .where(eq(stories.id, fixture.story.id));
+}
+
+maybe("원문 재수집 저장(#86, 실 DB)", () => {
+  it("원장·재수집 일정 저장", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      await seedLiveStory(db);
+
+      // 원장: UTC 날짜 행에 용도별로 더한다.
+      await addGnewsRequests(db, { utcDate: "2026-09-17", purpose: "discovery", count: 4 });
+      await addGnewsRequests(db, { utcDate: "2026-09-17", purpose: "recheck", count: 2 });
+      await addGnewsRequests(db, { utcDate: "2026-09-17", purpose: "recheck", count: 1 });
+      expect(await loadGnewsLedgerDay(db, "2026-09-17")).toEqual({
+        utcDate: "2026-09-17",
+        discovery: 4,
+        recheck: 3,
+      });
+      expect(await loadGnewsLedgerDay(db, "2026-09-18")).toEqual({
+        utcDate: "2026-09-18",
+        discovery: 0,
+        recheck: 0,
+      });
+
+      // 일정: 본문 있는 기사 둘이 후보이고(링크만 기사 Atlas는 버전이 없어 빠진다), 12시간째라 둘 다 대상이다.
+      const candidates = await loadRecheckCandidates(db, now);
+      expect(candidates.map((c) => c.articleId)).toEqual(["a-harbor", "a-meridian"]);
+      expect(planRechecks({ candidates, now })).toEqual([
+        { articleId: "a-harbor", slot: "12h" },
+        { articleId: "a-meridian", slot: "12h" },
+      ]);
+
+      // 미확인은 일정만 기록하고 사건을 올리지 않는다.
+      await saveRecheckResult(db, {
+        articleId: "a-harbor",
+        storyId: fixture.story.id,
+        slot: "12h",
+        checkedAt: now,
+        outcome: "미확인",
+      });
+      // 새 버전(정정 후보)은 버전·일정·사건 재처리 표시를 한 트랜잭션에 쓴다.
+      const [target] = await loadRecheckTargets(db, ["a-meridian"]);
+      expect(target?.latest.id).toBe("av-meridian");
+      const version = createArticleVersion({
+        id: "av-meridian-2",
+        articleId: "a-meridian",
+        rawBody: `${target?.latest.body}\nCorrection: an earlier version misnamed the port.`,
+        capturedAt: now,
+      });
+      const newVersion = {
+        version,
+        publishedAt: fixture.revision.publishedAt,
+        correctionCandidate: true,
+      };
+      const input = {
+        articleId: "a-meridian",
+        storyId: fixture.story.id,
+        slot: "12h" as const,
+        checkedAt: now,
+        outcome: "찾음" as const,
+        newVersion,
+      };
+      expect(await saveRecheckResult(db, input)).toBe(true);
+      // 같은 일정·같은 본문을 다시 저장해도 행이 늘지 않는다.
+      expect(await saveRecheckResult(db, input)).toBe(false);
+
+      const rechecks = await db.select().from(articleRechecks).orderBy(articleRechecks.article_id);
+      expect(rechecks.map((r) => [r.article_id, r.slot, r.outcome, r.article_version_id])).toEqual([
+        ["a-harbor", "12h", "미확인", null],
+        ["a-meridian", "12h", "찾음", "av-meridian-2"],
+      ]);
+      const [saved] = await db
+        .select()
+        .from(articleVersions)
+        .where(eq(articleVersions.id, "av-meridian-2"));
+      expect(saved?.correction_candidate).toBe(true);
+      expect(saved?.body_expires_at).toEqual(
+        new Date(fixture.revision.publishedAt.getTime() + 30 * 24 * HOUR),
+      );
+
+      // 한 일정은 다시 하지 않는다.
+      const after = await loadRecheckCandidates(db, now);
+      expect(planRechecks({ candidates: after, now })).toEqual([]);
+      expect(await loadDormantSampledToday(db, now.toISOString().slice(0, 10))).toEqual({});
+
+      // 재처리 대상: 배치가 사건을 다시 읽고, 새 버전은 정정 후보로, 옛 버전 본문은 좌표 정렬용으로 온다.
+      const { stories: batch } = await loadBatchStories(db);
+      expect(batch.map((s) => s.story.id)).toEqual([fixture.story.id]);
+      const meridian = batch[0]?.articles.find((a) => a.id === "a-meridian");
+      expect(meridian).toMatchObject({
+        articleVersionId: "av-meridian-2",
+        correctionCandidate: true,
+      });
+      expect(batch[0]?.previousVersionBodies?.map((v) => v.articleVersionId)).toEqual([
+        "av-meridian",
+      ]);
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("마이그레이션 뒤 기존 행 보존", async () => {
+    const { db, sql, cleanup } = await createMigrationDb(url as string);
+    try {
+      const migration = readFileSync(
+        new URL("../drizzle/0009_recheck_ledger.sql", import.meta.url),
+        "utf8",
+      );
+      // 표 둘과 열 하나를 더할 뿐 기존 행을 고치거나 지우지 않는다.
+      // (외래 키의 `ON DELETE/UPDATE no action` 절은 동작이 아니라 제약 선언이다.)
+      expect(migration.replace(/ON (DELETE|UPDATE) no action/g, "")).not.toMatch(
+        /\b(UPDATE|DELETE|DROP)\b/i,
+      );
+      await publishRevision(db, fixture);
+      // 마이그레이션 전 모양의 기사 버전 행(새 열 없음)은 정정 후보가 아니다.
+      await sql`insert into article_versions (id, article_id, body, normalization_version, body_hash, captured_at, body_expires_at)
+        values ('av-legacy', 'a-meridian', 'legacy body', 1, 'legacy-hash', now(), now())`;
+      const rows = await db.select().from(articleVersions).orderBy(articleVersions.id);
+      expect(rows.map((r) => [r.id, r.correction_candidate])).toEqual([
+        ["av-harbor", false],
+        ["av-legacy", false],
+        ["av-meridian", false],
+      ]);
+    } finally {
+      await cleanup();
+    }
+  });
+});

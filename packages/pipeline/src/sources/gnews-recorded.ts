@@ -53,3 +53,25 @@ function readRecorded(topicKey: GnewsTopicKey, page: number): RecordedGnewsRespo
   const recorded: RecordedGnewsResponse = JSON.parse(readFileSync(path, "utf8"));
   return recorded;
 }
+
+/** 기록된 재수집 조회 응답(`fixtures/gnews-recheck/<name>.json`, #86). 모양은 `RecordedGnewsResponse`와 같다. */
+export function recordedRecheckPath(name: string): string {
+  return fileURLToPath(new URL(`../../fixtures/gnews-recheck/${name}.json`, import.meta.url));
+}
+
+/** 기록된 재수집 조회 응답 하나를 읽는다. 없으면 던진다. */
+export function loadRecordedRecheck(name: string): RecordedGnewsResponse {
+  const path = recordedRecheckPath(name);
+  if (!existsSync(path)) throw new Error(`기록된 재수집 응답 없음: ${name}`);
+  const recorded: RecordedGnewsResponse = JSON.parse(readFileSync(path, "utf8"));
+  return recorded;
+}
+
+/** 어떤 요청에도 기록된 응답 하나를 돌려주는 `fetch`(재수집 조회 리플레이). 네트워크는 타지 않는다. */
+export function createRecordedRecheckFetch(recorded: RecordedGnewsResponse): typeof fetch {
+  return async () =>
+    new Response(JSON.stringify(recorded.body), {
+      status: recorded.status,
+      headers: { "content-type": "application/json" },
+    });
+}

@@ -189,6 +189,7 @@ export const ArticleInputSchema: z.ZodType<ArticleInput> = z.object({
   ...articleShape,
   articleVersionId: z.string(),
   rawBody: z.string(),
+  correctionCandidate: z.boolean().exactOptional(),
 });
 
 export const BudgetSchema: z.ZodType<Budget> = z.object({
@@ -201,6 +202,9 @@ export const StoryStateSchema: z.ZodType<StoryState> = z.object({
   latestRevision: RevisionSchema.exactOptional(),
   deferredSince: z.date().exactOptional(),
   linkOnlySources: z.array(RevisionSourceSchema).exactOptional(),
+  previousVersionBodies: z
+    .array(z.object({ articleVersionId: z.string(), body: z.string() }))
+    .exactOptional(),
 });
 
 export const BatchInputSchema: z.ZodType<BatchInput> = z.object({
@@ -231,4 +235,8 @@ export const BatchReportSchema: z.ZodType<BatchReport> = z.object({
   ),
   budgetReached: z.boolean(),
   deadlineReached: z.boolean(),
+  spanRealignment: z.object({
+    attempted: z.number().int().nonnegative(),
+    aligned: z.number().int().nonnegative(),
+  }),
 });

@@ -1,11 +1,14 @@
 import {
+  type Claim,
   computeChanges,
   createArticleVersion,
+  createSpanAligner,
   isSameRevisionContent,
   matchClaims,
   type Revision,
   type RevisionChange,
   type RevisionSource,
+  type SpanRealignResult,
 } from "@newsplatform/domain";
 import { MODEL_MAX_RETRIES, MODEL_RETRY_DELAY_MS, requestReservationUsd } from "./openai/client.ts";
 import { prioritizeStories } from "./priority.ts";
@@ -36,6 +39,7 @@ import {
   type ModelUsage,
   type RevisionChanges,
   StageFailure,
+  type StoryState,
 } from "./types.ts";
 
 /** 개정판이 기록하는 프롬프트 버전(`<단계>@<정수>`, `src/prompts/`). */
@@ -153,6 +157,7 @@ export async function runBatch(rawInput: BatchInput, deps: BatchDeps): Promise<B
   const storyDeps = { ...deps, modelClient: budgetedClient(deps.modelClient, usage, input, deps) };
   // 실패한 사건의 빠진 주장도 남긴다(이유 추적용).
   const droppedClaims: DroppedClaim[] = [];
+  const spanRealignment = { attempted: 0, aligned: 0 };
 
   const groups = prioritizeStories(
     [...groupByStory(input.articles)].map(([storyId, articles]) => {
@@ -192,6 +197,7 @@ export async function runBatch(rawInput: BatchInput, deps: BatchDeps): Promise<B
           input,
           storyDeps,
           droppedClaims,
+          spanRealignment,
         );
         return { kind: "done", outcome };
       } catch (error) {
@@ -246,6 +252,7 @@ export async function runBatch(rawInput: BatchInput, deps: BatchDeps): Promise<B
     usage: STAGES.map((stage) => ({ stage, ...(usage.get(stage) ?? { tokens: 0, spend: 0 }) })),
     budgetReached: stopped === "budget" || budgetReached(usage, input),
     deadlineReached,
+    spanRealignment,
   };
 
   return { revisions, confirmed, changes, report };
@@ -301,6 +308,7 @@ async function processStory(
   input: BatchInput,
   deps: BatchDeps,
   droppedClaims: DroppedClaim[],
+  spanRealignment: { attempted: number; aligned: number },
 ): Promise<StoryOutcome> {
   // 사건 배정은 #21에서 통과 단계다: 기사가 이미 가진 storyId가 아는 사건이어야 한다(M2a에서 채운다).
   const state = input.existingStories.find((s) => s.story.id === storyId);
@@ -417,9 +425,13 @@ async function processStory(
     supported.push({ claim, evidence });
   }
 
+  // 좌표 정렬(#86): 이전 개정판 근거 중 기사 버전이 바뀐 것을 새 버전 좌표로 옮긴다. 실패한 근거는 옛 버전에 남아
+  // 매칭 겹침이 0이다(새 식별자 + 계보는 #85 규칙대로).
+  const alignedPrevious = realignClaims(latest?.claims ?? [], versions, state, spanRealignment);
+
   // 주장 매칭(#85): 이전 개정판 주장과 근거 구간 겹침으로 식별자를 잇는다. 상충 판정이 이전 상태를 보므로 그 앞에서 한다.
   const matches = matchClaims(
-    latest?.claims ?? [],
+    alignedPrevious,
     supported.map(({ claim, evidence }) => ({ claimType: claim.claimType, evidence })),
   );
   const lineage = new Map<string, string>();
@@ -439,6 +451,10 @@ async function processStory(
         claimKey: claim.claimKey,
         claimText: claim.text,
         previous: latest?.claims.find((c) => c.id === claimId)?.contradictionStatus,
+        // 정정 후보 기사 버전(#86)을 근거로 쓰는 주장은 명시 정정 입력을 받는다(상태 규칙 ③).
+        ...(evidence.some((item) => item.origin.article.correctionCandidate === true)
+          ? { explicitCorrection: true }
+          : {}),
         evidence: evidence.map((item) => ({
           quoteId: item.quoteId,
           quote: item.spanText,
@@ -512,12 +528,57 @@ async function processStory(
       confirmed: { storyId: story.id, revisionId: latest.id, checkedAt: input.now },
     };
   }
+  // 정정 후보 버전은 원문 변경으로 세지 않는다(스펙 "정정 vs 원문 변경": 정정은 상충 상태 변화로 드러난다).
   const changes = computeChanges(latest, draft, {
     lineage,
-    articleVersions: versions.map(({ article, version }) => ({
-      articleId: article.id,
-      articleVersionId: version.id,
-    })),
+    alignedClaims: alignedPrevious,
+    articleVersions: versions
+      .filter(({ article }) => article.correctionCandidate !== true)
+      .map(({ article, version }) => ({ articleId: article.id, articleVersionId: version.id })),
   });
   return { kind: "revision", revision: draft, changes };
+}
+
+/**
+ * 이전 개정판 주장의 근거를 이번 입력의 기사 버전 좌표로 옮긴다(#86). 근거의 기사 버전이 입력 버전과 같거나 그 기사가
+ * 입력에 없으면 그대로 둔다. 다르면 이전 본문(`previousVersionBodies`)과 새 본문의 차이로 구간을 옮기고, 실패하면
+ * 그대로 둔다(옛 버전이라 겹침 0). 시도·성공 수를 `counter`에 더한다.
+ */
+function realignClaims(
+  claims: readonly Claim[],
+  versions: readonly {
+    readonly article: ArticleInput;
+    readonly version: { readonly id: string; readonly body: string };
+  }[],
+  state: StoryState,
+  counter: { attempted: number; aligned: number },
+): Claim[] {
+  const currentByArticle = new Map(versions.map((v) => [v.article.id, v.version]));
+  const bodies = new Map(
+    (state.previousVersionBodies ?? []).map((v) => [v.articleVersionId, v.body]),
+  );
+  const aligners = new Map<
+    string,
+    (span: Claim["evidence"][number]["span"]) => SpanRealignResult
+  >();
+  return claims.map((claim) => ({
+    ...claim,
+    evidence: claim.evidence.map((item) => {
+      const current = currentByArticle.get(item.articleId);
+      if (current === undefined || current.id === item.articleVersionId) return item;
+      counter.attempted++;
+      const previousBody = bodies.get(item.articleVersionId);
+      if (previousBody === undefined) return item;
+      const key = `${item.articleVersionId}\n${current.id}`;
+      let align = aligners.get(key);
+      if (align === undefined) {
+        align = createSpanAligner(previousBody, current.body);
+        aligners.set(key, align);
+      }
+      const result = align(item.span);
+      if (!result.ok) return item;
+      counter.aligned++;
+      return { ...item, articleVersionId: current.id, span: result.span };
+    }),
+  }));
 }

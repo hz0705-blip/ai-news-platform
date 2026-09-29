@@ -1,0 +1,35 @@
+{
+  "request": {
+    "path": "/api/v4/search",
+    "params": {
+      "q": "\"South Korea outraged by Zelensky revealing North Korean POW transfer\"",
+      "in": "title",
+      "lang": "en",
+      "max": "10",
+      "from": "2026-09-27T19:41:58Z",
+      "to": "2026-09-29T19:41:58Z"
+    }
+  },
+  "status": 200,
+  "body": {
+    "totalArticles": 1,
+    "articles": [
+      {
+        "id": "f36325f76fc4e13612a412b5cbccfa63",
+        "title": "South Korea outraged by Zelensky revealing North Korean POW transfer",
+        "description": "Seoul is furious that Ukrainian President Volodymyr Zelensky revealed two North Korean soldiers were transferred to South Korea.",
+        "content": "“It is in itself a very serious matter that the Ukrainian side violated the confidentiality agreement between the two countries and made the disclosure unilaterally,” Seong Ghi-hong, senior presidential secretary for public relations, said Sunday night. “But the Ukrainian presidential press office’s false statement that there had been no confidentiality agreement, seriously undermines trust between the two governments and gravely damages friendly relations between the two countries.”\nThe presidential secretary further stated that the South Korean government is “considering additional measures that may be necessary regarding this matter,” without further explanation.\nThe Ukrainian ambassador to South Korea was summoned to the Ministry of Foreign Affairs on Monday as Seoul demands an official apology and an explanation of how this happened.\n“From the perspective of those who advertised the repatriation to the whole world with enthusiastic fanfare to show off their achievements – regardless of the impact on inter-Korean relations, the loss of life, or the damage to national interests – they likely not only cannot understand our government’s efforts to keep it confidential but may even wonder if there is something wrong with it,” Lee wrote just hours after Zelensky’s address in New York. “I do not know the reasons behind Ukraine’s disclosure in violation of the non-disclosure agreement, but it is deeply regrettable.”\nJames Kim, director of the Korea Program at the Stimson Center, told the Washington Examiner that Zelensky’s disclosure has put Lee and his government in a terrible situation that will likely force them to compromise their campaign to normalize relations with the North or face domestic backlash.\n“The current administration in Seoul wants to re-engage with North Korea, and taking on prisoners of war from Ukraine would complicate that plan because North Korea would see that as an act that is in concert with their adversary,” Kim said.\nKim Jong Un’s regime has not publicly commented on the situation yet, but if it does, a demand for repatriation will be further complicated by the two detainees’ request for asylum in South Korea. Both have expressed a desire to integrate into the southern half of the peninsula and live normal lives.\n“[Repatriating the prisoners] can potentially be looked upon as a violation of human rights because they know that the North Korean government is not very tolerant of anyone that decides to defect or has expressed the desire to do so. And so returning them would effectively mean that they would either be tortured or they would be imprisoned for life or even put to death,” Kim explained.\nEstimated reading time: 5 minutes\n“Number two, I think that it shows the weakness of the administration — that it is not really bargaining or dealing with North Korea on equal grounds,” he continued. “And thirdly … you have a conservative opposition that will be using this kind of incident to politicize this kind of behavior and label the progressive administration as being pro-North Korean.”\nTAKAICHI AND VICTIM FAMILIES MAKE MULTIFRONT PLEA FOR US TO HELP JAPANESE CITIZENS ABDUCTED BY NORTH KOREA\nA similar political football contributed to a previous administration’s downfall and created a lasting backlash that ultimately led to court convictions for government officials.\nIn 2019, two fishermen were captured by South Korean forces on the country’s east coast. Then-President Moon Jae-in and his administration condemned the North Koreans as “dangerous criminals” and “human scum” after it was determined that they killed over a dozen crewmates in a mutiny against their captain before sailing over the maritime border. They were deported back to the North.\nNorth Korean escapees who return to their country are almost universally punished with imprisonment, torture, or death.\nHuman rights groups condemned the two fishermen’s deportations as a functional death sentence, while political opponents framed the handover as Seoul caving to Pyongyang.\nThe next administration, led by now-impeached President Yook Suk Yeol, reopened the case in 2022. The Seoul Central District Court found four former officials guilty of criminal acts for the deportation orders, though all of them received suspended sentences.",
+        "url": "https://www.washingtonexaminer.com/news/world/4745534/south-korea-outraged-zelensky-revealing-north-korea-pow-transfer/",
+        "image": "https://www.washingtonexaminer.com/wp-content/uploads/2026/09/AP26252105512458.jpg?resize=1200,683",
+        "publishedAt": "2026-09-28T19:41:58Z",
+        "lang": "en",
+        "source": {
+          "id": "eaeeaeaa1e329f65d3a921c9c867fd7b",
+          "name": "Washington Examiner",
+          "url": "https://www.washingtonexaminer.com",
+          "country": "us"
+        }
+      }
+    ]
+  }
+}
