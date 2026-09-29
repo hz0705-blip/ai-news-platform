@@ -1,6 +1,6 @@
 import { loadPublishedStory } from "@newsplatform/db";
 import { createMigrationDb, readTestDbUrl } from "@newsplatform/db/testing";
-import { DEMO_REFERENCE_TIME } from "@newsplatform/pipeline";
+import { DEMO_REFERENCE_TIME, loadDemoStepGolden } from "@newsplatform/pipeline";
 import { describe, expect, it } from "vitest";
 import { loadAllDemoStories, loadDemoStory } from "./load-demo-story.ts";
 
@@ -43,13 +43,15 @@ maybe("데모 사건 적재", () => {
     }
   });
 
-  it("인자 없는 적재는 골든셋 두 사건을 모두 넣고 데모 ②는 보도 상충으로 적재된다", async () => {
+  it("인자 없는 적재는 골든셋 네 사건을 모두 넣고 데모 ②는 보도 상충으로 적재된다", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {
       const results = await loadAllDemoStories({ url: url as string });
       expect(results.map((r) => [r.slug, r.inserted, r.revisionCount])).toEqual([
         ["demo-1-agreement", true, 1],
         ["demo-2-conflict", true, 1],
+        ["demo-3-correction", true, 2],
+        ["demo-4-figures", true, 2],
       ]);
       const page = await loadPublishedStory(db, { slug: "demo-2-conflict" });
       expect(page?.revision.contradictionStatus).toBe("보도 상충");
@@ -58,6 +60,28 @@ maybe("데모 사건 적재", () => {
         expect.stringContaining("중단"),
         expect.stringContaining("계속"),
       ]);
+    } finally {
+      await cleanup();
+    }
+  });
+  it("단계 픽스처는 단계를 순서대로 적용해 개정판 2개와 변화를 적재하고, 재실행은 개정판을 늘리지 않는다(#88)", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      const first = await loadDemoStory({ url: url as string, slug: "demo-3-correction" });
+      expect(first).toMatchObject({ inserted: true, revisionCount: 2, storyIsDemo: true });
+      const golden = loadDemoStepGolden("demo-3-correction", 2);
+      const page = await loadPublishedStory(db, { slug: "demo-3-correction" });
+      expect(page?.revision.revisionNumber).toBe(2);
+      expect(page?.revision.contradictionStatus).toBe("정정됨");
+      expect(page?.changes).toEqual(golden.changes);
+      const firstRevision = await loadPublishedStory(db, {
+        slug: "demo-3-correction",
+        revisionId: "demo-3-correction:rev-1",
+      });
+      expect(firstRevision?.revision.contradictionStatus).toBe("보도 상충");
+
+      const again = await loadDemoStory({ url: url as string, slug: "demo-3-correction" });
+      expect(again).toMatchObject({ inserted: false, confirmed: true, revisionCount: 2 });
     } finally {
       await cleanup();
     }

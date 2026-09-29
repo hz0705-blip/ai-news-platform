@@ -1,0 +1,24 @@
+{
+  "story-demo-3-correction:c-1": {
+    "pairs": [
+      {
+        "a": "q-b815da-1",
+        "b": "q-ce872e-1",
+        "label": "양립 불가",
+        "differsIn": {
+          "q-b815da-1": "의회가 수요일에 법안을 가결했다고 보도한다.",
+          "q-ce872e-1": "의회가 법안 표결을 연기했다고 보도한다."
+        }
+      }
+    ]
+  },
+  "story-demo-3-correction:c-4": {
+    "pairs": [
+      {
+        "a": "q-b815da-4",
+        "b": "q-ce872e-3",
+        "label": "뒷받침 일치"
+      }
+    ]
+  }
+}

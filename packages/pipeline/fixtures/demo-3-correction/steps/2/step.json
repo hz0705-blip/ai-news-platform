@@ -1,0 +1,27 @@
+{
+  "at": "2026-09-17T00:30:00.000Z",
+  "articles": [
+    {
+      "id": "article-meridian-kessel",
+      "sourceId": "source-meridian-wire",
+      "storyId": "story-demo-3-correction",
+      "url": "https://meridianwire.example/kessel-concession-vote",
+      "title": "Kaldera lawmakers approve Port Kessel terminal concession",
+      "publishedAt": "2026-09-16T03:10:00.000Z",
+      "topics": ["세계 경제·금융"],
+      "articleVersionId": "av-meridian-kessel-2",
+      "file": "articles/meridian-kessel-2.txt"
+    },
+    {
+      "id": "article-harbor-kessel",
+      "sourceId": "source-harbor-ledger",
+      "storyId": "story-demo-3-correction",
+      "url": "https://harborledger.example/kessel-concession",
+      "title": "Kaldera parliament takes up Port Kessel concession bill",
+      "publishedAt": "2026-09-16T04:25:00.000Z",
+      "topics": ["세계 경제·금융"],
+      "articleVersionId": "av-harbor-kessel-2",
+      "file": "articles/harbor-kessel-2.txt"
+    }
+  ]
+}

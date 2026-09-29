@@ -1,0 +1,293 @@
+{
+  "id": "demo-4-figures:rev-1",
+  "storyId": "story-demo-4-figures",
+  "revisionNumber": 1,
+  "title": "태풍 리스, 손홀트 항구 운영 중단과 크레인 피해",
+  "publishedAt": "2026-09-16T12:30:00.000Z",
+  "contradictionStatus": "단일 출처",
+  "promptVersions": {
+    "evidenceExtract": "evidence-extract@1",
+    "claimGenerate": "claim-generate@1",
+    "gate": "gate@1",
+    "contradictionLabel": "contradiction-label@1"
+  },
+  "modelId": "gpt-5-mini-2025-08-07",
+  "claims": [
+    {
+      "id": "demo-4-figures:c-1",
+      "text": "태풍 리스가 월요일 손홀트 인근에 상륙해 항구의 모든 컨테이너 운영이 중단됐다고 보도됐다.",
+      "claimType": "보도된 사실",
+      "modality": "단정",
+      "order": 0,
+      "contradictionStatus": "복수 출처 일치",
+      "evidence": [
+        {
+          "id": "demo-4-figures:rev-1/demo-4-figures:c-1:q-ad0d04-1",
+          "claimId": "demo-4-figures:c-1",
+          "articleId": "article-meridian-liss",
+          "articleVersionId": "av-meridian-liss-1",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 0,
+            "end": 104
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Typhoon Liss made landfall near Sonholt on Monday, forcing the port to suspend all container operations.",
+          "spanHash": "a53dd2f4448958de94a56e37d17c8a76738df9a92c55246931dba688cc6df537",
+          "excerpt": "Typhoon Liss made landfall near Sonholt on Monday, forcing the port to suspend all container operations.",
+          "excerptSpan": {
+            "start": 0,
+            "end": 104
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 104
+          },
+          "sourceUrl": "https://meridianwire.example/typhoon-liss-sonholt",
+          "verifiedAt": "2026-09-16T12:30:00.000Z"
+        },
+        {
+          "id": "demo-4-figures:rev-1/demo-4-figures:c-1:q-1a07e7-1",
+          "claimId": "demo-4-figures:c-1",
+          "articleId": "article-harbor-liss",
+          "articleVersionId": "av-harbor-liss-1",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 0,
+            "end": 104
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Typhoon Liss made landfall near Sonholt on Monday, forcing the port to suspend all container operations.",
+          "spanHash": "a53dd2f4448958de94a56e37d17c8a76738df9a92c55246931dba688cc6df537",
+          "excerpt": "Typhoon Liss made landfall near Sonholt on Monday, forcing the port to suspend all container operations.",
+          "excerptSpan": {
+            "start": 0,
+            "end": 104
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 104
+          },
+          "sourceUrl": "https://harborledger.example/sonholt-typhoon-cranes",
+          "verifiedAt": "2026-09-16T12:30:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "demo-4-figures:c-2",
+      "text": "손홀트 항만청은 월요일 저녁 항만 시설 피해액을 4,200만 달러로 추산했다고 밝혔다.",
+      "claimType": "귀속 입장",
+      "modality": "단정",
+      "order": 1,
+      "contradictionStatus": "복수 출처 일치",
+      "evidence": [
+        {
+          "id": "demo-4-figures:rev-1/demo-4-figures:c-2:q-ad0d04-2",
+          "claimId": "demo-4-figures:c-2",
+          "articleId": "article-meridian-liss",
+          "articleVersionId": "av-meridian-liss-1",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 106,
+            "end": 222
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The Sonholt Port Authority said on Monday evening that it estimated damage to port facilities at 42 million dollars.",
+          "spanHash": "d0158fe4eda517717880474458e4a846bc0bdc88cd1ba30ec518adc0e98ef30c",
+          "excerpt": "The Sonholt Port Authority said on Monday evening that it estimated damage to port facilities at 42 million dollars.",
+          "excerptSpan": {
+            "start": 106,
+            "end": 222
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 116
+          },
+          "sourceUrl": "https://meridianwire.example/typhoon-liss-sonholt",
+          "verifiedAt": "2026-09-16T12:30:00.000Z"
+        },
+        {
+          "id": "demo-4-figures:rev-1/demo-4-figures:c-2:q-1a07e7-2",
+          "claimId": "demo-4-figures:c-2",
+          "articleId": "article-harbor-liss",
+          "articleVersionId": "av-harbor-liss-1",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 106,
+            "end": 222
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The Sonholt Port Authority said on Monday evening that it estimated damage to port facilities at 42 million dollars.",
+          "spanHash": "d0158fe4eda517717880474458e4a846bc0bdc88cd1ba30ec518adc0e98ef30c",
+          "excerpt": "The Sonholt Port Authority said on Monday evening that it estimated damage to port facilities at 42 million dollars.",
+          "excerptSpan": {
+            "start": 106,
+            "end": 222
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 116
+          },
+          "sourceUrl": "https://harborledger.example/sonholt-typhoon-cranes",
+          "verifiedAt": "2026-09-16T12:30:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "demo-4-figures:c-3",
+      "text": "항만청은 폭풍으로 인해 세 대의 선박-육상 크레인이 레일에서 탈선했다고 말했다.",
+      "claimType": "귀속 입장",
+      "modality": "단정",
+      "order": 2,
+      "contradictionStatus": "복수 출처 일치",
+      "evidence": [
+        {
+          "id": "demo-4-figures:rev-1/demo-4-figures:c-3:q-ad0d04-3",
+          "claimId": "demo-4-figures:c-3",
+          "articleId": "article-meridian-liss",
+          "articleVersionId": "av-meridian-liss-1",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 223,
+            "end": 311
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The authority said three ship-to-shore cranes were knocked off their rails by the storm.",
+          "spanHash": "ae23ceefba0d6436ead9cf8214348013de54120e0f2ad188077ccd952ae7f23d",
+          "excerpt": "The authority said three ship-to-shore cranes were knocked off their rails by the storm.",
+          "excerptSpan": {
+            "start": 223,
+            "end": 311
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 88
+          },
+          "sourceUrl": "https://meridianwire.example/typhoon-liss-sonholt",
+          "verifiedAt": "2026-09-16T12:30:00.000Z"
+        },
+        {
+          "id": "demo-4-figures:rev-1/demo-4-figures:c-3:q-1a07e7-3",
+          "claimId": "demo-4-figures:c-3",
+          "articleId": "article-harbor-liss",
+          "articleVersionId": "av-harbor-liss-1",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 223,
+            "end": 311
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The authority said three ship-to-shore cranes were knocked off their rails by the storm.",
+          "spanHash": "ae23ceefba0d6436ead9cf8214348013de54120e0f2ad188077ccd952ae7f23d",
+          "excerpt": "The authority said three ship-to-shore cranes were knocked off their rails by the storm.",
+          "excerptSpan": {
+            "start": 223,
+            "end": 311
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 88
+          },
+          "sourceUrl": "https://harborledger.example/sonholt-typhoon-cranes",
+          "verifiedAt": "2026-09-16T12:30:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "demo-4-figures:c-4",
+      "text": "항만청은 항구 노동자 중 부상자는 없었다고 밝혔다.",
+      "claimType": "귀속 입장",
+      "modality": "단정",
+      "order": 3,
+      "contradictionStatus": "단일 출처",
+      "evidence": [
+        {
+          "id": "demo-4-figures:rev-1/demo-4-figures:c-4:q-ad0d04-4",
+          "claimId": "demo-4-figures:c-4",
+          "articleId": "article-meridian-liss",
+          "articleVersionId": "av-meridian-liss-1",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 313,
+            "end": 362
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "No port workers were injured, the authority said.",
+          "spanHash": "c1a1d51eeaf116870b362712a32973661d8f9d9f558aa4805521f3f10ac15835",
+          "excerpt": "No port workers were injured, the authority said.",
+          "excerptSpan": {
+            "start": 313,
+            "end": 362
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 49
+          },
+          "sourceUrl": "https://meridianwire.example/typhoon-liss-sonholt",
+          "verifiedAt": "2026-09-16T12:30:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "demo-4-figures:c-5",
+      "text": "터미널이 닫힌 동안 선사들은 배를 밴티지와 인근 다른 항구로 우회시키기 시작했다고 보도됐다.",
+      "claimType": "보도된 사실",
+      "modality": "단정",
+      "order": 4,
+      "contradictionStatus": "단일 출처",
+      "evidence": [
+        {
+          "id": "demo-4-figures:rev-1/demo-4-figures:c-5:q-1a07e7-4",
+          "claimId": "demo-4-figures:c-5",
+          "articleId": "article-harbor-liss",
+          "articleVersionId": "av-harbor-liss-1",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 313,
+            "end": 420
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Shipping lines have begun diverting vessels to Vantage and other nearby ports while the terminal is closed.",
+          "spanHash": "50a47bfcd1e85617ab015fe815f1520f975d34f2a20a5fd9d7789c978c696b32",
+          "excerpt": "Shipping lines have begun diverting vessels to Vantage and other nearby ports while the terminal is closed.",
+          "excerptSpan": {
+            "start": 313,
+            "end": 420
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 107
+          },
+          "sourceUrl": "https://harborledger.example/sonholt-typhoon-cranes",
+          "verifiedAt": "2026-09-16T12:30:00.000Z"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "sourceId": "source-meridian-wire",
+      "articleId": "article-meridian-liss",
+      "articleTitle": "Typhoon Liss shuts Sonholt port",
+      "articleUrl": "https://meridianwire.example/typhoon-liss-sonholt",
+      "publishedAt": "2026-09-16T02:40:00.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    },
+    {
+      "sourceId": "source-harbor-ledger",
+      "articleId": "article-harbor-liss",
+      "articleTitle": "Typhoon Liss halts Sonholt port as cranes topple",
+      "articleUrl": "https://harborledger.example/sonholt-typhoon-cranes",
+      "publishedAt": "2026-09-16T03:55:00.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    }
+  ]
+}

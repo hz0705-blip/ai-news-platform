@@ -129,8 +129,13 @@ describe("데모 사건 ① 픽스처 경로 검증", () => {
 });
 
 describe("골든셋", () => {
-  it("항목 두 개이며 slug 순서가 고정된다", () => {
-    expect(listGoldenSetSlugs()).toEqual(["demo-1-agreement", "demo-2-conflict"]);
+  it("항목 네 개이며 slug 순서가 고정된다", () => {
+    expect(listGoldenSetSlugs()).toEqual([
+      "demo-1-agreement",
+      "demo-2-conflict",
+      "demo-3-correction",
+      "demo-4-figures",
+    ]);
   });
   it("모든 항목이 CC-BY-4.0·운영자 저작이고 expected 파일이 존재한다", () => {
     const set = JSON.parse(

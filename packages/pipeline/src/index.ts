@@ -2,14 +2,20 @@ export { BATCH_CONCURRENCY, PROMPT_VERSIONS, runBatch } from "./batch-run.ts";
 export {
   type ClaimGenerateRecord,
   type ContradictionLabelRecord,
+  createDemoStepModelClient,
   DEMO_REFERENCE_TIME,
   type DemoArticleMeta,
   type DemoStoryFixture,
+  type DemoStoryStep,
+  type DemoStorySteps,
+  demoStepBatchInput,
   type EvidenceExtractRecord,
   LIVE_REFERENCE_TIME,
   listGoldenSetSlugs,
+  loadDemoStepGolden,
   loadDemoStoryFixture,
   loadDemoStoryInputs,
+  loadDemoStorySteps,
 } from "./fixtures.ts";
 export {
   createOpenAiModelClient,

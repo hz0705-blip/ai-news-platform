@@ -1,0 +1,20 @@
+{
+  "story-demo-3-correction:c-1": {
+    "pairs": [
+      {
+        "a": "q-395b22-1",
+        "b": "q-af6e5b-1",
+        "label": "뒷받침 일치"
+      }
+    ]
+  },
+  "story-demo-3-correction:c-4": {
+    "pairs": [
+      {
+        "a": "q-395b22-4",
+        "b": "q-af6e5b-3",
+        "label": "뒷받침 일치"
+      }
+    ]
+  }
+}

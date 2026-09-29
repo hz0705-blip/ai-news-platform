@@ -1,0 +1,267 @@
+{
+  "id": "demo-3-correction:rev-2",
+  "storyId": "story-demo-3-correction",
+  "revisionNumber": 2,
+  "title": "칼데라 의회, 항구 케셀 터미널 운영권 민간 이관 가결",
+  "publishedAt": "2026-09-17T00:30:00.000Z",
+  "contradictionStatus": "정정됨",
+  "promptVersions": {
+    "evidenceExtract": "evidence-extract@1",
+    "claimGenerate": "claim-generate@1",
+    "gate": "gate@1",
+    "contradictionLabel": "contradiction-label@1"
+  },
+  "modelId": "gpt-5-mini-2025-08-07",
+  "claims": [
+    {
+      "id": "demo-3-correction:c-1",
+      "text": "칼데라 의회는 수요일 항구 케셀 컨테이너 터미널 운영권을 민간에 25년 동안 부여하는 법안을 가결했다고 보도되었다.",
+      "claimType": "보도된 사실",
+      "modality": "단정",
+      "order": 0,
+      "contradictionStatus": "정정됨",
+      "evidence": [
+        {
+          "id": "demo-3-correction:rev-2/demo-3-correction:c-1:q-395b22-1",
+          "claimId": "demo-3-correction:c-1",
+          "articleId": "article-meridian-kessel",
+          "articleVersionId": "av-meridian-kessel-2",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 0,
+            "end": 146
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Kaldera's parliament on Wednesday approved a bill that hands operation of the Port Kessel container terminal to a private concession for 25 years.",
+          "spanHash": "629b7084eafc3c45c141bd48603c82972c269b1f7e70d8667cf4329d4fbc8ad7",
+          "excerpt": "Kaldera's parliament on Wednesday approved a bill that hands operation of the Port Kessel container terminal to a private concession for 25 years.",
+          "excerptSpan": {
+            "start": 0,
+            "end": 146
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 146
+          },
+          "sourceUrl": "https://meridianwire.example/kessel-concession-vote",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        },
+        {
+          "id": "demo-3-correction:rev-2/demo-3-correction:c-1:q-af6e5b-1",
+          "claimId": "demo-3-correction:c-1",
+          "articleId": "article-harbor-kessel",
+          "articleVersionId": "av-harbor-kessel-2",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 0,
+            "end": 218
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Kaldera's parliament on Wednesday approved a bill that hands operation of the Port Kessel container terminal to a private concession for 25 years, after rejecting opposition requests for more time to review amendments.",
+          "spanHash": "bc98d31306293bc43a7b67d59b66e1978f1fe62a1c7590b2404cfbe458955340",
+          "excerpt": "Kaldera's parliament on Wednesday approved a bill that hands operation of the Port Kessel container terminal to a private concession for 25 years, after rejecting opposition requests for more time to review amendments.",
+          "excerptSpan": {
+            "start": 0,
+            "end": 218
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 218
+          },
+          "sourceUrl": "https://harborledger.example/kessel-concession",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "demo-3-correction:c-2@rev-2",
+      "text": "의원들은 논의가 자정을 넘긴 뒤 그 법안을 찬성 88표, 반대 61표로 통과시켰다고 보도됐다.",
+      "claimType": "보도된 사실",
+      "modality": "단정",
+      "order": 1,
+      "contradictionStatus": "단일 출처",
+      "evidence": [
+        {
+          "id": "demo-3-correction:rev-2/demo-3-correction:c-2@rev-2:q-395b22-2",
+          "claimId": "demo-3-correction:c-2@rev-2",
+          "articleId": "article-meridian-kessel",
+          "articleVersionId": "av-meridian-kessel-2",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 147,
+            "end": 232
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Lawmakers passed the measure by 88 votes to 61 after a debate that ran past midnight.",
+          "spanHash": "c58f43c62a9f89ab0b7721ee5958da4c513090ae531555f9a30726bd13610ab5",
+          "excerpt": "Lawmakers passed the measure by 88 votes to 61 after a debate that ran past midnight.",
+          "excerptSpan": {
+            "start": 147,
+            "end": 232
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 85
+          },
+          "sourceUrl": "https://meridianwire.example/kessel-concession-vote",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "demo-3-correction:c-3@rev-2",
+      "text": "교통부는 운영권을 교통부가 주관하는 공개 입찰로 수여할 것이며 그 공개 입찰을 3개월 이내에 시작하겠다고 밝혔다.",
+      "claimType": "귀속 입장",
+      "modality": "단정",
+      "order": 2,
+      "contradictionStatus": "단일 출처",
+      "evidence": [
+        {
+          "id": "demo-3-correction:rev-2/demo-3-correction:c-3@rev-2:q-395b22-3",
+          "claimId": "demo-3-correction:c-3@rev-2",
+          "articleId": "article-meridian-kessel",
+          "articleVersionId": "av-meridian-kessel-2",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 234,
+            "end": 357
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The concession will be awarded through an open tender that the transport ministry said it would launch within three months.",
+          "spanHash": "adc2414a8dea72cdb800d3f4c344215d3eb60214cdb179ad0f2e135417cfae47",
+          "excerpt": "The concession will be awarded through an open tender that the transport ministry said it would launch within three months.",
+          "excerptSpan": {
+            "start": 234,
+            "end": 357
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 123
+          },
+          "sourceUrl": "https://meridianwire.example/kessel-concession-vote",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "demo-3-correction:c-4",
+      "text": "법안 본문에는 승리한 운영자가 현재 약 1,400명의 노동자를 최소 5년간 그대로 고용해야 한다고 규정돼 있다고 보도됐다.",
+      "claimType": "보도된 사실",
+      "modality": "단정",
+      "order": 3,
+      "contradictionStatus": "정정됨",
+      "evidence": [
+        {
+          "id": "demo-3-correction:rev-2/demo-3-correction:c-4:q-395b22-4",
+          "claimId": "demo-3-correction:c-4",
+          "articleId": "article-meridian-kessel",
+          "articleVersionId": "av-meridian-kessel-2",
+          "sourceId": "source-meridian-wire",
+          "span": {
+            "start": 358,
+            "end": 506
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The winning operator must keep the terminal's current workforce of about 1,400 employees for at least five years, according to the text of the bill.",
+          "spanHash": "ada4f79278a416288cfbdcf085dc08a17d2f555de310856b4ed5e25e0f77e176",
+          "excerpt": "The winning operator must keep the terminal's current workforce of about 1,400 employees for at least five years, according to the text of the bill.",
+          "excerptSpan": {
+            "start": 358,
+            "end": 506
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 148
+          },
+          "sourceUrl": "https://meridianwire.example/kessel-concession-vote",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        },
+        {
+          "id": "demo-3-correction:rev-2/demo-3-correction:c-4:q-af6e5b-3",
+          "claimId": "demo-3-correction:c-4",
+          "articleId": "article-harbor-kessel",
+          "articleVersionId": "av-harbor-kessel-2",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 306,
+            "end": 444
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Under the bill, the winning operator would have to keep the terminal's current workforce of about 1,400 employees for at least five years.",
+          "spanHash": "ed34dba30fb8d0ba459f9c703c16768a576c77f5c41c8a1b9fb2a6bb609d3410",
+          "excerpt": "Under the bill, the winning operator would have to keep the terminal's current workforce of about 1,400 employees for at least five years.",
+          "excerptSpan": {
+            "start": 306,
+            "end": 444
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 138
+          },
+          "sourceUrl": "https://harborledger.example/kessel-concession",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "demo-3-correction:c-5@rev-2",
+      "text": "부두노조는 기존 연금 조건을 보장하지 않는 양도에는 반대한다고 노조가 밝혀왔다.",
+      "claimType": "귀속 입장",
+      "modality": "단정",
+      "order": 4,
+      "contradictionStatus": "정정됨",
+      "evidence": [
+        {
+          "id": "demo-3-correction:rev-2/demo-3-correction:c-5@rev-2:q-af6e5b-4",
+          "claimId": "demo-3-correction:c-5@rev-2",
+          "articleId": "article-harbor-kessel",
+          "articleVersionId": "av-harbor-kessel-2",
+          "sourceId": "source-harbor-ledger",
+          "span": {
+            "start": 446,
+            "end": 551
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The dockworkers' union has said it opposes any concession that does not guarantee existing pension terms.",
+          "spanHash": "668d9a71bda41dd136abe850348b563788901d52fc19bfe0d42c94a97201358a",
+          "excerpt": "The dockworkers' union has said it opposes any concession that does not guarantee existing pension terms.",
+          "excerptSpan": {
+            "start": 446,
+            "end": 551
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 105
+          },
+          "sourceUrl": "https://harborledger.example/kessel-concession",
+          "verifiedAt": "2026-09-17T00:30:00.000Z"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "sourceId": "source-meridian-wire",
+      "articleId": "article-meridian-kessel",
+      "articleTitle": "Kaldera lawmakers approve Port Kessel terminal concession",
+      "articleUrl": "https://meridianwire.example/kessel-concession-vote",
+      "publishedAt": "2026-09-16T03:10:00.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    },
+    {
+      "sourceId": "source-harbor-ledger",
+      "articleId": "article-harbor-kessel",
+      "articleTitle": "Kaldera parliament takes up Port Kessel concession bill",
+      "articleUrl": "https://harborledger.example/kessel-concession",
+      "publishedAt": "2026-09-16T04:25:00.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    }
+  ]
+}

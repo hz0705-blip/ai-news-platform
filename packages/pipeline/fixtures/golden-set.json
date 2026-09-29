@@ -12,5 +12,19 @@
     "labelSource": "운영자 저작",
     "license": "CC-BY-4.0",
     "expected": "fixtures/demo-2-conflict/golden/revision.json"
+  },
+  {
+    "id": "demo-3-correction",
+    "storySlug": "demo-3-correction",
+    "labelSource": "운영자 저작",
+    "license": "CC-BY-4.0",
+    "expected": "fixtures/demo-3-correction/steps/2/golden/revision.json"
+  },
+  {
+    "id": "demo-4-figures",
+    "storySlug": "demo-4-figures",
+    "labelSource": "운영자 저작",
+    "license": "CC-BY-4.0",
+    "expected": "fixtures/demo-4-figures/steps/2/golden/revision.json"
   }
 ]
