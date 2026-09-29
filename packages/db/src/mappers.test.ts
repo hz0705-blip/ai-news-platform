@@ -4,11 +4,13 @@ import {
   type RevisionSourceRow,
   toDomainRevision,
   toDomainSource,
+  toDomainStory,
   toRows,
   toSourceRow,
+  toStoryRow,
 } from "./mappers.ts";
 // 개정판 픽스처는 publish.test.ts와 공유한다(src/test-fixtures.ts).
-import { revision } from "./test-fixtures.ts";
+import { fixture, revision } from "./test-fixtures.ts";
 
 /** 읽기 질의가 `articles`·`sources`를 이어 만드는 출처 구획 행(쓰기 행에는 없다). */
 function joinedSources(r: Revision): RevisionSourceRow[] {
@@ -75,5 +77,9 @@ describe("행 ↔ 도메인 매퍼", () => {
     const wired: Source = { ...source, wireId: "wire-1" };
     expect(toSourceRow(wired).wire_id).toBe("wire-1");
     expect(toDomainSource(toSourceRow(wired))).toEqual(wired);
+  });
+
+  it("사건 행은 도메인 사건으로 왕복한다", () => {
+    expect(toDomainStory(toStoryRow(fixture.story))).toEqual(fixture.story);
   });
 });

@@ -5,7 +5,10 @@ export const RELATION_LABELS = ["뒷받침 일치", "양립 불가", "판정 불
 export type RelationLabel = (typeof RELATION_LABELS)[number];
 
 export interface ClaimStatusInput {
-  /** 이전 개정판의 주장 상태. 첫 개정판이면 undefined. */
+  /**
+   * 같은 식별자의 이전 주장 상태(마지막 개정판 또는 열린 에피소드의 마지막 기록). 첫 개정판이면 undefined.
+   * 보도 상충이면 그 주장의 상충 에피소드가 열려 있다(`openEpisodeClaims`: 마지막 기록이 보도 상충인 주장).
+   */
   readonly previous: ContradictionStatus | undefined;
   /** 정합성 게이트 1단계를 통과한 근거만 있으면 true. */
   readonly verified: boolean;
@@ -15,8 +18,6 @@ export interface ClaimStatusInput {
   readonly supportingOrigins: number;
   /** 같은 범위에서 양립 불가한 명제를 보도한 독립 원점 수(뒷받침 원점과 겹치지 않음). */
   readonly conflictingOrigins: number;
-  /** 기록된 상충 에피소드가 아직 닫히지 않았으면 true. */
-  readonly openEpisode: boolean;
   /** 발행사가 실질 내용을 명시 정정했으면 true. */
   readonly explicitCorrection: boolean;
   /** 기록된 상충이 해명·철회·범위 설명으로 명시적으로 정리되었으면 true. */
@@ -55,14 +56,13 @@ export function deriveClaimStatus(input: ClaimStatusInput): ClaimStatusResult {
 
   const settledExplicitly = input.explicitCorrection || input.explicitResolution;
   const incompatibleNow = input.conflictingOrigins >= 1;
-  const episodeStillOpen =
-    (input.openEpisode || input.previous === "보도 상충") && !settledExplicitly;
+  const openEpisode = input.previous === "보도 상충";
+  const episodeStillOpen = openEpisode && !settledExplicitly;
   if (incompatibleNow || episodeStillOpen) return { publish: true, status: "보도 상충", guard: 2 };
 
   if (input.explicitCorrection) return { publish: true, status: "정정됨", guard: 3 };
 
-  const hadEpisode = input.openEpisode || input.previous === "보도 상충";
-  if (input.explicitResolution && hadEpisode)
+  if (input.explicitResolution && openEpisode)
     return { publish: true, status: "상충 해소", guard: 4 };
 
   if (input.supportingOrigins >= 2) return { publish: true, status: "복수 출처 일치", guard: 5 };

@@ -1,7 +1,8 @@
 import type { Revision, Source } from "@newsplatform/domain";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, not, sql } from "drizzle-orm";
+import { storyNeedsReprocess } from "./batch.ts";
 import { toSourceRow } from "./mappers.ts";
-import { loadLatestRevision } from "./queries/revision.ts";
+import { loadRevision } from "./queries/revision.ts";
 import type { RuntimeDb } from "./runtime.ts";
 import { articles, sources, stories, storyRevisions } from "./schema/index.ts";
 
@@ -120,27 +121,19 @@ export async function saveLinkOnlyArticle(
 }
 
 /**
- * 출처 추가 개정판의 바탕: 사건의 최신 개정판(출처 구획은 현재 기사들). 개정판이 없거나, 미뤄졌거나,
- * 마지막 처리 시각이 최신 확인 시각보다 늦어(입력이 바뀌어) 모델 재처리를 기다리는 사건이면 undefined다 —
- * 그때 출처 추가 개정판을 내면 확인 시각이 앞서 재처리가 빠진다.
+ * 출처 추가 개정판의 바탕: 사건의 최신 개정판(출처 구획은 현재 기사들). 재처리 필요(`storyNeedsReprocess`: 개정판이
+ * 없거나, 미뤄졌거나, 입력이 바뀌어 모델 재처리를 기다리는) 사건이면 undefined다 — 그때 출처 추가 개정판을 내면 확인
+ * 시각이 앞서 재처리가 빠진다.
  */
 export async function loadRevisionToExtend(
   db: RuntimeDb["db"],
   storyId: string,
 ): Promise<Revision | undefined> {
-  const latestChecked = sql`(select max(${storyRevisions.checked_at}) from ${storyRevisions} where ${storyRevisions.story_id} = ${stories.id})`;
   const [row] = await db
-    .select()
+    .select({ id: stories.id })
     .from(stories)
-    .where(
-      and(
-        eq(stories.id, storyId),
-        sql`${stories.deferred_at} is null`,
-        sql`${latestChecked} is not null`,
-        sql`(${stories.last_processed_at} is null or ${stories.last_processed_at} <= ${latestChecked})`,
-      ),
-    )
+    .where(and(eq(stories.id, storyId), not(storyNeedsReprocess)))
     .limit(1);
   if (row === undefined) return undefined;
-  return loadLatestRevision(db, { slug: row.slug });
+  return (await loadRevision(db, { storyId: row.id }))?.revision;
 }

@@ -1,12 +1,13 @@
 import { readFileSync } from "node:fs";
-import { type Revision, type RevisionChange, revisionWithSources } from "@newsplatform/domain";
+import {
+  openEpisodeClaims,
+  type Revision,
+  type RevisionChange,
+  revisionWithSources,
+} from "@newsplatform/domain";
 import { describe, expect, it } from "vitest";
 import { commitRevision, confirmRevision, saveDemoStoryRecords } from "./publish.ts";
-import {
-  loadLatestRevision,
-  loadOpenEpisodeClaims,
-  loadRevisionChanges,
-} from "./queries/revision.ts";
+import { loadClaimHistory, loadLatestRevision, loadRevisionChanges } from "./queries/revision.ts";
 import { loadPublishedStory } from "./queries/story.ts";
 import { createMigrationDb, readTestDbUrl } from "./test-db.ts"; // DATABASE_TEST_URL로 연결하고 테스트 끝에 truncate
 // revision·story·articles·articleVersions·sources 픽스처는 mappers.test.ts와 같은 값을 공유한다.
@@ -450,7 +451,7 @@ maybe("개정판에 고정된 출처 구획(#98)", () => {
 });
 
 maybe("열린 상충 에피소드(#90)", () => {
-  it("마지막 기록이 보도 상충이고 마지막 개정판에 없는 주장만 그 기록으로 돌려준다", async () => {
+  it("주장 개정판 이력에서 마지막 기록이 보도 상충이고 마지막 개정판에 없는 주장만 그 기록으로 파생한다", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {
       // 개정판 1: c-1 보도 상충. 개정판 2·3: c-1이 요약에서 빠졌다(요약 제외로는 닫히지 않는다).
@@ -473,13 +474,15 @@ maybe("열린 상충 에피소드(#90)", () => {
         await publishFixture(db, { ...fixture, revision: previous });
       }
       const storyId = fixture.story.id;
-      expect(await loadOpenEpisodeClaims(db, { storyId, latestClaimIds: [c2.id] })).toEqual([
-        disputed,
+      const history = await loadClaimHistory(db, { storyId });
+      expect(history.map((claims) => claims.map((c) => c.id))).toEqual([
+        [disputed.id, c2.id],
+        [c2.id],
+        [c2.id],
       ]);
+      expect(openEpisodeClaims(history, [c2.id])).toEqual([disputed]);
       // 마지막 개정판에 있으면 그 주장의 상태가 정하므로 에피소드 목록에 없다.
-      expect(
-        await loadOpenEpisodeClaims(db, { storyId, latestClaimIds: [c2.id, disputed.id] }),
-      ).toEqual([]);
+      expect(openEpisodeClaims(history, [c2.id, disputed.id])).toEqual([]);
 
       // 명시 정정으로 정정됨이 된 기록이 가장 늦으면 에피소드는 닫혀 있다.
       const corrected = revisionWithSources(previous, previous.sources, {
@@ -503,7 +506,7 @@ maybe("열린 상충 에피소드(#90)", () => {
           ],
         },
       });
-      expect(await loadOpenEpisodeClaims(db, { storyId, latestClaimIds: [c2.id] })).toEqual([]);
+      expect(openEpisodeClaims(await loadClaimHistory(db, { storyId }), [c2.id])).toEqual([]);
     } finally {
       await cleanup();
     }
