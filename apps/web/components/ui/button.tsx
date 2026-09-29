@@ -12,6 +12,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:underline",
+        outline: "border-border bg-background text-foreground hover:underline",
       },
     },
     defaultVariants: { variant: "default" },

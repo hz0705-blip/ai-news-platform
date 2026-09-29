@@ -4,7 +4,7 @@
 # 빈 DB 마이그레이션을 적용한 뒤 pgvector 게이트(임시 테이블·HNSW 인덱스 생성)를 스모크로 돈다.
 # "이전 릴리스 픽스처 DB"에 마이그레이션을 적용하는 검사는 픽스처 DB가 생기는 M2a로 미룬다(스펙 배포 흐름의 양쪽 적용 중 빈 DB만 여기서 돈다).
 # 잡 셋이 병렬로 돈다: checks(고정 설치·lint·typecheck·test·web build), migration-smoke(pgvector/pgvector:0.8.x-pg17 digest 고정,
-# 자격은 ci/ci-<run_id>로 워크플로 안에서 생성, db:migrate → db:gate), e2e(playwright install --with-deps → web build → test:e2e,
+# 자격은 ci/ci-<run_id>로 워크플로 안에서 생성, db:migrate → db:gate), e2e(playwright install --with-deps → 로컬 Supabase Auth(CLI) → web build → test:e2e,
 # 실패해도 아티팩트 web-e2e(playwright-report·test-results, 보관 7일)를 올림, 타임아웃 15분).
 # 시크릿·환경을 읽지 않으므로 포크 PR에서도 돈다. main push(스쿼시 머지 뒤)에도 같은 잡이 돈다. 캐시는 actions/setup-node의 cache: pnpm.
 # 서비스 이미지 태그는 env를 보간할 수 없어 -pg<N>을 하드코딩한다. PG_MAJOR와 같음은 ci-workflow.test.ts가 단언한다.
@@ -98,6 +98,18 @@ jobs:
       # 실 DB 테스트는 테이블을 비우므로 적재는 그 뒤에 한다.
       - name: 데모 사건 적재
         run: pnpm --filter @newsplatform/worker demo:load
+      # E2E 인증(#104): 고정 버전 CLI(루트 devDependency)로 로컬 Supabase Auth를 띄운다(supabase/config.toml, 이메일·비밀번호만).
+      # 앱 데이터는 위 서비스 컨테이너에 그대로 두고 CLI 스택은 Auth에만 쓴다. 키는 CLI 고정 로컬 값이며 시크릿이 아니다.
+      # NEXT_PUBLIC_*는 빌드에 들어가므로 빌드 전에 잡 환경에 싣는다.
+      - name: 로컬 Supabase Auth 시작
+        run: |
+          pnpm exec supabase start
+          pnpm exec supabase status -o env \
+            --override-name api.url=NEXT_PUBLIC_SUPABASE_URL \
+            --override-name auth.publishable_key=NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY \
+            --override-name auth.secret_key=SUPABASE_SECRET_KEY \
+            | grep -E '^(NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY|SUPABASE_SECRET_KEY)=' \
+            | tr -d '"' >> "$GITHUB_ENV"
       - name: 웹 프로덕션 빌드
         run: pnpm --filter @newsplatform/web build
       - name: Playwright·axe
