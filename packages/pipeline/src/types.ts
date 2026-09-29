@@ -17,10 +17,14 @@ export type ArticleInput = Article & {
   readonly articleVersionId: string;
   readonly rawBody: string;
   /**
-   * 이 기사 버전이 재수집에서 정정 표지가 새로 생긴 정정 후보인가(#86). 참이면 이 버전을 근거로 쓰는 주장의
-   * 상충 판정에 "명시 정정"으로 들어가고(상태 규칙 ③), 변화는 원문 변경으로 세지 않는다.
+   * 이 기사 버전이 재수집에서 정정 표지가 새로 생긴 정정 후보인가(#86). 참이면 변화는 원문 변경으로 세지 않는다.
    */
   readonly correctionCandidate?: boolean;
+  /**
+   * 정정 후보 버전이 생긴 뒤 첫 재처리인가(#94). 정정 후보와 함께 참일 때만, 이전 근거가 이 버전에서 바뀐 이어진
+   * 주장이 상충 판정에 "명시 정정"으로 들어간다(상태 규칙 ③).
+   */
+  readonly correctionFirstReprocess?: boolean;
 };
 
 /** 하루 비용 상한(docs/spec/v1.md "배치와 비용"). */
