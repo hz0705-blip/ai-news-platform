@@ -13,6 +13,7 @@ import {
 import { claimHref } from "../../lib/claim-anchor.ts";
 import { formatAbsolute } from "../../lib/format-time.ts";
 import type { StoryView } from "../../lib/story-view.ts";
+import { LoginGate } from "../auth/login-gate.tsx";
 import { DemoBadge } from "../demo-badge.tsx";
 import { StatusBadge } from "../status-badge.tsx";
 import { Button } from "../ui/button.tsx";
@@ -56,14 +57,13 @@ export function StoryHeader({ header }: { header: StoryView["header"] }) {
           </li>
         ))}
       </ul>
-      <p className="flex flex-wrap gap-2">
-        <Button disabled aria-disabled="true">
-          {FOLLOW}
-        </Button>
+      {/* 로그인 게이트의 <dialog>는 <p> 안에 둘 수 없다. */}
+      <div className="flex flex-wrap gap-2">
+        <LoginGate label={FOLLOW} />
         <Button disabled aria-disabled="true">
           {SHARE}
         </Button>
-      </p>
+      </div>
     </header>
   );
 }
