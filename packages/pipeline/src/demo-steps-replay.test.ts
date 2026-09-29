@@ -106,9 +106,7 @@ describe("데모 사건 ③④ 시나리오", () => {
     const revision = second?.revision;
     expect(revision?.revisionNumber).toBe(2);
     // 월요일 4,200만 달러 주장은 식별자를 잇고, 화요일 9,500만 달러는 새 주장이다. 어느 주장도 보도 상충이 아니다.
-    expect(revision?.claims.find((c) => c.id === "demo-4-figures:c-2")?.text).toContain(
-      "4,200만",
-    );
+    expect(revision?.claims.find((c) => c.id === "demo-4-figures:c-2")?.text).toContain("4,200만");
     expect(revision?.claims.some((c) => c.text.includes("9,500만"))).toBe(true);
     for (const claim of [...(first?.revision?.claims ?? []), ...(revision?.claims ?? [])]) {
       expect(claim.contradictionStatus).not.toBe("보도 상충");

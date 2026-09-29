@@ -7,49 +7,35 @@
         "text": "칼데라 의회는 수요일 항구 케셀 컨테이너 터미널 운영권을 민간에 25년 동안 부여하는 법안을 가결했다고 보도되었다.",
         "claimType": "보도된 사실",
         "modality": "단정",
-        "quoteIds": [
-          "q-395b22-1",
-          "q-af6e5b-1",
-          "q-af6e5b-7"
-        ]
+        "quoteIds": ["q-395b22-1", "q-af6e5b-1", "q-af6e5b-7"]
       },
       {
         "claimKey": "c-2",
         "text": "의원들은 논의가 자정을 넘긴 뒤 그 법안을 찬성 88표, 반대 61표로 통과시켰다고 보도됐다.",
         "claimType": "보도된 사실",
         "modality": "단정",
-        "quoteIds": [
-          "q-395b22-2"
-        ]
+        "quoteIds": ["q-395b22-2"]
       },
       {
         "claimKey": "c-3",
         "text": "교통부는 운영권을 교통부가 주관하는 공개 입찰로 수여할 것이며 그 공개 입찰을 3개월 이내에 시작하겠다고 밝혔다.",
         "claimType": "귀속 입장",
         "modality": "단정",
-        "quoteIds": [
-          "q-395b22-3",
-          "q-af6e5b-2"
-        ]
+        "quoteIds": ["q-395b22-3", "q-af6e5b-2"]
       },
       {
         "claimKey": "c-4",
         "text": "법안 본문에는 승리한 운영자가 현재 약 1,400명의 노동자를 최소 5년간 그대로 고용해야 한다고 규정돼 있다고 보도됐다.",
         "claimType": "보도된 사실",
         "modality": "단정",
-        "quoteIds": [
-          "q-395b22-4",
-          "q-af6e5b-3"
-        ]
+        "quoteIds": ["q-395b22-4", "q-af6e5b-3"]
       },
       {
         "claimKey": "c-5",
         "text": "부두노조는 기존 연금 조건을 보장하지 않는 양도에는 반대한다고 노조가 밝혀왔다.",
         "claimType": "귀속 입장",
         "modality": "단정",
-        "quoteIds": [
-          "q-af6e5b-4"
-        ]
+        "quoteIds": ["q-af6e5b-4"]
       }
     ]
   }

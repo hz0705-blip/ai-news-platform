@@ -7,69 +7,49 @@
         "text": "메리디언 와이어는 칼데라 의회가 수요일 항구 케셀 컨테이너 터미널 운영을 25년간 민간 위탁으로 넘기는 법안을 가결했다고 보도했다.",
         "claimType": "보도된 사실",
         "modality": "단정",
-        "quoteIds": [
-          "q-b815da-1",
-          "q-ce872e-1"
-        ]
+        "quoteIds": ["q-b815da-1", "q-ce872e-1"]
       },
       {
         "claimKey": "c-2",
         "text": "하버 레저는 칼데라 의회가 수요일 해당 법안에 대한 표결을 야당 의원들의 수정안 검토 요청으로 연기했다고 보도했다.",
         "claimType": "보도된 사실",
         "modality": "단정",
-        "quoteIds": [
-          "q-ce872e-1",
-          "q-b815da-1"
-        ]
+        "quoteIds": ["q-ce872e-1", "q-b815da-1"]
       },
       {
         "claimKey": "c-3",
         "text": "보도에 따르면 운송부는 공개 입찰을 통해 위탁 운영사를 선정할 것이라고 전했다.",
         "claimType": "보도된 사실",
         "modality": "단정",
-        "quoteIds": [
-          "q-b815da-3",
-          "q-ce872e-2"
-        ]
+        "quoteIds": ["q-b815da-3", "q-ce872e-2"]
       },
       {
         "claimKey": "c-4",
         "text": "법안의 문구에 따르면 선정된 운영사는 약 1,400명인 현재 인력을 최소 5년간 유지해야 한다.",
         "claimType": "보도된 사실",
         "modality": "단정",
-        "quoteIds": [
-          "q-b815da-4",
-          "q-ce872e-3"
-        ]
+        "quoteIds": ["q-b815da-4", "q-ce872e-3"]
       },
       {
         "claimKey": "c-5",
         "text": "메리디언 와이어는 법안이 88대 61로 가결됐고 관련 토론이 자정을 넘겨 진행됐다고 보도했다.",
         "claimType": "보도된 사실",
         "modality": "단정",
-        "quoteIds": [
-          "q-b815da-2"
-        ]
+        "quoteIds": ["q-b815da-2"]
       },
       {
         "claimKey": "c-6",
         "text": "부두 노동조합은 최종 본문을 검토한 뒤 법적 대응 여부를 결정하겠다고 말했으며, 기존 연금 조건을 보장하지 않는 위탁에는 반대한다고 밝혔다.",
         "claimType": "귀속 입장",
         "modality": "단정",
-        "quoteIds": [
-          "q-b815da-5",
-          "q-ce872e-4"
-        ]
+        "quoteIds": ["q-b815da-5", "q-ce872e-4"]
       },
       {
         "claimKey": "c-7",
         "text": "항만을 이용하는 선사들은 더 큰 선박을 처리하려면 새 크레인과 더 깊은 접안 시설이 필요하다고 말했고, 크레인 고장과 얕은 접안 수심을 오래 전부터 불평해왔다.",
         "claimType": "보도된 사실",
         "modality": "단정",
-        "quoteIds": [
-          "q-b815da-6",
-          "q-ce872e-5"
-        ]
+        "quoteIds": ["q-b815da-6", "q-ce872e-5"]
       }
     ]
   }

@@ -69,7 +69,8 @@ for (const [index, step] of demo.steps.entries()) {
       clock: () => step.at,
     },
   );
-  if (existsSync(extractPath)) Object.assign(seenExtracts, JSON.parse(readFileSync(extractPath, "utf8")));
+  if (existsSync(extractPath))
+    Object.assign(seenExtracts, JSON.parse(readFileSync(extractPath, "utf8")));
 
   const revision = result.revisions[0];
   if (revision !== undefined) {
