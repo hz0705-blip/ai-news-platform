@@ -20,6 +20,7 @@ import {
   text,
   timestamp,
   unique,
+  uuid,
   vector,
 } from "drizzle-orm/pg-core";
 
@@ -319,6 +320,51 @@ export const articleRechecks = pgTable(
     index("article_rechecks_checked_at_idx").on(t.checked_at),
   ],
 );
+
+/**
+ * 계정 데이터(스펙 "계정": 계정에 저장하는 것은 팔로우와 마지막으로 본 개정판뿐, #105). 소유자는 인증 사용자 ID(`user_id`,
+ * Supabase `auth.users.id`)로만 식별하고 시각·기기 같은 다른 열은 두지 않는다. `user_id → auth.users(id) ON DELETE CASCADE`는
+ * Drizzle 스키마가 아니라 마이그레이션 0011이 `auth.users`가 있는 DB(프로덕션 Supabase)에만 건다 — 테스트·CI의 앱 DB에는
+ * auth 스키마가 없다(docs/agents/project.md). RLS를 켜고 정책을 두지 않아 Supabase Data API(anon·authenticated)로는
+ * 읽고 쓸 수 없다. 앱은 테이블 소유자 연결이라 RLS를 거치지 않고, 모든 질의가 `user_id`를 소유자 조건으로 건다.
+ */
+
+/** 사건 팔로우(CONTEXT.md "팔로우"). 사용자 × 사건 한 행. */
+export const storyFollows = pgTable(
+  "story_follows",
+  {
+    user_id: uuid().notNull(),
+    story_id: text()
+      .notNull()
+      .references(() => stories.id),
+  },
+  (t) => [primaryKey({ columns: [t.user_id, t.story_id] })],
+).enableRLS();
+
+/** 토픽 팔로우(CONTEXT.md "팔로우"). 사용자 × 토픽 한 행. 토픽 값 목록은 도메인 상수가 정본이다. */
+export const topicFollows = pgTable(
+  "topic_follows",
+  {
+    user_id: uuid().notNull(),
+    topic: text({ enum: TOPICS }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.user_id, t.topic] })],
+).enableRLS();
+
+/** 마지막으로 본 개정판(CONTEXT.md "마지막으로 본 개정판"). 사용자 × 사건 → 개정판 한 행. */
+export const lastSeenRevisions = pgTable(
+  "last_seen_revisions",
+  {
+    user_id: uuid().notNull(),
+    story_id: text()
+      .notNull()
+      .references(() => stories.id),
+    revision_id: text()
+      .notNull()
+      .references(() => storyRevisions.id),
+  },
+  (t) => [primaryKey({ columns: [t.user_id, t.story_id] })],
+).enableRLS();
 
 export type SourceRow = typeof sources.$inferSelect;
 export type StoryRow = typeof stories.$inferSelect;

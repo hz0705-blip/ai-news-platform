@@ -36,6 +36,17 @@ export {
   type RuntimeConfig,
 } from "./config.ts";
 export {
+  type FollowFeedStory,
+  followStory,
+  followTopic,
+  loadFollowedTopics,
+  loadFollowFeed,
+  recordStoryVisit,
+  type StoryVisit,
+  unfollowStory,
+  unfollowTopic,
+} from "./follows.ts";
+export {
   findArticleIdsByNormalizedUrl,
   loadGdeltStories,
   loadRecentlyPublishedStoryIds,
