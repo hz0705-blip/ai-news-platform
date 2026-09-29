@@ -211,6 +211,66 @@ maybe("변화 저장(#85)", () => {
     }
   });
 
+  it("사건 페이지 데이터는 그 개정판의 변화와 그 개정판까지의 개정판별 변화 종류 개수를 싣는다", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      await publishRevision(db, fixture);
+      const next = revisionWithSources(fixture.revision, fixture.revision.sources, {
+        revisionNumber: 2,
+        publishedAt: new Date("2026-09-18T00:30:00.000Z"),
+      });
+      const changes: RevisionChange[] = [
+        {
+          kind: "주장 추가·삭제·수정",
+          claimChange: "수정",
+          claimId: "demo-1-agreement:c-1",
+          previousText: "이전 문장",
+          currentText: "현재 문장",
+        },
+        { kind: "출처 추가", articleId: "a-meridian" },
+        { kind: "출처 추가", articleId: "a-atlas" },
+      ];
+      await publishRevision(db, { ...fixture, revision: next, changes });
+
+      const latest = await loadPublishedStory(db, { slug: fixture.story.slug });
+      expect(latest?.changes).toEqual(changes);
+      expect(latest?.revisions).toEqual([
+        {
+          id: fixture.revision.id,
+          revisionNumber: 1,
+          publishedAt: fixture.revision.publishedAt,
+          changeCounts: {
+            "주장 추가·삭제·수정": 0,
+            "상충 상태 변화": 0,
+            "원문 변경": 0,
+            "출처 추가": 0,
+          },
+        },
+        {
+          id: next.id,
+          revisionNumber: 2,
+          publishedAt: next.publishedAt,
+          changeCounts: {
+            "주장 추가·삭제·수정": 1,
+            "상충 상태 변화": 0,
+            "원문 변경": 0,
+            "출처 추가": 2,
+          },
+        },
+      ]);
+      expect(latest?.sources.map((s) => s.articleId)).toContain("a-meridian");
+
+      const first = await loadPublishedStory(db, {
+        slug: fixture.story.slug,
+        revisionId: fixture.revision.id,
+      });
+      expect(first?.changes).toEqual([]);
+      expect(first?.revisions.map((r) => r.id)).toEqual([fixture.revision.id]);
+    } finally {
+      await cleanup();
+    }
+  });
+
   it("migration keeps existing revisions with no changes", async () => {
     const { db, sql, cleanup } = await createMigrationDb(url as string);
     try {
