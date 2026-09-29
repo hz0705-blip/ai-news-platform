@@ -85,6 +85,13 @@
       "when": 1790665716518,
       "tag": "0011_auth_users_cascade",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790668463669,
+      "tag": "0012_account_deletion",
+      "breakpoints": true
     }
   ]
 }

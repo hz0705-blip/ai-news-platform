@@ -17,6 +17,7 @@ import { getCurrentUserId } from "../../lib/auth/server.ts";
 import { getRuntimeDb } from "../../lib/db.ts";
 import { submitStoryUnfollow, submitTopicFollow } from "../../lib/follow-actions.ts";
 import { arrangeFollowFeed, hasChangesSinceSeen } from "../../lib/follow-feed.ts";
+import { ACCOUNT_LINK } from "../account/copy.ts";
 import { NEXT_UPDATE, TODAY_LABEL } from "../copy.ts";
 import {
   CHANGED_SINCE_SEEN,
@@ -161,9 +162,12 @@ export default function FollowsPage(): ReactElement {
   return (
     <main className="mx-auto flex max-w-[76rem] flex-col gap-8 px-4 py-12 lg:px-6">
       <header className="flex flex-col gap-3">
-        <p className="text-meta">
+        <p className="flex gap-4 text-meta">
           <a href="/" className="underline">
             {TODAY_LABEL}
+          </a>
+          <a href="/account" className="underline">
+            {ACCOUNT_LINK}
           </a>
         </p>
         <h1>{FOLLOWS_TITLE}</h1>

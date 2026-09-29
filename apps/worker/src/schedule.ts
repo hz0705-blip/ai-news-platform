@@ -1,6 +1,7 @@
 import { loadBatchRunsSince, type RuntimeDb } from "@newsplatform/db";
 import { latestSlotAtOrBefore, missedSlots, slotKeyOf } from "@newsplatform/domain/batch-slot";
 import { PgBoss } from "pg-boss";
+import { ACCOUNT_UNLINK_CRON, ACCOUNT_UNLINK_QUEUE } from "./account-unlink.ts";
 
 /** 배치 잡 큐(스펙 "배포와 운영" 스케줄러: pg-boss가 유일한 스케줄 권한). */
 export const BATCH_QUEUE = "batch";
@@ -41,6 +42,8 @@ export interface SchedulerOptions {
   readonly connectionString: string;
   readonly db: RuntimeDb["db"];
   readonly run: (slotKey: string) => Promise<unknown>;
+  /** 계정 삭제의 연결 해제 재시도(account-unlink.ts). 매분 한 번, 한 번에 하나만 돈다. */
+  readonly sweepAccounts: () => Promise<unknown>;
   readonly clock: () => Date;
   readonly log: (event: Record<string, unknown>) => void;
 }
@@ -82,6 +85,15 @@ export async function startScheduler(options: SchedulerOptions): Promise<PgBoss>
       options.log({ stage: "job", jobId: job.id, slotKey });
       await options.run(slotKey);
     }
+  });
+
+  // 연결 해제 재시도: 큐에 하나·실행 하나만(exclusive) 두어 앞 잡이 길어져도 겹치지 않는다. 실패는 다음 분에 다시 돈다.
+  if ((await boss.getQueue(ACCOUNT_UNLINK_QUEUE)) === null) {
+    await boss.createQueue(ACCOUNT_UNLINK_QUEUE, { policy: "exclusive", retryLimit: 0 });
+  }
+  await boss.schedule(ACCOUNT_UNLINK_QUEUE, ACCOUNT_UNLINK_CRON, {}, { missed: "skip" });
+  await boss.work(ACCOUNT_UNLINK_QUEUE, { batchSize: 1 }, async () => {
+    await options.sweepAccounts();
   });
 
   for (const slotKey of await findMissedSlotKeys(options.db, { now: options.clock() })) {

@@ -12,7 +12,8 @@
     "assign:stories": "node --env-file-if-exists=../../.env scripts/assign-stories.ts",
     "gdelt:run": "node --env-file-if-exists=../../.env scripts/gdelt-run.ts",
     "sources:sync": "node --env-file-if-exists=../../.env scripts/sources-sync.ts",
-    "source:set-tier": "node --env-file-if-exists=../../.env scripts/source-set-tier.ts"
+    "source:set-tier": "node --env-file-if-exists=../../.env scripts/source-set-tier.ts",
+    "accounts:replay-deletions": "node --env-file-if-exists=../../.env scripts/replay-account-deletions.ts"
   },
   "dependencies": {
     "@newsplatform/db": "workspace:*",
