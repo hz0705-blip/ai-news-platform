@@ -16,6 +16,7 @@ import {
   NEXT_UPDATE,
   NO_STORIES,
   SCREEN_TITLE,
+  SEARCH_LINK,
   storyCount,
   TODAY_LABEL,
   TOPICS_LABEL,
@@ -69,6 +70,11 @@ export function TodayScreen({
           )}
         </p>
         <p className="text-meta text-muted-foreground">{NEXT_UPDATE}</p>
+        <p>
+          <a href="/search" className="underline">
+            {SEARCH_LINK}
+          </a>
+        </p>
         {operationalNotice}
       </header>
       <ToggleGroup
