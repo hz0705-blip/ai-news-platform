@@ -437,6 +437,51 @@ export const accountDeletions = pgTable("account_deletions", {
   deleted_at: timestamptz("deleted_at").notNull(),
 }).enableRLS();
 
+/**
+ * 익명 요청 남용 방지 카운터(#125, 스펙 "배치와 비용" 익명 요청 남용 방지). 행 하나 = 키 하나의 고정 창 하나.
+ * `key`는 `<요청 종류>:<cookie|ip>:<HMAC>:<minute|day>` — 원시 쿠키·IP는 두지 않는다. 분 창은 UTC 분, 일 창은 KST 날짜.
+ * `expires_at`은 창의 끝이며 워커의 정리 잡이 지난 행을 지운다(창은 24시간 이하라 48시간 안에 지워진다).
+ */
+export const requestCounters = pgTable(
+  "request_counters",
+  {
+    key: text().notNull(),
+    window_start: timestamptz("window_start").notNull(),
+    count: integer().notNull(),
+    expires_at: timestamptz("expires_at").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.key, t.window_start] }),
+    index("request_counters_expires_at_idx").on(t.expires_at),
+  ],
+).enableRLS();
+
+/** 진행 중인 익명 유료 요청(동시 한도, #125). 끝나면 지우고, 죽은 요청의 행은 `expires_at`이 지나면 세지 않고 정리 잡이 지운다. */
+export const requestLeases = pgTable(
+  "request_leases",
+  {
+    id: uuid().primaryKey(),
+    key: text().notNull(),
+    expires_at: timestamptz("expires_at").notNull(),
+  },
+  (t) => [index("request_leases_key_idx").on(t.key)],
+).enableRLS();
+
+/**
+ * 번역·검색 일일 예산 원장(#125, 스펙 "개발 중 결정 항목" 토큰 계량). 행 하나 = 종류(`search`·`translation`) × KST 날짜.
+ * 모델 호출 전 최대 비용을 `reserved_usd`에 더하고(합이 상한을 넘으면 거부), 끝나면 예약을 빼고 실제 비용을 `spent_usd`에 더한다.
+ */
+export const requestBudgets = pgTable(
+  "request_budgets",
+  {
+    kind: text().notNull(),
+    kst_date: text("kst_date").notNull(),
+    reserved_usd: doublePrecision("reserved_usd").notNull().default(0),
+    spent_usd: doublePrecision("spent_usd").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.kind, t.kst_date] })],
+).enableRLS();
+
 export type SourceRow = typeof sources.$inferSelect;
 export type StoryRow = typeof stories.$inferSelect;
 export type ArticleRow = typeof articles.$inferSelect;
