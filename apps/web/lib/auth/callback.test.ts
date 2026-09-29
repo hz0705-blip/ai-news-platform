@@ -2,7 +2,7 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { NextRequest, type NextResponse } from "next/server";
 import { describe, expect, it, vi } from "vitest";
 import { DELETION_INTENT_COOKIE, encodeIntent } from "../account/deletion.ts";
-import { type CallbackDeps, handleAuthCallback } from "./callback.ts";
+import { type CallbackDeps, handleAuthCallback, handleKakaoCallback } from "./callback.ts";
 import { RETURN_COOKIE } from "./urls.ts";
 
 // Supabase Auth 경계 스텁: 코드 교환은 세션 쿠키를 쓰고(`setAll`), 로그아웃은 그 쿠키를 비운다 — 실제 어댑터와 같은 흐름.
@@ -30,12 +30,18 @@ function fakeAuth(user: User, session: Record<string, unknown> = {}) {
     jar.push({ name: SESSION_COOKIE, value: "" });
     return { error: null };
   });
-  const client = { auth: { exchangeCodeForSession, signOut } } as unknown as SupabaseClient;
+  const signInWithIdToken = vi.fn(async (_credentials: Record<string, unknown>) => {
+    jar.push({ name: SESSION_COOKIE, value: "session" });
+    return { data: { user, session: { user, ...session } }, error: null };
+  });
+  const client = {
+    auth: { exchangeCodeForSession, signInWithIdToken, signOut },
+  } as unknown as SupabaseClient;
   const respond = <T extends NextResponse>(response: T): T => {
     for (const { name, value } of jar) response.cookies.set(name, value);
     return response;
   };
-  return { client, respond, exchangeCodeForSession, signOut };
+  return { client, respond, exchangeCodeForSession, signInWithIdToken, signOut };
 }
 
 function callback(cookies: Record<string, string> = {}): NextRequest {
@@ -173,5 +179,109 @@ describe("인증 콜백 — 계정 삭제의 재로그인", () => {
     );
     expect(second.headers.get("location")).toBe("http://web.test/account?error=failed");
     expect(second.cookies.get("account-deletion-key")).toBeUndefined();
+  });
+});
+
+describe("Kakao 콜백", () => {
+  const kakao = { restApiKey: "rest-key", clientSecret: "client-secret" };
+  // 테스트에서 만든 id_token(서명·aud·nonce 검증은 Supabase가 한다 — 앱은 그대로 넘긴다).
+  const ID_TOKEN = ["header", btoa(JSON.stringify({ sub: "4242", nonce: "hashed" })), "sig"].join(
+    ".",
+  );
+
+  function kakaoCallback(state: string, cookies: Record<string, string>): NextRequest {
+    return new NextRequest(`http://web.test/auth/callback/kakao?code=kcode&state=${state}`, {
+      headers: {
+        host: "web.test",
+        cookie: Object.entries(cookies)
+          .map(([name, value]) => `${name}=${value}`)
+          .join("; "),
+      },
+    });
+  }
+
+  const tokenFetch = () =>
+    vi.fn(
+      async (_url: string | URL | Request, _init?: RequestInit) =>
+        new Response(JSON.stringify({ id_token: ID_TOKEN, access_token: "kakao-access" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    );
+
+  it("Kakao 콜백은 state가 다르면 거부한다", async () => {
+    const auth = fakeAuth(kakaoUser());
+    const fetch = tokenFetch();
+    const response = await handleKakaoCallback(
+      kakaoCallback("forged", {
+        "kakao-oidc-state": "expected",
+        "kakao-oidc-nonce": "raw-nonce",
+        [RETURN_COOKIE]: "/follows",
+      }),
+      { ...deps(auth), kakao, fetch },
+    );
+    expect(fetch).not.toHaveBeenCalled();
+    expect(auth.signInWithIdToken).not.toHaveBeenCalled();
+    expect(sessionCookie(response)).toBe("");
+    const location = new URL(response.headers.get("location") ?? "");
+    expect(location.pathname).toBe("/auth/login");
+    expect(location.searchParams.get("error")).toBe("failed");
+  });
+
+  it("Kakao 콜백은 코드를 id_token으로 바꿔 signInWithIdToken으로 로그인하고 돌아갈 주소로 보낸다", async () => {
+    const auth = fakeAuth(kakaoUser());
+    const fetch = tokenFetch();
+    const response = await handleKakaoCallback(
+      kakaoCallback("st", {
+        "kakao-oidc-state": "st",
+        "kakao-oidc-nonce": "raw-nonce",
+        [RETURN_COOKIE]: "/follows",
+      }),
+      { ...deps(auth), kakao, fetch },
+    );
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const [url, init] = fetch.mock.calls[0] ?? [];
+    expect(url).toBe("https://kauth.kakao.com/oauth/token");
+    expect(init?.method).toBe("POST");
+    expect(Object.fromEntries(new URLSearchParams(String(init?.body)))).toEqual({
+      grant_type: "authorization_code",
+      client_id: "rest-key",
+      client_secret: "client-secret",
+      redirect_uri: "http://web.test/auth/callback/kakao",
+      code: "kcode",
+    });
+    // Supabase에는 nonce 원문을 넘긴다(GoTrue가 SHA-256 해시로 id_token의 nonce와 비교한다).
+    expect(auth.signInWithIdToken).toHaveBeenCalledWith({
+      provider: "kakao",
+      token: ID_TOKEN,
+      nonce: "raw-nonce",
+      access_token: "kakao-access",
+    });
+    expect(auth.exchangeCodeForSession).not.toHaveBeenCalled();
+    expect(sessionCookie(response)).toBe("session");
+    expect(response.headers.get("location")).toBe("http://web.test/follows");
+    for (const name of ["kakao-oidc-state", "kakao-oidc-nonce", RETURN_COOKIE]) {
+      expect(response.cookies.get(name)?.value).toBe("");
+    }
+  });
+
+  it("Kakao 삭제 재로그인도 같은 규칙으로 Kakao ID(identity id)를 연결 해제 대상으로 삭제한다", async () => {
+    const auth = fakeAuth(kakaoUser());
+    const runDeletion = vi.fn(async () => "completed" as const);
+    const response = await handleKakaoCallback(
+      kakaoCallback("st", {
+        "kakao-oidc-state": "st",
+        "kakao-oidc-nonce": "raw-nonce",
+        [DELETION_INTENT_COOKIE]: encodeIntent({ userId: USER_ID, requestKey: KEY }, SECRET),
+      }),
+      { ...deps(auth, { runDeletion }), kakao, fetch: tokenFetch() },
+    );
+    expect(runDeletion).toHaveBeenCalledWith({
+      userId: USER_ID,
+      identities: [{ provider: "kakao", providerSubject: "4242", revocationToken: null }],
+      requestKey: KEY,
+    });
+    expect(response.headers.get("location")).toBe("http://web.test/account/deleted");
   });
 });
