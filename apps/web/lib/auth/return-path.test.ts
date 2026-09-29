@@ -6,6 +6,9 @@ describe("safeReturnPath — 로그인 뒤 돌아갈 주소", () => {
     "/",
     "/story/demo-1-agreement",
     "/story/demo-1-agreement/revision/story-demo-1%3Arev-1",
+    "/follows",
+    "/story/demo-1-agreement?intent=follow",
+    "/story/demo-1-agreement/revision/story-demo-1%3Arev-1?intent=follow",
   ])("같은 출처 허용 경로 %s는 그대로 통과한다", (path) => {
     expect(safeReturnPath(path)).toBe(path);
   });
@@ -46,6 +49,13 @@ describe("safeReturnPath — 로그인 뒤 돌아갈 주소", () => {
     "/auth/callback",
     "/story/x?next=//evil.com",
     "/story/x#claim-1",
+    "/story/x?intent=follow&next=//evil.com",
+    "/story/x?intent=follow#claim-1",
+    "/story/x?intent=follow?x",
+    "/story/x?intent=unfollow",
+    "/?intent=follow",
+    "/follows?intent=follow",
+    "/follows/x",
     "/story/X-Upper",
     "",
   ])("허용 목록 밖 경로·질의·해시 %s는 fallback으로 바꾼다", (path) => {

@@ -26,6 +26,7 @@ import { StatusBadge } from "../status-badge.tsx";
 import { CHANGE_KIND_ICONS, KindLabel } from "./change-kind.tsx";
 import { CoverageChart } from "./coverage-chart.tsx";
 import { RevisionStrip } from "./revision-strip.tsx";
+import { SinceLastSeenNotice } from "./story-personal.tsx";
 
 function ClaimRef({ order }: { order: number | undefined }) {
   return order === undefined ? null : <a href={claimHref(order)}>{claimLabel(order)}</a>;
@@ -174,6 +175,7 @@ export function ChangeSection({ view }: { view: StoryView }) {
   return (
     <section id="changes" aria-labelledby="changes-heading" className="flex flex-col gap-6">
       <h2 id="changes-heading">{CHANGES_HEADING}</h2>
+      <SinceLastSeenNotice revisions={view.revisions} />
       {empty ? (
         <p>{NO_CHANGES}</p>
       ) : (

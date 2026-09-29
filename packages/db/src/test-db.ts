@@ -7,11 +7,14 @@ import postgres, { type Sql } from "postgres";
  *
  * 여러 테스트 파일(packages/db·apps/worker)이 같은 DB의 같은 테이블을 비우므로, 연결마다
  * 세션 advisory lock을 잡아 한 번에 하나만 돌게 한다. 잡은 뒤 테이블(#21의 여덟 + 슬롯 원장)을 비우고 시작하며,
- * `cleanup()`이 다시 비우고 잠금을 풀고 연결을 닫는다. 비우는 대상은 #21의 테이블 여덟과 `batch_runs`·`revision_changes`다.
+ * `cleanup()`이 다시 비우고 잠금을 풀고 연결을 닫는다. 비우는 대상은 아래 `TABLES`(계정 데이터 셋 포함)다.
  */
 const LOCK_KEY = 2106;
 
 const TABLES = [
+  "story_follows",
+  "topic_follows",
+  "last_seen_revisions",
   "gnews_request_ledger",
   "article_rechecks",
   "batch_runs",

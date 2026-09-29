@@ -1,6 +1,7 @@
 /**
  * 로그인 뒤 돌아갈 주소 검증(스펙 "계정"): 같은 출처의 허용 경로만 받는다.
- * 허용 경로는 오늘(`/`)·사건(`/story/<slug>`)·개정판(`/story/<slug>/revision/<id>`)의 경로뿐이며 질의·해시는 받지 않는다.
+ * 허용 경로는 오늘(`/`)·팔로우(`/follows`)·사건(`/story/<slug>`)·개정판(`/story/<slug>/revision/<id>`)의 경로뿐이다.
+ * 질의는 사건·개정판 경로의 하려던 팔로우 동작(`?intent=follow`, 사건은 경로의 slug) 하나만 받고 해시는 받지 않는다.
  * 프로토콜 상대(`//`), 역슬래시, 디코딩하면 `/`·`\`가 되는 인코딩, 외부 호스트는 모두 fallback으로 바뀐다.
  */
 const SLUG = /^[a-z0-9-]+$/;
@@ -19,8 +20,10 @@ function isSafeSegment(segment: string): boolean {
   return decoded !== "." && decoded !== ".." && !/[/\\\u0000-\u001f\u007f]/.test(decoded);
 }
 
-function isAllowedPath(path: string): boolean {
-  if (path === "/") return true;
+/** 사건 페이지로 돌아가 마칠 팔로우 동작(`FOLLOW_INTENT_QUERY`). */
+export const FOLLOW_INTENT_QUERY = "intent=follow";
+
+function isStoryPath(path: string): boolean {
   const parts = path.split("/");
   if (parts[0] !== "" || parts[1] !== "story") return false;
   const slug = parts[2];
@@ -29,13 +32,24 @@ function isAllowedPath(path: string): boolean {
   return parts.length === 5 && parts[3] === "revision" && isSafeSegment(parts[4] ?? "");
 }
 
+function isAllowedPath(path: string): boolean {
+  return path === "/" || path === "/follows" || isStoryPath(path);
+}
+
 export function safeReturnPath(raw: string | null | undefined, fallback = "/"): string {
   if (typeof raw !== "string" || !raw.startsWith("/") || raw.startsWith("//")) return fallback;
-  if (!isAllowedPath(raw)) return fallback;
-  // 이중 확인: 임의 기준 출처에 붙여도 출처·경로가 그대로여야 한다.
+  const [path = "", query, ...rest] = raw.split("?");
+  if (rest.length > 0) return fallback;
+  if (
+    query === undefined ? !isAllowedPath(path) : query !== FOLLOW_INTENT_QUERY || !isStoryPath(path)
+  ) {
+    return fallback;
+  }
+  // 이중 확인: 임의 기준 출처에 붙여도 출처·경로·질의가 그대로여야 한다.
   const base = "http://return-path.invalid";
   const url = new URL(raw, base);
-  return url.origin === base && url.pathname === raw && url.search === "" && url.hash === ""
+  const search = query === undefined ? "" : `?${query}`;
+  return url.origin === base && url.pathname === path && url.search === search && url.hash === ""
     ? raw
     : fallback;
 }

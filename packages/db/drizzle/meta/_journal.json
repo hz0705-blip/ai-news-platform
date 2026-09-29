@@ -71,6 +71,20 @@
       "when": 1790645695577,
       "tag": "0009_recheck_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790665712992,
+      "tag": "0010_account_follows",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790665716518,
+      "tag": "0011_auth_users_cascade",
+      "breakpoints": true
     }
   ]
 }

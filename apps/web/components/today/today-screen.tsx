@@ -8,6 +8,7 @@ import { TOPICS } from "@newsplatform/domain/topic";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
   DEMO_STORIES,
+  FOLLOWS_LINK,
   LAST_UPDATED,
   LATEST_STORIES,
   MORE,
@@ -149,6 +150,11 @@ export function TodayScreen({
           ))}
         </ul>
       </section>
+      <p>
+        <a href="/follows" className="underline">
+          {FOLLOWS_LINK}
+        </a>
+      </p>
     </main>
   );
 }

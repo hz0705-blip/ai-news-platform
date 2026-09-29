@@ -143,6 +143,8 @@ export interface CoverageView {
 
 export interface StoryView {
   readonly slug: string;
+  /** 이 화면이 보이는 개정판. 방문 기록(마지막으로 본 개정판)이 이것을 넘긴다. */
+  readonly revisionId: string;
   readonly header: {
     readonly title: string;
     readonly topics: readonly Topic[];
@@ -318,6 +320,7 @@ export function buildStoryView(data: StoryPageData): StoryView {
   }
   return {
     slug: data.story.slug,
+    revisionId: data.revision.id,
     header: {
       title: data.revision.title,
       topics: data.story.topics,
