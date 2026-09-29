@@ -1,4 +1,4 @@
-import type { Source } from "@newsplatform/domain";
+import type { Claim, Source } from "@newsplatform/domain";
 import { describe, expect, it } from "vitest";
 import { runBatch } from "./batch-run.ts";
 import { DEMO_REFERENCE_TIME, LIVE_REFERENCE_TIME, loadDemoStoryFixture } from "./fixtures.ts";
@@ -262,6 +262,117 @@ describe("배치 실행", () => {
     );
     expect(result.revisions[0]?.claims.map((c) => c.id)).not.toContain("demo-1-agreement:c-1");
     expect(result.revisions[0]?.contradictionStatus).toBe("보도 상충");
+  });
+  /**
+   * 개정판 1에서 c-1이 보도 상충, 개정판 2에서 c-1이 빠진(요약 제외) 상태를 만든다. 개정판 2에는 링크만 기사가 없어
+   * 이번 재처리는 출처 추가로 새 개정판이 된다. `openEpisodeClaims`는 적재가 claim_revisions에서 파생하는 값이다.
+   */
+  async function episodeAbsentFromLatest() {
+    const first = await publishFirst();
+    const atlas = fixture.sources.find((s) => s.rightsTier === "링크만");
+    const disputed = { ...(first.claims[0] as Claim), contradictionStatus: "보도 상충" as const };
+    const latest = {
+      ...first,
+      id: "demo-1-agreement:rev-2",
+      revisionNumber: 2,
+      contradictionStatus: "보도 상충" as const,
+      claims: first.claims.filter((c) => c.id !== disputed.id),
+      sources: first.sources.filter((s) => s.sourceId !== atlas?.id),
+    };
+    return { latest, disputed };
+  }
+  const undeterminableC1 = {
+    "contradiction-label": {
+      "story-demo-1-agreement:c-1": { pairs: [{ a: "q-m-1", b: "q-h-1", label: "판정 불가" }] },
+    },
+  } as const;
+
+  it("개정판 N의 열린 상충 에피소드는 N+1에서 분쟁 주장이 빠져도 사건 상태를 보도 상충으로 유지한다(#90)", async () => {
+    const { latest, disputed } = await episodeAbsentFromLatest();
+    const run = (openEpisodeClaims: readonly Claim[]) =>
+      runBatch(
+        {
+          ...input(),
+          existingStories: [{ story: fixture.story, latestRevision: latest, openEpisodeClaims }],
+        },
+        {
+          ...deps(),
+          modelClient: createRecordedModelClient("demo-1-agreement", {
+            override: undeterminableC1,
+          }),
+        },
+      );
+    const result = await run([disputed]);
+    const [revision] = result.revisions;
+    expect(revision?.revisionNumber).toBe(3);
+    expect(revision?.claims.map((c) => c.id)).not.toContain(disputed.id);
+    expect(revision?.contradictionStatus).toBe("보도 상충");
+    // 대조: 에피소드를 넘기지 않으면(마지막 개정판만 보면) 에피소드가 사라진다.
+    expect((await run([])).revisions[0]?.contradictionStatus).not.toBe("보도 상충");
+  });
+
+  it("열린 상충 에피소드는 명시 정정·해소 입력으로만 닫힌다(#90)", async () => {
+    const { latest, disputed } = await episodeAbsentFromLatest();
+    const run = (articles: ReturnType<typeof input>["articles"]) =>
+      runBatch(
+        {
+          ...input(),
+          articles,
+          existingStories: [
+            { story: fixture.story, latestRevision: latest, openEpisodeClaims: [disputed] },
+          ],
+        },
+        deps(),
+      );
+    // 분쟁 주장이 다시 나와도 명시 입력이 없으면(뒷받침 일치 라벨뿐) 식별자를 잇고 보도 상충에 머문다.
+    const silent = (await run(input().articles)).revisions[0];
+    const back = silent?.claims.find((c) => c.id === disputed.id);
+    expect(back?.contradictionStatus).toBe("보도 상충");
+    expect(silent?.contradictionStatus).toBe("보도 상충");
+
+    // 그 주장의 근거 기사가 정정 후보(명시 정정 입력)면 에피소드가 닫힌다.
+    const correctedArticles = new Set(disputed.evidence.map((e) => e.articleId));
+    const corrected = (
+      await run(
+        input().articles.map((a) =>
+          correctedArticles.has(a.id) ? { ...a, correctionCandidate: true } : a,
+        ),
+      )
+    ).revisions[0];
+    expect(corrected?.claims.find((c) => c.id === disputed.id)?.contradictionStatus).toBe("정정됨");
+    expect(corrected?.contradictionStatus).toBe("정정됨");
+  });
+
+  it("주장 순서·differsIn만 다른 재처리는 새 개정판 없이 확인 시각만 남긴다(#90)", async () => {
+    const first = await publishFirst();
+    const [a, b, ...rest] = first.claims;
+    if (a === undefined || b === undefined) throw new Error("주장이 둘 이상이어야 한다");
+    const latest = {
+      ...first,
+      claims: [
+        { ...b, order: a.order },
+        {
+          ...a,
+          order: b.order,
+          evidence: a.evidence.map((e) => ({ ...e, differsIn: "이전 판정의 다른 점" })),
+        },
+        ...rest,
+      ],
+    };
+    const checkedAt = new Date("2026-09-18T01:00:00.000Z");
+    const again = await runBatch(
+      {
+        ...input(),
+        now: checkedAt,
+        existingStories: [{ story: fixture.story, latestRevision: latest }],
+      },
+      deps(),
+    );
+    expect(again.revisions).toEqual([]);
+    expect(again.changes).toEqual([]);
+    expect(again.confirmed).toEqual([
+      { storyId: fixture.story.id, revisionId: latest.id, checkedAt },
+    ]);
   });
   it("이전 개정판이 있고 내용이 다르면 개정판 번호가 하나 오르고 근거 id에 개정판이 들어간다", async () => {
     const latest = await publishFirst();

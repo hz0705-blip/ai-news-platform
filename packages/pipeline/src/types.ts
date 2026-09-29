@@ -1,5 +1,6 @@
 import type {
   Article,
+  Claim,
   Revision,
   RevisionChange,
   RevisionSource,
@@ -48,6 +49,12 @@ export interface StoryState {
     readonly articleVersionId: string;
     readonly body: string;
   }[];
+  /**
+   * 마지막 개정판에 없지만 아직 열린 상충 에피소드의 주장(#90): 앞선 개정판에서 마지막으로 기록된 상태가 보도 상충인
+   * 주장의 그 기록. 에피소드는 명시 종료 전까지 열려 있어 사건 상태를 보도 상충으로 두고(스펙 "사건 파생"), 주장이
+   * 다시 나오면 매칭 후보가 되어 식별자와 이전 상태(보도 상충)를 잇는다.
+   */
+  readonly openEpisodeClaims?: readonly Claim[];
 }
 
 /** 가드 ①로 이번 개정판에서 빠진 주장 하나(#22 Ruling 22-4). */
