@@ -13,7 +13,9 @@
     "eval:export": "node --env-file-if-exists=../../.env scripts/eval-export.ts",
     "eval:draft": "node --env-file-if-exists=../../.env scripts/eval-draft.ts",
     "eval:compare": "node --env-file-if-exists=../../.env scripts/eval-compare.ts",
-    "eval:adjudicate": "node --env-file-if-exists=../../.env scripts/eval-adjudicate.ts"
+    "eval:adjudicate": "node --env-file-if-exists=../../.env scripts/eval-adjudicate.ts",
+    "eval:run": "node --env-file-if-exists=../../.env scripts/eval-run.ts",
+    "eval:score": "node --env-file-if-exists=../../.env scripts/eval-score.ts"
   },
   "dependencies": {
     "@newsplatform/domain": "workspace:*",

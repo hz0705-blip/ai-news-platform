@@ -1,4 +1,4 @@
-import type { Topic } from "@newsplatform/domain";
+import type { Source, Topic } from "@newsplatform/domain";
 import type { CandidateArticle, LocalPacket, StoryCandidate } from "./packet.ts";
 
 /** 테스트용 가상 기사(직접 쓴 텍스트). */
@@ -58,4 +58,19 @@ export function fakePacket(): LocalPacket {
       },
     ],
   };
+}
+
+/** 패킷 기사의 출처(가상, 본문 처리 등급). */
+export function fakeSources(packets: readonly LocalPacket[]): Source[] {
+  return packets.flatMap((p) =>
+    p.articles.map((a) => ({
+      id: a.sourceId,
+      name: `Imaginary Source ${a.sourceId}`,
+      rightsTier: "본문 처리 + 발췌 표시" as const,
+      region: "미확인",
+      ownership: "unknown",
+      language: "en",
+      isFictional: true,
+    })),
+  );
 }
