@@ -25,7 +25,8 @@ import type { BatchInput, ModelClient } from "./types.ts";
 export const DEMO_REFERENCE_TIME = new Date("2026-09-17T00:30:00.000Z");
 
 /**
- * 실제 기사로 만든 기록 픽스처(`live-*`, #54)의 기준 시각: 기사 수집일(2026-09-27) KST 17:00 배치.
+ * 실제 모델 응답을 기록한 픽스처(`live-*`, #54)의 기준 시각: 기사 수집일(2026-09-27) KST 17:00 배치.
+ * 기사 본문·제목·URL과 기록 응답의 문장은 직접 쓴 가상 텍스트로 바꿨다(#143).
  * 기록할 때와 리플레이할 때 같은 값을 써야 같은 개정판이 나온다.
  */
 export const LIVE_REFERENCE_TIME = new Date("2026-09-27T08:00:00.000Z");

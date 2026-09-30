@@ -133,4 +133,4 @@ flowchart TB
 ## 라이선스
 
 - 코드: [MIT](LICENSE).
-- 픽스처 기사와 골든셋 라벨: CC-BY-4.0. 범위와 예외(실제 기사 기록)는 [fixtures/LICENSE.md](packages/pipeline/fixtures/LICENSE.md).
+- 픽스처 기사와 골든셋 라벨: CC-BY-4.0. 픽스처의 기사는 모두 직접 쓴 가상 텍스트다. 범위와 예외(GDELT 공개 데이터 부분)는 [fixtures/LICENSE.md](packages/pipeline/fixtures/LICENSE.md).

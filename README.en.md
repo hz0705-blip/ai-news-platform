@@ -135,4 +135,4 @@ Install, dev server, test and migration commands are in [project.md, "명령어"
 ## License
 
 - Code: [MIT](LICENSE).
-- Fixture articles and golden-set labels: CC-BY-4.0. Scope and exceptions (recordings of real articles) are in [fixtures/LICENSE.md](packages/pipeline/fixtures/LICENSE.md).
+- Fixture articles and golden-set labels: CC-BY-4.0. Every fixture article is fictional text written for this repository. Scope and the one exception (GDELT open-data fields) are in [fixtures/LICENSE.md](packages/pipeline/fixtures/LICENSE.md).

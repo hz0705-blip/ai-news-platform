@@ -22,9 +22,9 @@ const STORY_AXIS = [1, 0, 0];
 
 /**
  * 기록된 GKG 행 중 사건과 무관하게 임베딩할 제목(고유명사는 모두 들어 있지만 배정 임계값에 걸리는 경우를 흉내 낸다).
- * 실제 행: "... and other Mideast news" 묶음 기사.
+ * 기록된 행: "... and other regional news" 묶음 기사.
  */
-const UNASSIGNABLE = /other Mideast news/;
+const UNASSIGNABLE = /other regional news/;
 
 /** 고정 벡터: `UNASSIGNABLE` 제목은 직교 축(배정 실패), 나머지는 사건 축. 입력은 제목만이어야 한다. */
 const embeddingClient: EmbeddingClient = {

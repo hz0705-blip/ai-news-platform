@@ -6,6 +6,7 @@ import { GDELT_MASTERFILELIST_URL } from "./gdelt.ts";
 
 /**
  * 기록된 GDELT GKG 조각(`fixtures/gdelt/<name>/`). 실제 파일에서 만든다(`scripts/record-gdelt.ts`).
+ * 행의 도메인·URL·제목은 직접 쓴 가상 값으로 바꿨다(#143).
  * - `files.txt`: 실제 `masterfilelist.txt`의 그 구간 줄(export·mentions·gkg, 실제 크기·MD5).
  * - `<YYYYMMDDHHMMSS>.gkg.csv`: 그 파일에서 필요한 행만(27열 그대로, 쓰지 않는 열은 비움).
  */
