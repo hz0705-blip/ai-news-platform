@@ -53,9 +53,13 @@ test("today title carries the service name and the icon link is emitted", async 
   const head = html.slice(0, html.indexOf("</head>"));
   expect(head).toContain("<title>Newstrail — 사건으로 읽는 해외 보도</title>");
   const icon = /<link rel="icon" href="([^"]+)"/.exec(head)?.[1];
-  expect(icon).toMatch(/^\/icon\.svg/);
-  const svg = await request.get(icon ?? "");
-  expect(svg.status()).toBe(200);
-  expect(svg.headers()["content-type"]).toContain("image/svg+xml");
-  expect(head).toMatch(/<link rel="apple-touch-icon" href="\/apple-icon/);
+  expect(icon).toMatch(/^\/icon\.png/);
+  const png = await request.get(icon ?? "");
+  expect(png.status()).toBe(200);
+  expect(png.headers()["content-type"]).toBe("image/png");
+  const apple = /<link rel="apple-touch-icon" href="([^"]+)"/.exec(head)?.[1];
+  expect(apple).toMatch(/^\/apple-icon\.png/);
+  const appleBody = await (await request.get(apple ?? "")).body();
+  // IHDR의 너비·높이
+  expect([appleBody.readUInt32BE(16), appleBody.readUInt32BE(20)]).toEqual([180, 180]);
 });
