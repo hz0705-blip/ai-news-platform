@@ -240,7 +240,7 @@ export async function runBatchSlot(
     const spentTodayUsd = await loadSpendBetween(deps.db, kstDayRange(startedAt));
     const previousTodayUsd = Math.max(0, spentTodayUsd - embeddingUsd);
     const remainingUsd = Math.max(0, budget.spend - spentTodayUsd);
-    const { stories, sources } = await loadBatchStories(deps.db);
+    const { stories, sources } = await loadBatchStories(deps.db, { now: startedAt });
     const batchStartedAt = deps.clock();
     const result = await runBatch(
       {

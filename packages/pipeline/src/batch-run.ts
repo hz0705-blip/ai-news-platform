@@ -162,6 +162,7 @@ export async function runBatch(rawInput: BatchInput, deps: BatchDeps): Promise<B
         storyId,
         articles,
         articleCount: articles.length,
+        sourceCount: new Set(articles.map((a) => a.sourceId)).size,
         topics: state?.story.topics ?? [],
         ...(state?.deferredSince === undefined ? {} : { deferredSince: state.deferredSince }),
       };

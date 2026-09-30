@@ -242,25 +242,34 @@ export interface BatchStory {
   readonly carriedClaims?: readonly Claim[];
 }
 
+/** 미룬 지 이만큼 지나고 새 기사 버전이 없으면 배치 대상에서 뺀다(스펙 "배치와 비용" 상한 도달 시 우선순위). */
+export const DEFERRED_STALE_MS = 48 * 60 * 60 * 1000;
+
+/** 미룬 뒤(`captured_at > deferred_at`) 그 사건의 기사에 새 기사 버전이 있다. */
+const newVersionSinceDeferred = sql`exists (select 1 from ${articleVersions} inner join ${articles} on ${articles.id} = ${articleVersions.article_id} where ${articles.story_id} = ${stories.id} and ${articleVersions.captured_at} > ${stories.deferred_at})`;
+
 /** 사건의 최신 확인 시각(`story_revisions.checked_at` 최댓값). 개정판이 없으면 null. */
 const latestCheckedAt = sql`(select max(${storyRevisions.checked_at}) from ${storyRevisions} where ${storyRevisions.story_id} = ${stories.id})`;
 
 /**
  * 재처리 필요(스펙 "개정판 생성 조건": 입력이 바뀐 사건만): 미뤄졌거나, 개정판이 없거나, 마지막 처리 시각
- * (`last_processed_at`, 배정·갱신 버전이 올린다)이 최신 확인 시각보다 늦다. 배치 대상(`loadBatchStories`)은 이 조건,
- * 출처 추가 개정판의 바탕(`loadRevisionToExtend`)은 그 부정이다. 처리 시각이 없으면 늦지 않은 것으로 본다.
+ * (`last_processed_at`, 배정·갱신 버전이 올린다)이 최신 확인 시각보다 늦다. 배치 대상(`loadBatchStories`)은 이 조건(48시간 넘게 미룬
+ * 사건은 거기서 따로 뺀다), 출처 추가 개정판의 바탕(`loadRevisionToExtend`)은 그 부정이다. 처리 시각이 없으면 늦지 않은 것으로 본다.
  */
 export const storyNeedsReprocess = sql`(${stories.deferred_at} is not null or ${latestCheckedAt} is null or coalesce(${stories.last_processed_at} > ${latestCheckedAt}, false))`;
 
 /**
  * 이번 배치가 처리할 라이브 사건: 종료가 아니고 재처리 필요(`storyNeedsReprocess`)인 사건. 사건마다 원자료(최신
  * 개정판·주장 개정판 이력·기사 버전 전부·최신 확인 시각)를 읽어 재처리 컨텍스트 규칙(`deriveReprocessContext`)으로
- * 기사 입력 버전·정정 표시·이전 본문·열린 에피소드를 정한다. 버전이 없는 기사는 뺀다(링크만 기사와 본문을 지운
- * 기사(#144)는 `linkOnlySources`로 따로 온다 — 출처 구획에만 들고 새 근거를 뽑지 않는다). 우선순위는 파이프라인이 정한다(`prioritizeStories`).
+ * 기사 입력 버전·정정 표시·이전 본문·열린 에피소드를 정한다. 배치 시작(`now`) 기준 48시간(`DEFERRED_STALE_MS`)보다
+ * 먼저 미뤄졌고 그 뒤 새 기사 버전이 없는 사건은 뺀다(행과 `deferred_at`은 둔다). 새 버전으로 다시 들어온 그런 사건은
+ * `deferredSince` 없이 온다. 버전이 없는 기사는 뺀다(링크만 기사와 본문을 지운 기사(#144)는 `linkOnlySources`로 따로 온다 — 출처 구획에만 들고 새 근거를 뽑지 않는다). 우선순위는 파이프라인이 정한다(`prioritizeStories`).
  */
 export async function loadBatchStories(
   db: RuntimeDb["db"],
+  input: { readonly now: Date },
 ): Promise<{ readonly stories: readonly BatchStory[]; readonly sources: readonly Source[] }> {
+  const staleBefore = new Date(input.now.getTime() - DEFERRED_STALE_MS);
   const storyRows = await db
     .select({
       story: stories,
@@ -269,7 +278,14 @@ export async function loadBatchStories(
       ),
     })
     .from(stories)
-    .where(and(eq(stories.is_demo, false), ne(stories.lifecycle, "종료"), storyNeedsReprocess))
+    .where(
+      and(
+        eq(stories.is_demo, false),
+        ne(stories.lifecycle, "종료"),
+        storyNeedsReprocess,
+        sql`not (${stories.deferred_at} is not null and ${stories.deferred_at} < ${staleBefore.toISOString()}::timestamptz and not ${newVersionSinceDeferred})`,
+      ),
+    )
     .orderBy(stories.id);
   if (storyRows.length === 0) return { stories: [], sources: [] };
   const storyIds = storyRows.map((s) => s.story.id);
@@ -355,7 +371,9 @@ export async function loadBatchStories(
       story: toDomainStory(row),
       articles: batchArticles,
       ...(context.latestRevision === undefined ? {} : { latestRevision: context.latestRevision }),
-      ...(row.deferred_at === null ? {} : { deferredSince: row.deferred_at }),
+      ...(row.deferred_at === null || row.deferred_at < staleBefore
+        ? {}
+        : { deferredSince: row.deferred_at }),
       ...(linkOnlySources.length === 0 ? {} : { linkOnlySources }),
       ...(context.previousVersionBodies === undefined
         ? {}
@@ -369,16 +387,20 @@ export async function loadBatchStories(
   return { stories: result, sources: sourceRows.map(toDomainSource) };
 }
 
-/** 미룬 사건에 "수집됨, 분석 대기" 시각을 적는다. 이미 미뤄진 사건의 시각은 유지한다(먼저 미룬 순 우선). */
+/**
+ * 미룬 사건에 "수집됨, 분석 대기" 시각을 적는다. 48시간(`DEFERRED_STALE_MS`) 안에 이미 미뤄진 사건의 시각은
+ * 유지하고(먼저 미룬 순 우선), 그보다 오래된 시각은 이번 시각으로 새로 적는다.
+ */
 export async function markStoriesDeferred(
   db: RuntimeDb["db"],
   input: { readonly storyIds: readonly string[]; readonly at: Date },
 ): Promise<void> {
   if (input.storyIds.length === 0) return;
+  const staleBefore = new Date(input.at.getTime() - DEFERRED_STALE_MS);
   await db
     .update(stories)
     .set({
-      deferred_at: sql`coalesce(${stories.deferred_at}, ${input.at.toISOString()}::timestamptz)`,
+      deferred_at: sql`case when ${stories.deferred_at} is null or ${stories.deferred_at} < ${staleBefore.toISOString()}::timestamptz then ${input.at.toISOString()}::timestamptz else ${stories.deferred_at} end`,
     })
     .where(inArray(stories.id, [...input.storyIds]));
 }
