@@ -1,5 +1,8 @@
 import { defineConfig } from "@playwright/test";
 
+// 병렬 워크트리는 E2E_PORT로 서로 다른 포트를 쓴다(scripts/cycle-start가 값을 출력한다).
+const port = Number(process.env.E2E_PORT ?? 3100);
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -8,7 +11,7 @@ export default defineConfig({
   workers: 2,
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
-    baseURL: "http://127.0.0.1:3100",
+    baseURL: `http://127.0.0.1:${port}`,
     locale: "ko-KR",
     timezoneId: "Asia/Seoul",
     trace: "retain-on-failure",
@@ -20,8 +23,8 @@ export default defineConfig({
     { name: "webkit", use: { browserName: "webkit" } },
   ],
   webServer: {
-    command: "pnpm start --hostname 127.0.0.1 --port 3100",
-    url: "http://127.0.0.1:3100",
+    command: `pnpm start --hostname 127.0.0.1 --port ${port}`,
+    url: `http://127.0.0.1:${port}`,
     reuseExistingServer: false,
     timeout: 60_000,
     // 사건 페이지는 적재된 DB를 읽는다. 로컬은 .env의 세션 풀러 URL, CI는 서비스 컨테이너 URL.

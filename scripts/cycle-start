@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# 구현 사이클 착수: 티켓 게이트를 확인하고 통과하면 클레임 + 브랜치 생성.
+# 구현 사이클 착수: 티켓 게이트를 확인하고 통과하면 클레임 + 워크트리(브랜치) 생성 + 의존성 설치.
+# 워크트리는 저장소 옆 ../ai-news-platform-wt/<이슈>에 origin/main에서 만든다. .env는 메인 체크아웃 것을 링크한다.
+# 메인 체크아웃에서 실행한다(main에 두고 편집하지 않는다).
 # 사용: scripts/cycle-start <이슈번호> [--check-only] [--slug <slug>]
 # 게이트: 이슈 OPEN, ready-for-agent 있음, research/needs-triage/needs-info 없음, 담당자 없음,
-#         열린 차단 이슈 없음(GitHub 의존성 + 본문 "리서치 대기 #N"), 작업 트리 깨끗, main 최신.
+#         열린 차단 이슈 없음(GitHub 의존성 + 본문 "리서치 대기 #N"), 메인 체크아웃이 main이고 깨끗, main 최신.
 # 종료 코드: 0 통과, 1 게이트 실패, 2 사용 오류.
 set -euo pipefail
 
@@ -47,7 +49,9 @@ for ref in $(grep -oE '리서치 대기 #[0-9]+' <<<"$body" | grep -oE '[0-9]+' 
   [ "$rstate" = "CLOSED" ] || fails+=("본문 '리서치 대기 #$ref'가 $rstate")
 done
 
-# 2. 작업 트리·main
+# 2. 메인 체크아웃·main
+[ "$(git rev-parse --git-dir)" = "$(git rev-parse --git-common-dir)" ] || fails+=("연결된 워크트리 안에서 실행함 — 메인 체크아웃에서 실행")
+[ "$(git rev-parse --abbrev-ref HEAD)" = "main" ] || fails+=("메인 체크아웃이 main이 아님")
 [ -z "$(git status --porcelain)" ] || fails+=("작업 트리에 변경이 있음")
 git fetch --quiet origin main
 [ "$(git rev-parse origin/main)" = "$(git rev-parse main)" ] || fails+=("로컬 main이 origin/main과 다름")
@@ -59,6 +63,9 @@ if [ -z "$slug" ]; then
 fi
 branch="ticket/$issue-$slug"
 git show-ref --verify --quiet "refs/heads/$branch" && fails+=("브랜치 $branch가 이미 존재함")
+wt="$(dirname "$PWD")/$(basename "$PWD")-wt/$issue"
+[ -e "$wt" ] && fails+=("워크트리 경로 $wt가 이미 있음")
+port=$((3200 + issue % 800))
 
 echo "#$issue $title"
 if [ ${#fails[@]} -gt 0 ]; then
@@ -70,10 +77,15 @@ fi
 if [ "$check_only" -eq 1 ]; then
   echo "PASS (확인만, 클레임·브랜치 안 함)"
   echo "branch: $branch"
+  echo "worktree: $wt"
   exit 0
 fi
 
 gh issue edit "$issue" --add-assignee @me >/dev/null
-git checkout -q -b "$branch" main
+git worktree add -q -b "$branch" "$wt" origin/main
+[ -f .env ] && ln -s "$PWD/.env" "$wt/.env"
+(cd "$wt" && pnpm install --frozen-lockfile --prefer-offline >/dev/null)
 echo "PASS — 클레임 완료(@me), branch: $branch"
+echo "worktree: $wt"
+echo "E2E_PORT=$port (pnpm test:db는 워크트리 전용 DB newsplatform_test_$issue를 쓴다)"
 echo "다음: 이슈 본문을 브리프로 구현 서브에이전트 착수 (CLAUDE.md 구현 사이클 2)"

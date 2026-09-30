@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# 구현 사이클 마무리: CI 대기 → 스쿼시 머지 → 로컬 정리 → main 갱신 → 다음 티켓 출력.
+# 구현 사이클 마무리: CI 대기 → 스쿼시 머지 → 워크트리·로컬 브랜치 정리 → main 갱신 → 다음 후보 출력.
+# 메인 체크아웃에서 실행한다. 원격 브랜치는 저장소 설정(delete_branch_on_merge)이 지운다.
 # 사용: scripts/cycle-finish <PR번호> [--wait-only]
 #   --wait-only  CI만 기다리고 머지하지 않는다(민감 티켓: 사용자 승인 뒤 다시 실행).
 # 종료 코드: 0 완료, 1 CI 실패·머지 불가, 2 사용 오류.
@@ -38,18 +39,23 @@ for _ in $(seq 1 12); do
   sleep 5
 done
 [ "$state" = "MERGEABLE" ] || { echo "FAIL: mergeable=$state"; exit 1; }
-gh pr merge "$pr" --squash --delete-branch
+gh pr merge "$pr" --squash
 echo "머지 완료"
 
-git checkout -q main
+wt="$(git worktree list --porcelain | awk -v b="refs/heads/$branch" '/^worktree /{p=substr($0,10)} $0=="branch "b{print p}')"
+if [ -n "$wt" ] && [ "$wt" != "$PWD" ]; then
+  git worktree remove --force "$wt"
+  docker exec newsplatform-test-db dropdb -h localhost -U test --if-exists "newsplatform_test_$(basename "$wt" | tr -c 'a-zA-Z0-9_\n' '_')" >/dev/null 2>&1 || true
+fi
+[ "$(git rev-parse --abbrev-ref HEAD)" = "$branch" ] && git checkout -q main
 git pull -q --ff-only origin main
 git branch -D "$branch" >/dev/null 2>&1 || true
 rm -rf .superpowers docs/superpowers/plans
 
 next="$(gh issue list --state open --label ready-for-agent --limit 50 --json number,labels,assignees \
-  --jq '[.[] | select((.labels|map(.name)|index("research"))==null and (.assignees|length)==0) | .number] | sort | .[0] // empty')"
+  --jq '[.[] | select((.labels|map(.name)|index("research"))==null and (.assignees|length)==0) | .number] | sort | map("#\(.)") | join(" ")')"
 if [ -n "$next" ]; then
-  echo "다음 티켓: #$next → scripts/cycle-start $next"
+  echo "다음 후보(차단은 cycle-start가 확인): $next"
 else
   echo "큐 비었음"
 fi
