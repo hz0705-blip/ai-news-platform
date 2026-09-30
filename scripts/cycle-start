@@ -62,9 +62,9 @@ if [ -z "$slug" ]; then
   [ -n "$slug" ] || slug="issue"
 fi
 branch="ticket/$issue-$slug"
-git show-ref --verify --quiet "refs/heads/$branch" && fails+=("브랜치 $branch가 이미 존재함")
+git show-ref --verify --quiet "refs/heads/$branch" && fails+=("브랜치 ${branch}가 이미 존재함")
 wt="$(dirname "$PWD")/$(basename "$PWD")-wt/$issue"
-[ -e "$wt" ] && fails+=("워크트리 경로 $wt가 이미 있음")
+[ -e "$wt" ] && fails+=("워크트리 경로 ${wt}가 이미 있음")
 port=$((3200 + issue % 800))
 
 echo "#$issue $title"
@@ -87,5 +87,5 @@ git worktree add -q -b "$branch" "$wt" origin/main
 (cd "$wt" && pnpm install --frozen-lockfile --prefer-offline >/dev/null)
 echo "PASS — 클레임 완료(@me), branch: $branch"
 echo "worktree: $wt"
-echo "E2E_PORT=$port (pnpm test:db는 워크트리 전용 DB newsplatform_test_$issue를 쓴다)"
+echo "E2E_PORT=$port (pnpm test:db는 워크트리 전용 DB newsplatform_test_${issue}를 쓴다)"
 echo "다음: 이슈 본문을 브리프로 구현 서브에이전트 착수 (CLAUDE.md 구현 사이클 2)"
