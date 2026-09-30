@@ -21,7 +21,7 @@ const UNSEEN_SENTENCE_2 =
 test.describe("데모 사건 ② — 동시 보도 상충", () => {
   test("사건 배지 보도 상충, 설명 문구, 상태별 개수 링크", async ({ page }) => {
     await page.goto(STORY_URL);
-    const header = page.locator("header");
+    const header = page.getByRole("main").locator("header");
     await expect(header.getByText("보도 상충", { exact: true }).first()).toBeVisible();
     await expect(header.getByText("출처에 따라 보도가 다릅니다.")).toBeVisible();
     const counts = page.getByRole("list", { name: "주장 상태별 개수" });
