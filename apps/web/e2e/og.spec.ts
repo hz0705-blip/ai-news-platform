@@ -21,6 +21,8 @@ test("scraper user agents get 200 html with og tags", async ({ request, browserN
     const html = await response.text();
     const head = html.slice(0, html.indexOf("</head>"));
     expect(meta(head, "og:title"), userAgent).toContain("데모 사건");
+    expect(meta(head, "og:site_name")).toBe("Newstrail");
+    expect(head, userAgent).toMatch(/<title>[^<]*데모 사건[^<]* — Newstrail<\/title>/);
     expect(meta(head, "og:description"), userAgent).toBeTruthy();
     expect(meta(head, "og:image:width")).toBe("1200");
     expect(meta(head, "og:image:height")).toBe("600");
@@ -40,4 +42,20 @@ test("scraper user agents get 200 html with og tags", async ({ request, browserN
   const body = await png.body();
   // IHDR의 너비·높이
   expect([body.readUInt32BE(16), body.readUInt32BE(20)]).toEqual([1200, 600]);
+});
+
+test("today title carries the service name and the icon link is emitted", async ({
+  request,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "HTTP 요청만 한다");
+  const html = await (await request.get("/")).text();
+  const head = html.slice(0, html.indexOf("</head>"));
+  expect(head).toContain("<title>Newstrail — 사건으로 읽는 해외 보도</title>");
+  const icon = /<link rel="icon" href="([^"]+)"/.exec(head)?.[1];
+  expect(icon).toMatch(/^\/icon\.svg/);
+  const svg = await request.get(icon ?? "");
+  expect(svg.status()).toBe(200);
+  expect(svg.headers()["content-type"]).toContain("image/svg+xml");
+  expect(head).toMatch(/<link rel="apple-touch-icon" href="\/apple-icon/);
 });

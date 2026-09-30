@@ -14,7 +14,11 @@ describe("루트 레이아웃", () => {
     expect(html).toContain("<p>내용</p>");
   });
 
-  it("문서 제목이 화면 제목과 같다", () => {
-    expect(metadata.title).toBe("사건으로 읽는 해외 보도");
+  it("문서 제목은 Newstrail — 사건으로 읽는 해외 보도이고 하위 화면은 ' — Newstrail'이 붙는다", () => {
+    expect(metadata.title).toEqual({
+      default: "Newstrail — 사건으로 읽는 해외 보도",
+      template: "%s — Newstrail",
+    });
+    expect(metadata.openGraph?.siteName).toBe("Newstrail");
   });
 });

@@ -1,4 +1,4 @@
-# ai-news-platform
+# Newstrail (ai-news-platform)
 
 [한국어](README.md)
 
@@ -6,7 +6,7 @@ A service that groups overseas English-language news into stories, presents each
 
 The Korean README is the primary document; this is the second reading path with the same structure. Project documents (spec, ADRs, agent rules) are written in Korean.
 
-- Live: <https://ai-news-platform-six.vercel.app> (every story, evidence span, revision history, and search works without logging in)
+- Live: <https://newstrail.vercel.app> (every story, evidence span, revision history, and search works without logging in)
 - Design and scope: [spec](docs/spec/v1.md) · glossary: [CONTEXT.md](CONTEXT.md) · decisions: [ADR index](docs/adr/)
 
 ## Core loop

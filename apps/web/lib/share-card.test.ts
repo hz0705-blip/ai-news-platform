@@ -14,7 +14,7 @@ describe("share card", () => {
   it("og image url changes per revision", () => {
     const first = storyOgImagePath("demo-1-agreement", "demo-1:r1");
     const second = storyOgImagePath("demo-1-agreement", "demo-1:r2");
-    expect(first).toBe("/og/story/demo-1-agreement/demo-1%3Ar1/ko-t1-f1.3.9.png");
+    expect(first).toBe("/og/story/demo-1-agreement/demo-1%3Ar1/ko-t2-f1.3.9.png");
     expect(second).not.toBe(first);
   });
 
@@ -24,13 +24,14 @@ describe("share card", () => {
     expect(metadata.description).toBe("기능 설명을 위해 만든 데모 사건입니다. 첫 주장.");
     expect(metadata.openGraph?.images).toEqual([
       {
-        url: "/og/story/demo-1-agreement/demo-1%3Ar2/ko-t1-f1.3.9.png",
+        url: "/og/story/demo-1-agreement/demo-1%3Ar2/ko-t2-f1.3.9.png",
         width: 1200,
         height: 600,
         alt: "[데모 사건] 제목",
       },
     ]);
     expect(metadata.twitter).toMatchObject({ card: "summary_large_image" });
+    expect(metadata.openGraph?.siteName).toBe("Newstrail");
     expect(storyMetadata(view("r", false)).title).toBe("제목");
   });
 });

@@ -1,10 +1,10 @@
-# ai-news-platform
+# Newstrail (ai-news-platform)
 
 [English](README.en.md)
 
 해외 영어 뉴스를 사건 단위로 묶어 한국어 주장으로 보여주고, 모든 주장을 영어 원문 근거 구간에 연결하며, 출처들이 갈리는 지점과 마지막으로 읽은 이후의 변화를 드러내는 서비스다. 정치 편향 점수와 확신도 숫자는 두지 않는다.
 
-- 배포: <https://ai-news-platform-six.vercel.app> (로그인 없이 모든 사건·근거·이력·검색을 쓸 수 있다)
+- 배포: <https://newstrail.vercel.app> (로그인 없이 모든 사건·근거·이력·검색을 쓸 수 있다)
 - 설계와 범위: [스펙](docs/spec/v1.md) · 용어: [CONTEXT.md](CONTEXT.md) · 결정: [ADR 목록](docs/adr/)
 
 ## 핵심 루프
