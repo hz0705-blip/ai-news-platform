@@ -5,28 +5,25 @@ import { Toggle } from "@base-ui/react/toggle";
 import { ToggleGroup } from "@base-ui/react/toggle-group";
 import type { TodayData } from "@newstrail/db";
 import { TOPICS } from "@newstrail/domain/topic";
+import { Search } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
-  ABOUT_LINK,
+  DEMO_NOTICE,
   DEMO_STORIES,
-  FOLLOWS_LINK,
-  LAST_UPDATED,
   LATEST_STORIES,
   MORE,
-  NEVER_PUBLISHED,
   NEXT_UPDATE,
   NO_STORIES,
-  SCREEN_TITLE,
   SEARCH_LINK,
   storyCount,
-  TODAY_LABEL,
   TOPICS_LABEL,
   VIEW_DEMO,
 } from "../../app/copy.ts";
-import { formatAbsolute } from "../../lib/format-time.ts";
 import { Button } from "../ui/button.tsx";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "../ui/empty.tsx";
-import { StoryCard } from "./story-card.tsx";
+import { EditorialCard, EditorialSectionHeading } from "./editorial-card.tsx";
+import { TodayHeader } from "./today-header.tsx";
+import { TodayOverview } from "./today-overview.tsx";
 
 const PAGE_SIZE = 8;
 
@@ -55,118 +52,136 @@ export function TodayScreen({
   const stories = live.stories.filter(
     (story) => selected.length === 0 || story.topics.some((topic) => selected.includes(topic)),
   );
-  const updated = live.lastUpdated ? formatAbsolute(live.lastUpdated) : null;
+  function selectTopics(topics: string[]) {
+    setSelected(topics);
+    setVisibleCount(PAGE_SIZE);
+    nextFocus.current = null;
+  }
   return (
-    <main className="mx-auto flex max-w-[76rem] flex-col gap-8 px-4 py-12 lg:px-6">
-      <header className="flex flex-col gap-3">
-        <p className="text-meta text-muted-foreground">{TODAY_LABEL}</p>
-        <h1>{SCREEN_TITLE}</h1>
-        <p className="text-meta text-muted-foreground">
-          {updated ? (
-            <>
-              {LAST_UPDATED} <time dateTime={updated.dateTime}>{updated.text}</time>
-            </>
-          ) : (
-            NEVER_PUBLISHED
-          )}
-        </p>
-        <p className="text-meta text-muted-foreground">{NEXT_UPDATE}</p>
+    <main className="today-page" id="today-content">
+      <TodayHeader lastUpdated={live.lastUpdated} operationalNotice={operationalNotice} />
+      <div className="today-toolbar">
+        <div className="today-topic-controls">
+          <button
+            type="button"
+            className="today-topic-filter today-all"
+            aria-pressed={selected.length === 0}
+            onClick={() => selectTopics([])}
+          >
+            전체 사건 <span>{live.stories.length}건</span>
+          </button>
+          <ToggleGroup
+            aria-label={TOPICS_LABEL}
+            multiple={false}
+            value={selected}
+            onValueChange={selectTopics}
+            className="today-topics"
+          >
+            {TOPICS.map((topic) => (
+              <Toggle key={topic} value={topic} className="today-topic-filter">
+                {topic}
+                <span>
+                  {storyCount(live.stories.filter((story) => story.topics.includes(topic)).length)}
+                </span>
+              </Toggle>
+            ))}
+          </ToggleGroup>
+        </div>
+        <search aria-label={SEARCH_LINK} className="today-search">
+          <form
+            aria-label={SEARCH_LINK}
+            action="/search"
+            method="get"
+            className="today-search-form"
+          >
+            <label htmlFor="today-search-query" className="sr-only">
+              검색어
+            </label>
+            <input
+              id="today-search-query"
+              type="search"
+              name="q"
+              placeholder="사건이나 키워드 검색"
+              required
+              className="today-search-input"
+            />
+            <button type="submit" aria-label={SEARCH_LINK} className="today-search-submit">
+              <Search size={20} aria-hidden="true" />
+            </button>
+          </form>
+        </search>
+      </div>
+      <div className="today-results">
         <p>
-          <a href="/search" className="underline">
-            {SEARCH_LINK}
-          </a>
+          {selected[0] ?? "전체 토픽"} · {storyCount(stories.length)}
         </p>
-        <p>
-          <a href="/about" className="underline">
-            {ABOUT_LINK}
-          </a>
-        </p>
-        {operationalNotice}
-      </header>
-      <ToggleGroup
-        aria-label={TOPICS_LABEL}
-        multiple={false}
-        value={selected}
-        onValueChange={(value) => {
-          setSelected(value);
-          setVisibleCount(PAGE_SIZE);
-        }}
-        className="grid auto-rows-fr grid-cols-1 gap-4 md:grid-cols-2"
-      >
-        {TOPICS.map((topic) => {
-          const members = live.stories.filter((story) => story.topics.includes(topic));
-          return (
-            <Toggle
-              key={topic}
-              value={topic}
-              className="flex min-w-0 flex-col items-start gap-2 rounded-md border border-input bg-card p-4 text-left text-card-foreground data-pressed:bg-primary data-pressed:text-primary-foreground"
-            >
-              <span className="text-card-title font-semibold">{topic}</span>
-              <span className="text-meta">{storyCount(members.length)}</span>
-              <span>{members[0]?.title ?? NO_STORIES}</span>
-            </Toggle>
-          );
-        })}
-      </ToggleGroup>
-      <section aria-labelledby="latest-stories" className="flex flex-col gap-4">
-        <h2 id="latest-stories">{LATEST_STORIES}</h2>
-        {stories.length === 0 ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyTitle>{NO_STORIES}</EmptyTitle>
-              <EmptyDescription>{NEXT_UPDATE}</EmptyDescription>
-            </EmptyHeader>
-            <EmptyContent>
-              <a href="#demo-stories">{VIEW_DEMO}</a>
-            </EmptyContent>
-          </Empty>
-        ) : (
-          <>
-            <ul className="flex flex-col gap-4">
-              {stories.slice(0, visibleCount).map((story) => (
-                <li key={story.id}>
-                  <StoryCard
-                    story={story}
-                    now={now}
-                    titleRef={(node) => {
-                      if (node && nextFocus.current === story.id) {
-                        node.focus();
-                        nextFocus.current = null;
-                      }
+        <p>사건 갱신 시각 순</p>
+      </div>
+      <div className="today-editorial">
+        <div className="today-content-column">
+          <section aria-labelledby="latest-stories">
+            <EditorialSectionHeading id="latest-stories" detail="발행된 사건">
+              {LATEST_STORIES}
+            </EditorialSectionHeading>
+            {stories.length === 0 ? (
+              <Empty className="my-6">
+                <EmptyHeader>
+                  <EmptyTitle>{NO_STORIES}</EmptyTitle>
+                  <EmptyDescription>{NEXT_UPDATE}</EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                  <a href="#demo-stories">{VIEW_DEMO}</a>
+                </EmptyContent>
+              </Empty>
+            ) : (
+              <>
+                <ul className="today-story-grid">
+                  {stories.slice(0, visibleCount).map((story, index) => (
+                    <li key={story.id} className={index === 0 ? "today-lead" : undefined}>
+                      <EditorialCard
+                        story={story}
+                        now={now}
+                        featured={index === 0}
+                        titleRef={(node) => {
+                          if (node && nextFocus.current === story.id) {
+                            node.focus();
+                            nextFocus.current = null;
+                          }
+                        }}
+                      />
+                    </li>
+                  ))}
+                </ul>
+                {visibleCount < stories.length && (
+                  <Button
+                    className="mt-6"
+                    variant="outline"
+                    onClick={() => {
+                      nextFocus.current = stories[visibleCount]?.id ?? null;
+                      setVisibleCount((count) => count + PAGE_SIZE);
                     }}
-                  />
+                  >
+                    {MORE}
+                  </Button>
+                )}
+              </>
+            )}
+          </section>
+          <section aria-labelledby="demo-stories" className="today-demos">
+            <EditorialSectionHeading id="demo-stories" detail={DEMO_NOTICE}>
+              {DEMO_STORIES}
+            </EditorialSectionHeading>
+            <ul className="today-story-grid">
+              {demo.stories.map((story) => (
+                <li key={story.id}>
+                  <EditorialCard story={story} now={now} />
                 </li>
               ))}
             </ul>
-            {visibleCount < stories.length && (
-              <Button
-                className="self-start"
-                onClick={() => {
-                  nextFocus.current = stories[visibleCount]?.id ?? null;
-                  setVisibleCount((count) => count + PAGE_SIZE);
-                }}
-              >
-                {MORE}
-              </Button>
-            )}
-          </>
-        )}
-      </section>
-      <section aria-labelledby="demo-stories" className="flex flex-col gap-4">
-        <h2 id="demo-stories">{DEMO_STORIES}</h2>
-        <ul className="flex flex-col gap-4">
-          {demo.stories.map((story) => (
-            <li key={story.id}>
-              <StoryCard story={story} now={now} />
-            </li>
-          ))}
-        </ul>
-      </section>
-      <p>
-        <a href="/follows" className="underline">
-          {FOLLOWS_LINK}
-        </a>
-      </p>
+          </section>
+        </div>
+        <TodayOverview stories={live.stories} />
+      </div>
     </main>
   );
 }

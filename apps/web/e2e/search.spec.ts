@@ -39,12 +39,10 @@ async function stubSearch(page: Page): Promise<string[]> {
 test("오늘에서 검색으로 가 한국어 질의로 사건을 연다", async ({ page }) => {
   const queries = await stubSearch(page);
   await page.goto("/");
-  await page.getByRole("link", { name: "사건 검색" }).click();
-  await expect(page).toHaveURL(/\/search$/);
+  await page.getByRole("searchbox", { name: "검색어" }).fill(QUERY);
+  await page.getByRole("searchbox", { name: "검색어" }).press("Enter");
+  await expect(page).toHaveURL(/\/search\?q=/);
   await expect(page.getByRole("heading", { level: 1, name: "사건 검색" })).toBeVisible();
-  const input = page.getByRole("searchbox", { name: "검색어" });
-  await input.fill(QUERY);
-  await input.press("Enter");
   const live = page.getByRole("region", { name: "검색 결과" });
   const demos = page.getByRole("region", { name: "데모 사건 결과" });
   await expect(live.getByRole("link")).toHaveText(["라이브 검색 결과"]);

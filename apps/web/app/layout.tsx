@@ -21,7 +21,7 @@ export default function RootLayout({ children }: { children: ReactNode }): React
           <AccountMenu />
         </header>
         {children}
-        <footer className="mx-auto flex max-w-[76rem] flex-wrap gap-x-4 gap-y-2 px-4 pb-12 lg:px-6">
+        <footer className="mx-auto flex max-w-[76rem] flex-wrap justify-center gap-x-4 gap-y-2 px-4 pb-12 text-meta lg:px-6">
           <a href="/about" className="underline">
             {ABOUT_LINK}
           </a>

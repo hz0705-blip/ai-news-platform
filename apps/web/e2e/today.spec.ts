@@ -48,7 +48,7 @@ const demos = (page: Page) => page.getByRole("region", { name: "데모 사건", 
 const tiles = (page: Page) =>
   page.getByRole("group", { name: "토픽", exact: true }).getByRole("button");
 
-test("실제 오늘: 미발행·동일 크기 0건 타일·데모 앵커 → 사건 → 근거", async ({ page }) => {
+test("실제 오늘: 미발행·0건 토픽 필터·데모 앵커 → 사건 → 근거", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
@@ -59,20 +59,9 @@ test("실제 오늘: 미발행·동일 크기 0건 타일·데모 앵커 → 사
   await expect(page.getByText("매일 오전 6시·오후 6시 갱신 예정").first()).toBeVisible();
   await expect(tiles(page)).toHaveCount(4);
   for (const tile of await tiles(page).all()) await expect(tile).toContainText("사건 0건");
-  const bounds = await tiles(page).evaluateAll((nodes) =>
-    nodes.map((node) => {
-      const rect = node.getBoundingClientRect();
-      return { width: rect.width, height: rect.height };
-    }),
+  await expect(page.getByRole("region", { name: "발행 사건 현황" })).toContainText(
+    "전체 발행 사건 0건",
   );
-  const firstBound = bounds[0];
-  if (!firstBound) throw new Error("Missing tile bounds");
-  expect(
-    bounds.every(
-      ({ width, height }) =>
-        Math.abs(width - firstBound.width) < 1 && Math.abs(height - firstBound.height) < 1,
-    ),
-  ).toBe(true);
   await expect(latest(page).getByRole("link", { name: "데모 사건 보기" })).toHaveAttribute(
     "href",
     "#demo-stories",
@@ -109,7 +98,6 @@ test("시간순 카드·다중 토픽·필터 해제·빈 토픽·8개 단위 �
       story.topics.includes(TOPICS[index] ?? TOPICS[0]),
     );
     await expect(tiles(page).nth(index)).toContainText(`사건 ${members.length}건`);
-    if (members[0]) await expect(tiles(page).nth(index)).toContainText(members[0].title);
   }
   await expect(latest(page).getByRole("list", { name: "토픽" }).first()).toHaveText(
     TOPICS[0] + TOPICS[1],
@@ -142,11 +130,12 @@ test("Tab·Enter·Space로 토픽을 선택하고 해제한다", async ({ page, 
   await mountToday(page);
   // macOS WebKit keyboard navigation preference uses Option-Tab for all controls.
   const tab = browserName === "webkit" && process.platform === "darwin" ? "Alt+Tab" : "Tab";
-  // 헤더의 검색·소개 진입점 다음이 첫 타일이다.
+  for (const name of ["오늘", "팔로우한 사건 보기", "사건 검색", "서비스 소개"]) {
+    await page.keyboard.press(tab);
+    await expect(page.getByRole("link", { name, exact: true })).toBeFocused();
+  }
   await page.keyboard.press(tab);
-  await expect(page.getByRole("link", { name: "사건 검색" })).toBeFocused();
-  await page.keyboard.press(tab);
-  await expect(page.getByRole("link", { name: "서비스 소개" })).toBeFocused();
+  await expect(page.getByRole("button", { name: /^전체 사건/ })).toBeFocused();
   await page.keyboard.press(tab);
   await expect(tiles(page).first()).toBeFocused();
   await page.keyboard.press("Enter");
@@ -212,10 +201,10 @@ for (const width of [320, 640, 1440]) {
           return {
             viewport: innerWidth,
             scrollWidth: document.documentElement.scrollWidth,
-            tiles: [...document.querySelectorAll('[role="group"] button')].map(rect),
-            cards: [
-              ...document.querySelectorAll('[aria-labelledby="latest-stories"] [data-slot="card"]'),
-            ].map(rect),
+            tiles: [...document.querySelectorAll(".today-topics button")].map(rect),
+            cards: [...document.querySelectorAll('[aria-labelledby="latest-stories"] article')].map(
+              rect,
+            ),
           };
         });
         expect(measurements.scrollWidth).toBeLessThanOrEqual(width);
@@ -223,20 +212,28 @@ for (const width of [320, 640, 1440]) {
         const [first, second, third] = measurements.tiles;
         if (!first || !second || !third) throw new Error("Missing tile bounds");
         for (const tile of measurements.tiles) {
-          expect(Math.abs(tile.width - first.width)).toBeLessThan(1);
-          expect(Math.abs(tile.height - first.height)).toBeLessThan(1);
+          expect(tile.width).toBeGreaterThan(0);
+          expect(tile.height).toBeGreaterThanOrEqual(44);
+          expect(tile.x).toBeGreaterThanOrEqual(0);
+          expect(tile.x + tile.width).toBeLessThanOrEqual(width);
         }
         if (width < 768) expect(second.y).toBeGreaterThan(first.y);
         else {
           expect(second.y).toBe(first.y);
           expect(second.x).toBeGreaterThan(first.x);
-          expect(third.y).toBeGreaterThan(first.y);
+          expect(third.y).toBe(first.y);
         }
-        expect(measurements.cards.length).toBeGreaterThan(1);
-        const [firstCard, secondCard] = measurements.cards;
-        if (!firstCard || !secondCard) throw new Error("Missing card bounds");
+        expect(measurements.cards.length).toBeGreaterThan(2);
+        const [firstCard, secondCard, thirdCard] = measurements.cards;
+        if (!firstCard || !secondCard || !thirdCard) throw new Error("Missing card bounds");
         expect(secondCard.x).toBe(firstCard.x);
         expect(secondCard.y).toBeGreaterThan(firstCard.y);
+        if (width < 768) expect(thirdCard.y).toBeGreaterThan(secondCard.y);
+        else {
+          expect(thirdCard.y).toBe(secondCard.y);
+          expect(thirdCard.x).toBeGreaterThan(secondCard.x);
+          expect(firstCard.width).toBeGreaterThan(secondCard.width);
+        }
         await testInfo.attach(`bounds-${state}.json`, {
           body: JSON.stringify(measurements, null, 2),
           contentType: "application/json",
@@ -265,10 +262,10 @@ test.describe("배치 상태", () => {
 
   test("today shows normal update time", async ({ page }) => {
     await mountToday(page, { kind: "none" });
-    // 정확히 이 텍스트: 상태 알림 없이 갱신 시각·약속 주기·검색·소개 진입점만 보인다.
-    await expect(header(page)).toHaveText(
-      "오늘사건으로 읽는 해외 보도마지막 갱신 2026. 9. 23. 오전 11:59 KST매일 오전 6시·오후 6시 갱신 예정사건 검색서비스 소개",
-    );
+    await expect(header(page)).toContainText("마지막 갱신 2026. 9. 23. 오전 11:59 KST");
+    await expect(header(page)).toContainText("매일 오전 6시·오후 6시 갱신 예정");
+    await expect(header(page).getByRole("link", { name: "사건 검색" })).toBeVisible();
+    await expect(header(page).locator("[data-batch-notice]")).toHaveCount(0);
   });
 
   test("today shows running", async ({ page }) => {
