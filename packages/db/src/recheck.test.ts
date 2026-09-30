@@ -122,7 +122,7 @@ maybe("원문 재수집 저장(#86, 실 DB)", () => {
       expect(await loadDormantSampledToday(db, now.toISOString().slice(0, 10))).toEqual({});
 
       // 재처리 대상: 배치가 사건을 다시 읽고, 새 버전은 정정 후보로, 옛 버전 본문은 좌표 정렬용으로 온다.
-      const { stories: batch } = await loadBatchStories(db);
+      const { stories: batch } = await loadBatchStories(db, { now });
       expect(batch.map((s) => s.story.id)).toEqual([fixture.story.id]);
       const meridian = batch[0]?.articles.find((a) => a.id === "a-meridian");
       expect(meridian).toMatchObject({
@@ -144,7 +144,7 @@ maybe("원문 재수집 저장(#86, 실 DB)", () => {
         .update(stories)
         .set({ last_processed_at: new Date(now.getTime() + 2 * HOUR) })
         .where(eq(stories.id, fixture.story.id));
-      const { stories: later } = await loadBatchStories(db);
+      const { stories: later } = await loadBatchStories(db, { now });
       const again = later[0]?.articles.find((a) => a.id === "a-meridian");
       expect(again).toMatchObject({ articleVersionId: "av-meridian-2", correctionCandidate: true });
       expect(again?.correctionFirstReprocess).toBeUndefined();
@@ -235,7 +235,7 @@ maybe("원문 재수집 저장(#86, 실 DB)", () => {
       }
 
       // 배치: 새 기사만 입력이고, 본문을 지운 기사는 출처 구획으로만 온다(좌표 정렬용 이전 본문도 없다).
-      const { stories: batch } = await loadBatchStories(db);
+      const { stories: batch } = await loadBatchStories(db, { now });
       expect(batch[0]?.articles.map((a) => a.id)).toEqual(["a-new"]);
       expect(batch[0]?.linkOnlySources?.map((s) => s.articleId).sort()).toEqual([
         "a-harbor",

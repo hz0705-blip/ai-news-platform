@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   addBatchRunSpend,
   clearStoriesDeferred,
+  DEFERRED_STALE_MS,
   finishBatchRun,
   loadBatchRunsSince,
   loadBatchStories,
@@ -181,7 +182,7 @@ maybe("배치 대상 사건", () => {
         last_processed_at: null,
         deferred_at: null,
       });
-      const first = await loadBatchStories(db);
+      const first = await loadBatchStories(db, { now });
       expect(first.stories.map((s) => s.story.id)).toEqual(["story-live"]);
       expect(first.stories[0]?.articles).toEqual([
         expect.objectContaining({
@@ -205,22 +206,81 @@ maybe("배치 대상 사건", () => {
           publishedAt: now,
         },
       });
-      expect((await loadBatchStories(db)).stories).toEqual([]);
+      expect((await loadBatchStories(db, { now })).stories).toEqual([]);
 
       // 미루면 다시 대상이고, 처리 표시를 지우면 빠진다.
       await markStoriesDeferred(db, { storyIds: ["story-live"], at: now });
-      const deferred = await loadBatchStories(db);
+      const deferred = await loadBatchStories(db, { now });
       expect(deferred.stories[0]?.deferredSince).toEqual(now);
       expect(deferred.stories[0]?.latestRevision?.id).toBe("story-live:rev-1");
       await clearStoriesDeferred(db, ["story-live"]);
-      expect((await loadBatchStories(db)).stories).toEqual([]);
+      expect((await loadBatchStories(db, { now })).stories).toEqual([]);
 
       // 확인만 된 뒤 새 처리(배정)가 있으면 다시 대상이다.
       const later = new Date(now.getTime() + 60_000);
       await confirmRevision(db, { revisionId: "story-live:rev-1", checkedAt: later });
-      expect((await loadBatchStories(db)).stories).toEqual([]);
+      expect((await loadBatchStories(db, { now })).stories).toEqual([]);
       await db.update(stories).set({ last_processed_at: new Date(later.getTime() + 1) });
-      expect((await loadBatchStories(db)).stories.map((s) => s.story.id)).toEqual(["story-live"]);
+      expect((await loadBatchStories(db, { now })).stories.map((s) => s.story.id)).toEqual([
+        "story-live",
+      ]);
+    } finally {
+      await cleanup();
+    }
+  });
+});
+
+maybe("48시간 넘게 미룬 사건", () => {
+  const stale = new Date(now.getTime() - DEFERRED_STALE_MS - 60_000);
+  const recent = new Date(now.getTime() - DEFERRED_STALE_MS + 60_000);
+
+  it("loadBatchStories skips stories deferred over 48h without new article versions", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      await seedLiveStory(db);
+      // 기사 버전(av-live, captured_at = now)보다 뒤에 미룬 것으로 둔다 — 미룬 뒤 새 버전 없음.
+      await db.update(articleVersions).set({ captured_at: new Date(stale.getTime() - 1) });
+      await db.update(stories).set({ deferred_at: stale });
+      expect((await loadBatchStories(db, { now })).stories).toEqual([]);
+      // 행과 deferred_at은 지우지 않는다.
+      const [row] = await db.select().from(stories);
+      expect(row?.deferred_at).toEqual(stale);
+
+      // 48시간 안이면 미룬 시각과 함께 온다.
+      await db.update(stories).set({ deferred_at: recent });
+      const loaded = await loadBatchStories(db, { now });
+      expect(loaded.stories.map((s) => s.story.id)).toEqual(["story-live"]);
+      expect(loaded.stories[0]?.deferredSince).toEqual(recent);
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("loadBatchStories returns a stale deferred story with a new version but without deferredSince", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      await seedLiveStory(db);
+      // av-live(captured_at = now)는 미룬 뒤에 들어온 새 버전이다.
+      await db.update(stories).set({ deferred_at: stale });
+      const loaded = await loadBatchStories(db, { now });
+      expect(loaded.stories.map((s) => s.story.id)).toEqual(["story-live"]);
+      expect(loaded.stories[0]?.deferredSince).toBeUndefined();
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("markStoriesDeferred restarts deferred_at older than 48h and keeps a recent one", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      await seedLiveStory(db);
+      await db.update(stories).set({ deferred_at: stale });
+      await markStoriesDeferred(db, { storyIds: ["story-live"], at: now });
+      expect((await db.select().from(stories))[0]?.deferred_at).toEqual(now);
+
+      await db.update(stories).set({ deferred_at: recent });
+      await markStoriesDeferred(db, { storyIds: ["story-live"], at: now });
+      expect((await db.select().from(stories))[0]?.deferred_at).toEqual(recent);
     } finally {
       await cleanup();
     }
@@ -234,7 +294,7 @@ maybe("재처리 필요 조건", () => {
       await seedLiveStory(db);
       /** [배치 대상인가, 확장할 개정판이 있는가] — 늘 정확히 하나만 참이다. */
       const sides = async () => [
-        (await loadBatchStories(db)).stories.some((s) => s.story.id === "story-live"),
+        (await loadBatchStories(db, { now })).stories.some((s) => s.story.id === "story-live"),
         (await loadRevisionToExtend(db, "story-live")) !== undefined,
       ];
       // 개정판 없음 → 재처리 필요.

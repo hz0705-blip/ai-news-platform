@@ -4,8 +4,10 @@ import { TOPICS, type Topic } from "@newsplatform/domain";
 export interface PriorityInput {
   readonly storyId: string;
   readonly articleCount: number;
+  /** 이번 배치 입력 기사의 서로 다른 출처 수. 2 이상이면 맨 앞이다. */
+  readonly sourceCount: number;
   readonly topics: readonly Topic[];
-  /** 이전 배치가 미룬 시각. 있으면 맨 앞이다. */
+  /** 이전 배치가 48시간 안에 미룬 시각. 있으면 출처 2곳 이상 사건 다음이다. */
   readonly deferredSince?: Date;
 }
 
@@ -15,11 +17,14 @@ function topicRank(topics: readonly Topic[]): number {
 }
 
 /**
- * 한도 도달 시 처리 순서(docs/spec/v1.md "배치와 비용"): 이전 배치가 미룬 사건(먼저 미룬 순) →
+ * 한도 도달 시 처리 순서(docs/spec/v1.md "배치와 비용"): 출처 2곳 이상 사건 → 이전 배치가 미룬 사건(먼저 미룬 순) →
  * 기사가 많이 붙은 사건 → 토픽 순서(`TOPICS`) → 사건 식별자(결정론). 입력을 바꾸지 않고 새 배열을 준다.
  */
 export function prioritizeStories<T extends PriorityInput>(stories: readonly T[]): T[] {
   return [...stories].sort((a, b) => {
+    const aMulti = a.sourceCount >= 2;
+    const bMulti = b.sourceCount >= 2;
+    if (aMulti !== bMulti) return aMulti ? -1 : 1;
     if (a.deferredSince !== undefined || b.deferredSince !== undefined) {
       if (a.deferredSince === undefined) return 1;
       if (b.deferredSince === undefined) return -1;
