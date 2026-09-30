@@ -88,7 +88,7 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 
 규칙은 `CLAUDE.md` "구현 사이클". 여기는 경로와 형식.
 
-- **스크립트**: 착수 `scripts/cycle-start <이슈> [--check-only]`(메인 체크아웃에서, 워크트리 생성·`.env` 링크·`pnpm install`), 마무리 `scripts/cycle-finish <PR> [--wait-only]`(CI 대기 → 스쿼시 머지 → 워크트리·로컬 브랜치 정리 → main 갱신 → 다음 후보 출력), 인계 상태 `scripts/handoff-state`. 머리말이 사용법.
+- **스크립트**: 착수 `scripts/cycle-start <이슈> [--check-only]`(메인 체크아웃에서, 워크트리 생성·`.env` 링크·`pnpm install`), 마무리 `scripts/cycle-finish <PR> [--wait-only]`(CI 대기·판정(모든 체크가 pass·skipping이어야 통과, cancel·pending도 실패) → 스쿼시 머지 → 워크트리·로컬 브랜치 정리 → main 갱신 → 다음 후보 출력), 인계 상태 `scripts/handoff-state`. 머리말이 사용법.
 - **워크트리**: 경로 `../ai-news-platform-wt/<이슈>`(저장소 옆, `origin/main`에서). `.env`는 메인 체크아웃 것의 심볼릭 링크다. 워크트리 안의 `pnpm test:db`는 같은 컨테이너의 전용 DB `newsplatform_test_<이슈>`를 만들어 쓰고 `cycle-finish`가 지운다. E2E는 `E2E_PORT=<3200 + 이슈 % 800>`(기본 3100, `apps/web/playwright.config.ts`). 로컬 Supabase Auth 스택(54321)은 하나를 함께 쓴다. 저장소 git config(`http.lowSpeed*`)는 워크트리가 공유한다. 원격 브랜치는 저장소 설정 `delete_branch_on_merge`가 지운다.
 - **superpowers**: 끔(`.claude/settings.json` `enabledPlugins`의 값 `false`). 다시 켜질 때를 대비해 `permissions.deny`의 superpowers 스킬 거부 규칙은 남긴다.
 - **브리프**(구현자·리뷰어 프롬프트 첫 블록): 이슈 번호와 본문 전문, 스펙 절 경로, 파일 후보, 테스트 이름, 위 커밋 트레일러 한 줄. 테스트 명령은 저장소 루트에서 `pnpm test`, `pnpm lint`, `pnpm typecheck`(`pnpm test:db`는 로컬 컨테이너, 위 "명령어" 참고). 규격은 이 파일 "스택"·"컨벤션"·"테스트"·"도메인 규칙", 용어는 `CONTEXT.md`. `ui` 티켓이면 스킬 원문 경로와 "스펙이 스킬보다 우선" 한 줄. 보고는 판정 한 줄 + 근거마다 1~2줄과 `파일:행`, diff·로그 원문 없음.
