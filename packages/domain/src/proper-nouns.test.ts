@@ -5,9 +5,9 @@ describe("properNounsOf", () => {
   it("picks capitalized tokens, joins phrases through `of`, drops stopwords and possessives", () => {
     expect(
       properNounsOf(
-        "Iran says it will wait for official US response after Trump rejects Strait of Hormuz proposal",
+        "Marrenland says it will wait for official NU response after Aldmark rejects Strait of Kaltenia proposal",
       ),
-    ).toEqual(["Iran", "US", "Trump", "Strait of Hormuz"]);
+    ).toEqual(["Marrenland", "NU", "Aldmark", "Strait of Kaltenia"]);
     expect(
       properNounsOf("After the vote, South Korea's Lee Jae-myung meets Xi in Beijing"),
     ).toEqual(["South Korea", "Lee Jae-myung", "Xi", "Beijing"]);
