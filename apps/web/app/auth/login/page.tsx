@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { type ReactElement, Suspense } from "react";
 import { LoginOptions } from "../../../components/auth/login-options.tsx";
+import { LegalLinks } from "../../../components/legal-links.tsx";
 import { Alert, AlertTitle } from "../../../components/ui/alert.tsx";
 import { Button } from "../../../components/ui/button.tsx";
 import { supabaseEnv } from "../../../lib/auth/env.ts";
@@ -78,6 +79,7 @@ export default function LoginPage({ searchParams }: PageProps<"/auth/login">): R
       <Suspense fallback={<div aria-hidden="true" className="min-h-40" />}>
         <LoginBody searchParams={searchParams} />
       </Suspense>
+      <LegalLinks />
     </main>
   );
 }

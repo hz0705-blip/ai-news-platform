@@ -74,7 +74,6 @@ export const REQUEST_INTRO =
   "사실 오류, 권리 침해, 개인에 관한 내용의 정정·삭제 요청은 메일로 받습니다.";
 export const requestMailLink = (email: string) => `${email}로 정정·삭제 요청 메일 보내기`;
 export const REQUEST_MAIL_SUBJECT = "정정·삭제 요청";
-export const CONTACT_PENDING = "연락처 준비 중";
 export const CONTACT_PENDING_DETAIL = "요청 메일 주소를 곧 이곳에 안내합니다.";
 export const REQUEST_FIELDS_INTRO = "메일에 다음을 적어 주세요.";
 export const REQUEST_FIELDS: readonly string[] = [
