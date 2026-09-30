@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { hashNonce } from "../../../../lib/auth/kakao.ts";
+import { hashNonce } from "../../../../lib/auth/oidc.ts";
 import { GET } from "./route.ts";
 
 afterEach(() => vi.unstubAllEnvs());
@@ -63,6 +63,51 @@ describe("로그인 시작 — Kakao", () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
     vi.stubEnv("KAKAO_REST_API_KEY", "");
     const response = await GET(start("kakao"));
+    const location = new URL(response.headers.get("location") ?? "");
+    expect(location.pathname).toBe("/auth/login");
+    expect(location.searchParams.get("error")).toBe("unavailable");
+  });
+});
+
+describe("로그인 시작 — Google", () => {
+  it("Google 인가 URL은 scope openid email profile·state·nonce 해시·redirect_uri를 담는다", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://ref.supabase.test");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
+    vi.stubEnv("GOOGLE_CLIENT_ID", "google-client");
+    vi.stubEnv("GOOGLE_CLIENT_SECRET", "google-secret");
+    const response = await GET(start("google"));
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    const authorize = new URL(response.headers.get("location") ?? "");
+    expect(`${authorize.origin}${authorize.pathname}`).toBe(
+      "https://accounts.google.com/o/oauth2/v2/auth",
+    );
+    const params = Object.fromEntries(authorize.searchParams);
+    expect(params.scope).toBe("openid email profile");
+    expect(params.client_id).toBe("google-client");
+    expect(params.response_type).toBe("code");
+    expect(params.redirect_uri).toBe("https://web.test/auth/callback/google");
+    expect(params.prompt).toBeUndefined();
+    expect(params.access_type).toBeUndefined();
+    expect(params.client_secret).toBeUndefined();
+
+    const state = response.cookies.get("google-oidc-state");
+    const nonce = response.cookies.get("google-oidc-nonce");
+    expect(state?.value).toBe(params.state);
+    expect(state).toMatchObject({ httpOnly: true, path: "/auth", maxAge: 600, secure: true });
+    expect(nonce).toMatchObject({ httpOnly: true, path: "/auth", maxAge: 600 });
+    expect(params.nonce).toBe(hashNonce(nonce?.value ?? ""));
+    expect(params.nonce).not.toBe(nonce?.value);
+    expect(response.cookies.get("auth-return-path")?.value).toBe("/story/s-1?intent=follow");
+  });
+
+  it("Google 변수가 없으면 로그인할 수 없음 안내로 보낸다", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://ref.supabase.test");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
+    vi.stubEnv("GOOGLE_CLIENT_ID", "google-client");
+    vi.stubEnv("GOOGLE_CLIENT_SECRET", "");
+    const response = await GET(start("google"));
     const location = new URL(response.headers.get("location") ?? "");
     expect(location.pathname).toBe("/auth/login");
     expect(location.searchParams.get("error")).toBe("unavailable");

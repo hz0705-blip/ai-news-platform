@@ -1,7 +1,8 @@
 // 개인정보 처리방침 문구(#128, 컨트롤러 Ruling). 목차는 스펙 v1 "개발 중 결정 항목" 법적 페이지 범위가 정본이다.
 // 쿠키 이름·scope는 코드 상수에서 가져온다. 위탁 업체의 지역·보존은 docs/agents/project.md "운영 환경"과 실제 설정에서 확인했다.
 import { DELETION_INTENT_COOKIE, DELETION_STATUS_COOKIE } from "../../lib/account/deletion.ts";
-import { GOOGLE_SCOPE, supabaseAuthCookieName } from "../../lib/auth/env.ts";
+import { supabaseAuthCookieName } from "../../lib/auth/env.ts";
+import { GOOGLE_NONCE_COOKIE, GOOGLE_SCOPE, GOOGLE_STATE_COOKIE } from "../../lib/auth/google.ts";
 import { KAKAO_NONCE_COOKIE, KAKAO_SCOPE, KAKAO_STATE_COOKIE } from "../../lib/auth/kakao.ts";
 import { RETURN_COOKIE } from "../../lib/auth/urls.ts";
 import { ANON_COOKIE } from "../../lib/search/guard.ts";
@@ -200,13 +201,14 @@ export const COOKIES_INTRO =
 export const COOKIES: readonly CookieRow[] = [
   {
     name: supabaseAuthCookieName("<프로젝트 ref>"),
-    purpose:
-      "로그인 세션 유지. 값이 크면 .0·.1로 나뉘고, Google 로그인 중에는 같은 접두의 코드 검증자 쿠키가 붙습니다.",
+    purpose: "로그인 세션 유지. 값이 크면 .0·.1로 나뉩니다.",
     duration: "최대 400일, 로그아웃·계정 삭제 시 삭제",
   },
   { name: RETURN_COOKIE, purpose: "로그인 뒤 돌아갈 주소", duration: "10분" },
   { name: KAKAO_STATE_COOKIE, purpose: "Kakao 로그인 위조 요청 방지(state)", duration: "10분" },
   { name: KAKAO_NONCE_COOKIE, purpose: "Kakao 로그인 재사용 방지(nonce)", duration: "10분" },
+  { name: GOOGLE_STATE_COOKIE, purpose: "Google 로그인 위조 요청 방지(state)", duration: "10분" },
+  { name: GOOGLE_NONCE_COOKIE, purpose: "Google 로그인 재사용 방지(nonce)", duration: "10분" },
   {
     name: DELETION_INTENT_COOKIE,
     purpose: "계정 삭제 전 다시 로그인한 계정이 같은지 확인",

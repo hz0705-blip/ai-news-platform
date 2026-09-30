@@ -1,7 +1,8 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DELETION_INTENT_COOKIE, DELETION_STATUS_COOKIE } from "../../lib/account/deletion.ts";
-import { GOOGLE_SCOPE, supabaseAuthCookieName } from "../../lib/auth/env.ts";
+import { supabaseAuthCookieName } from "../../lib/auth/env.ts";
+import { GOOGLE_NONCE_COOKIE, GOOGLE_SCOPE, GOOGLE_STATE_COOKIE } from "../../lib/auth/google.ts";
 import { KAKAO_NONCE_COOKIE, KAKAO_SCOPE, KAKAO_STATE_COOKIE } from "../../lib/auth/kakao.ts";
 import { RETURN_COOKIE } from "../../lib/auth/urls.ts";
 import { ANON_COOKIE } from "../../lib/search/guard.ts";
@@ -62,6 +63,8 @@ describe("개인정보 처리방침", () => {
       RETURN_COOKIE,
       KAKAO_STATE_COOKIE,
       KAKAO_NONCE_COOKIE,
+      GOOGLE_STATE_COOKIE,
+      GOOGLE_NONCE_COOKIE,
       DELETION_INTENT_COOKIE,
       DELETION_STATUS_COOKIE,
       ANON_COOKIE,
@@ -76,7 +79,7 @@ describe("개인정보 처리방침", () => {
     expect(identity?.textContent).toContain(`Kakao(요청 범위 ${KAKAO_SCOPE})`);
     expect(identity?.textContent).toContain(`Google(요청 범위 ${GOOGLE_SCOPE})`);
     expect(KAKAO_SCOPE).toBe("openid,profile_nickname,account_email");
-    expect(GOOGLE_SCOPE).toBe("email profile");
+    expect(GOOGLE_SCOPE).toBe("openid email profile");
   });
 
   it("위탁 업체와 지역·보존을 적고 쓰지 않는 업체는 적지 않는다", () => {

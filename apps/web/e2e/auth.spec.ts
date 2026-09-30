@@ -149,7 +149,7 @@ test("KakaoTalk 인앱에서 Google을 고르면 외부 브라우저 안내가 �
   await expectNoAxeViolations(page, testInfo, "in-app-notice");
 });
 
-test("Google 로그인 시작은 PKCE 인가 요청으로 보내고 콜백은 정확히 같은 출처 /auth/callback이다", async ({
+test("Google 로그인 시작은 앱의 직접 OIDC 인가 요청으로 보내고 콜백은 같은 출처 /auth/callback/google이다", async ({
   page,
   baseURL,
 }) => {
@@ -161,27 +161,28 @@ test("Google 로그인 시작은 PKCE 인가 요청으로 보내고 콜백은 �
   expect(response.headers()["cache-control"]).toMatch(/private/);
   expect(response.headers()["cache-control"]).toMatch(/no-store/);
   const authorize = new URL(response.headers().location ?? "");
-  expect(authorize.origin).toBe(authEnv()?.url);
-  expect(authorize.pathname).toBe("/auth/v1/authorize");
-  expect(authorize.searchParams.get("provider")).toBe("google");
-  expect(authorize.searchParams.get("redirect_to")).toBe(`${baseURL}/auth/callback`);
-  expect(authorize.searchParams.get("code_challenge")).toMatch(/^[A-Za-z0-9_-]{43,}$/);
-  expect(authorize.searchParams.get("code_challenge_method")?.toLowerCase()).toBe("s256");
-  // PKCE 검증자와 돌아갈 주소가 이 브라우저 컨텍스트에 남는다(콜백이 읽는다).
+  expect(`${authorize.origin}${authorize.pathname}`).toBe(
+    "https://accounts.google.com/o/oauth2/v2/auth",
+  );
+  expect(authorize.searchParams.get("scope")).toBe("openid email profile");
+  expect(authorize.searchParams.get("redirect_uri")).toBe(`${baseURL}/auth/callback/google`);
+  // state·nonce와 돌아갈 주소가 이 브라우저 컨텍스트에 남는다(콜백이 읽는다).
   const names = (await page.context().cookies()).map((cookie) => cookie.name);
-  expect(names.some((name) => name.endsWith("-code-verifier"))).toBe(true);
-  expect(names).toContain("auth-return-path");
+  expect(names).toEqual(
+    expect.arrayContaining(["google-oidc-state", "google-oidc-nonce", "auth-return-path"]),
+  );
 });
 
-test("콜백은 잘못된 코드를 로그인 화면으로 돌리고 인증 응답은 private, no-store다", async ({
+test("콜백은 state가 맞지 않는 요청을 로그인 화면으로 돌리고 인증 응답은 private, no-store다", async ({
   page,
 }) => {
-  const response = await page.request.get("/auth/callback?code=not-a-code", { maxRedirects: 0 });
+  const forged = "/auth/callback/google?code=not-a-code&state=forged";
+  const response = await page.request.get(forged, { maxRedirects: 0 });
   expect(response.status()).toBe(303);
   expect(response.headers()["cache-control"]).toMatch(/private/);
   expect(response.headers()["cache-control"]).toMatch(/no-store/);
   expect(response.headers().location).toMatch(/\/auth\/login\?next=%2F&error=failed$/);
 
-  await page.goto("/auth/callback?code=not-a-code");
+  await page.goto(forged);
   await expect(page.getByText("로그인을 완료하지 못했습니다.", { exact: false })).toBeVisible();
 });

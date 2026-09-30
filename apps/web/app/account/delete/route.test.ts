@@ -78,3 +78,36 @@ describe("계정 삭제 시작 — Kakao 재로그인", () => {
     );
   });
 });
+
+describe("계정 삭제 시작 — Google 재로그인", () => {
+  it("Google 계정 삭제 재로그인은 계정을 다시 고르고 동의를 다시 받는 직접 흐름을 쓴다", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://ref.supabase.test");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
+    vi.stubEnv("SUPABASE_SECRET_KEY", "sb_secret_test");
+    vi.stubEnv("GOOGLE_CLIENT_ID", "google-client");
+    vi.stubEnv("GOOGLE_CLIENT_SECRET", "google-secret");
+    const user = {
+      id: "00000000-0000-4000-8000-00000000000a",
+      identities: [{ id: "1087", provider: "google", identity_data: {} }],
+    } as unknown as User;
+    vi.mocked(verifiedSession).mockResolvedValueOnce({ user, claims: {} as never });
+
+    const response = await POST(post({ confirm: "yes" }, "http://web.test"));
+    expect(response.status).toBe(303);
+    const authorize = new URL(response.headers.get("location") ?? "");
+    expect(`${authorize.origin}${authorize.pathname}`).toBe(
+      "https://accounts.google.com/o/oauth2/v2/auth",
+    );
+    expect(authorize.searchParams.get("prompt")).toBe("select_account consent");
+    expect(authorize.searchParams.get("access_type")).toBe("offline");
+    expect(authorize.searchParams.get("scope")).toBe("openid email profile");
+    expect(authorize.searchParams.get("redirect_uri")).toBe("http://web.test/auth/callback/google");
+    expect(response.cookies.get("google-oidc-state")?.value).toBe(
+      authorize.searchParams.get("state"),
+    );
+    expect(response.cookies.get("google-oidc-nonce")?.value).toBeTruthy();
+    expect(response.cookies.get("account-deletion-intent")?.value).toMatch(
+      /^00000000-0000-4000-8000-00000000000a\./,
+    );
+  });
+});
