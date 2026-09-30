@@ -79,9 +79,10 @@ for (const colorScheme of ["light", "dark"] as const) {
       await expect(page.locator("html")).toHaveAttribute("lang", "ko");
       await expect(page.locator("html")).toHaveCSS("font-size", "16px");
       await expect(page.locator("body")).toHaveCSS("font-size", width < 1024 ? "17px" : "18px");
+      // 오늘 머리 제목은 48rem 이상에서 40px이다(스펙 "타이포"). 일반 제목 26/32는 타이포 유틸 검사가 본다.
       await expect(page.getByRole("heading", { level: 1 })).toHaveCSS(
         "font-size",
-        width < 1024 ? "26px" : "32px",
+        width < 768 ? "26px" : "40px",
       );
       await expect(page.getByRole("button", { name: /테마|다크|라이트/ })).toHaveCount(0);
       expect(
