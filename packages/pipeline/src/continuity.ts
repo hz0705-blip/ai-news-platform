@@ -13,7 +13,7 @@ import {
   type RevisionSource,
   revisionWithSources,
   type SpanRealignResult,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { type RevisionInput, runRevision } from "./stages/revision.ts";
 
 /**

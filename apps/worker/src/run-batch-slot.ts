@@ -7,9 +7,9 @@ import {
   loadSpendBetween,
   type RuntimeDb,
   startBatchRun,
-} from "@newsplatform/db";
-import { gnewsLedgerDate } from "@newsplatform/domain";
-import { kstDayRange, slotAtOf } from "@newsplatform/domain/batch-slot";
+} from "@newstrail/db";
+import { gnewsLedgerDate } from "@newstrail/domain";
+import { kstDayRange, slotAtOf } from "@newstrail/domain/batch-slot";
 import {
   type BatchReport,
   type Budget,
@@ -18,7 +18,7 @@ import {
   type EmbeddingClient,
   type ModelClient,
   runBatch,
-} from "@newsplatform/pipeline";
+} from "@newstrail/pipeline";
 import { applyBatchResult } from "./apply-batch-result.ts";
 import { assignStories } from "./assign.ts";
 import { DAILY_PIPELINE_BUDGET_TOKENS, DAILY_PIPELINE_BUDGET_USD } from "./budget.ts";

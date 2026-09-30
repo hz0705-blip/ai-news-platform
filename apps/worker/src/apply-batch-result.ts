@@ -4,8 +4,8 @@ import {
   confirmRevision,
   markStoriesDeferred,
   type RuntimeDb,
-} from "@newsplatform/db";
-import type { BatchResult } from "@newsplatform/pipeline";
+} from "@newstrail/db";
+import type { BatchResult } from "@newstrail/pipeline";
 
 export interface AppliedBatchResult {
   /** 커밋한(또는 이미 있던) 개정판의 사건과 새로 넣었는지. `result.revisions` 순서. */

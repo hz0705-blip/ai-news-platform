@@ -1,4 +1,4 @@
-import type { UnlinkResult } from "@newsplatform/domain";
+import type { UnlinkResult } from "@newstrail/domain";
 import { describe, expect, it, vi } from "vitest";
 import {
   type AccountDeletionPorts,

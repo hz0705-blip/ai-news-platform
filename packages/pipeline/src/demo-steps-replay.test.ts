@@ -1,4 +1,4 @@
-import type { Revision, RevisionChange } from "@newsplatform/domain";
+import type { Revision, RevisionChange } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import { runBatch } from "./batch-run.ts";
 import { createRecordedModelClient } from "./recorded.ts";

@@ -213,8 +213,8 @@ ${table(
 
 \`\`\`sh
 # EVAL_DATA_DIR(저장소 밖, 패킷·초안이 있는 곳)과 OPENAI_API_KEY가 필요하다. 산출물은 EVAL_DATA_DIR/runs/<runId>/.
-pnpm --filter @newsplatform/pipeline eval:run            # 도착 스트림 실행(실제 호출, 상한 안에서)
-pnpm --filter @newsplatform/pipeline eval:score <runId>  # 판정자 호출(결과는 캐시) + 채점 + 이 파일
+pnpm --filter @newstrail/pipeline eval:run            # 도착 스트림 실행(실제 호출, 상한 안에서)
+pnpm --filter @newstrail/pipeline eval:score <runId>  # 판정자 호출(결과는 캐시) + 채점 + 이 파일
 # 유료 호출 없이 경로만 점검: 두 명령에 --offline
 \`\`\`
 `;

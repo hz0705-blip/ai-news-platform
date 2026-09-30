@@ -4,8 +4,8 @@ import {
   type RuntimeDb,
   retryPendingUnlinks,
   type UnlinkRetryReport,
-} from "@newsplatform/db";
-import type { UnlinkResult } from "@newsplatform/domain";
+} from "@newstrail/db";
+import type { UnlinkResult } from "@newstrail/domain";
 
 /**
  * 계정 삭제의 연결 해제 재시도 잡(스펙 "계정", #106). pg-boss 큐 `account-unlink`가 매분 돌며 다음 시도 시각이 된

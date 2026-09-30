@@ -1,4 +1,4 @@
-import { DISPLAY_POLICY_VERSION } from "@newsplatform/domain";
+import { DISPLAY_POLICY_VERSION } from "@newstrail/domain";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { ReactElement } from "react";

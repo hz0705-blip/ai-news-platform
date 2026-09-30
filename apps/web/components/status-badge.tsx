@@ -1,5 +1,5 @@
 /** @jsxImportSource react */
-import type { ContradictionStatus } from "@newsplatform/domain";
+import type { ContradictionStatus } from "@newstrail/domain";
 import { CheckCheck, CircleCheck, FilePenLine, FileText, TriangleAlert } from "lucide-react";
 import { STATUS_DESCRIPTION } from "../app/story/copy.ts";
 import { Badge } from "./ui/badge.tsx";

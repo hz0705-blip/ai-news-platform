@@ -1,4 +1,4 @@
-import type { Revision, Source } from "@newsplatform/domain";
+import type { Revision, Source } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import {
   type RevisionSourceRow,

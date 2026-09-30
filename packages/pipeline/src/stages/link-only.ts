@@ -9,7 +9,7 @@ import {
   type RevisionChange,
   type RevisionSource,
   type Source,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { finalizeRevision } from "../continuity.ts";
 import type { GdeltLink } from "../sources/gdelt.ts";
 import type { EmbeddingClient } from "../types.ts";

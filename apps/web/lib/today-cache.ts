@@ -1,5 +1,5 @@
-import { loadDueBatchRun, loadPublishedToday, type TodayData } from "@newsplatform/db";
-import type { DueBatchRun } from "@newsplatform/domain/batch-status";
+import { loadDueBatchRun, loadPublishedToday, type TodayData } from "@newstrail/db";
+import type { DueBatchRun } from "@newstrail/domain/batch-status";
 import { cacheTag } from "next/cache";
 import { getRuntimeDb } from "./db.ts";
 

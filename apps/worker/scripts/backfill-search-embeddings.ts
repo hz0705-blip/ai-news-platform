@@ -1,5 +1,5 @@
-import { createRuntimeDb } from "@newsplatform/db";
-import { createOpenAiEmbeddingClient } from "@newsplatform/pipeline";
+import { createRuntimeDb } from "@newstrail/db";
+import { createOpenAiEmbeddingClient } from "@newstrail/pipeline";
 import { fillSearchEmbeddings } from "../src/search-embedding.ts";
 
 /**
@@ -7,7 +7,7 @@ import { fillSearchEmbeddings } from "../src/search-embedding.ts";
  * 이미 채운 것은 건너뛰므로 다시 돌려도 임베딩 호출이 없다. 인자는 없다(pnpm 12가 `--` 뒤 인자를 버린다).
  * 결과 한 줄 JSON(대상·재사용·임베딩 수·토큰·USD). 실패하면 종료 코드 1이고, 다시 돌리면 남은 것만 채운다.
  *
- * 실행: pnpm --filter @newsplatform/worker search:backfill-embeddings
+ * 실행: pnpm --filter @newstrail/worker search:backfill-embeddings
  * (DATABASE_MIGRATION_URL·OPENAI_API_KEY 필요. 0014 마이그레이션 뒤.)
  */
 const url = process.env.DATABASE_MIGRATION_URL;

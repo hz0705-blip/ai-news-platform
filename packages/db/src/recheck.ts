@@ -4,7 +4,7 @@ import type {
   GnewsLedgerDay,
   RecheckCandidate,
   RecheckSlot,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { and, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import { toArticleVersionRow } from "./mappers.ts";
 import type { RuntimeDb } from "./runtime.ts";

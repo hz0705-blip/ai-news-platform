@@ -1,4 +1,4 @@
-import type { ChangeKind } from "@newsplatform/domain";
+import type { ChangeKind } from "@newstrail/domain";
 import type { RevisionStripItemView } from "./story-view.ts";
 
 /** "읽은 이후 변화": 마지막으로 본 개정판 뒤 개정판들의 변화 종류별 개수 합(스펙 "마지막으로 본 개정판", #105). */

@@ -1,4 +1,4 @@
-import { sha256Hex } from "@newsplatform/domain";
+import { sha256Hex } from "@newstrail/domain";
 import { z } from "zod";
 import * as prompt from "../prompts/claim-generate.ts";
 import { buildRequest } from "../prompts/prompt.ts";

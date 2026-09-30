@@ -1,4 +1,4 @@
-import type { ChangeKind } from "@newsplatform/domain";
+import type { ChangeKind } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import { changesSinceLastSeen } from "./last-seen.ts";
 import type { RevisionStripItemView } from "./story-view.ts";

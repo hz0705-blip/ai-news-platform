@@ -4,13 +4,13 @@ import {
   AccountDeletionExportSchema,
   createRuntimeDb,
   replayAccountDeletions,
-} from "@newsplatform/db";
+} from "@newstrail/db";
 
 /**
  * 백업 복원 뒤 삭제 재적용(스펙 "데이터 보존", #106). 복원 **전에** accounts:export-deletions로 뜬 파일을 복원된 DB에 적용한다:
  * 삭제 기록을 되살리고, 삭제 대기 행을 복원 직전 상태로 바꾸고, 삭제 기록의 사용자마다 계정 데이터를 지운다(`auth.users`가
  * 있는 DB면 그 인증 사용자도). 끝에 보관 기간(90일)이 지난 삭제 기록을 지운다. 서비스를 열기 전에 돌린다. 다시 돌려도 안전하다.
- * 실행: ACCOUNT_DELETIONS_FILE=<절대경로> pnpm --filter @newsplatform/worker accounts:replay-deletions
+ * 실행: ACCOUNT_DELETIONS_FILE=<절대경로> pnpm --filter @newstrail/worker accounts:replay-deletions
  * (DATABASE_MIGRATION_URL = 복원한 DB)
  */
 const url = process.env.DATABASE_MIGRATION_URL;

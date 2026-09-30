@@ -5,7 +5,7 @@ import {
   readTestDbUrl,
   sources,
   stories,
-} from "@newsplatform/db/testing";
+} from "@newstrail/db/testing";
 import { describe, expect, it, vi } from "vitest";
 import { RETENTION_CRON, RETENTION_QUEUE, runRetention, scheduleRetention } from "./retention.ts";
 

@@ -52,7 +52,7 @@ jobs:
       - name: 테스트
         run: pnpm test
       - name: 웹 프로덕션 빌드
-        run: pnpm --filter @newsplatform/web build
+        run: pnpm --filter @newstrail/web build
 
   e2e:
     runs-on: ubuntu-24.04
@@ -91,7 +91,7 @@ jobs:
       - name: 고정 설치
         run: pnpm install --frozen-lockfile
       - name: 브라우저 설치
-        run: pnpm --filter @newsplatform/web exec playwright install --with-deps chromium firefox webkit
+        run: pnpm --filter @newstrail/web exec playwright install --with-deps chromium firefox webkit
       - name: 빈 DB 마이그레이션 적용(drizzle)
         run: pnpm db:migrate
       # checks 잡에서는 DATABASE_TEST_URL이 없어 실 DB 테스트가 skip된다. 여기서 반드시 돈다.
@@ -99,7 +99,7 @@ jobs:
         run: pnpm test --project db --project worker
       # 실 DB 테스트는 테이블을 비우므로 적재는 그 뒤에 한다.
       - name: 데모 사건 적재
-        run: pnpm --filter @newsplatform/worker demo:load
+        run: pnpm --filter @newstrail/worker demo:load
       # E2E 인증(#104): 고정 버전 CLI(루트 devDependency)로 로컬 Supabase Auth를 띄운다(supabase/config.toml, 이메일·비밀번호만).
       # 앱 데이터는 위 서비스 컨테이너에 그대로 두고 CLI 스택은 Auth에만 쓴다. 키는 CLI 고정 로컬 값이며 시크릿이 아니다.
       # NEXT_PUBLIC_*는 빌드에 들어가므로 빌드 전에 잡 환경에 싣는다.
@@ -113,9 +113,9 @@ jobs:
             | grep -E '^(NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY|SUPABASE_SECRET_KEY)=' \
             | tr -d '"' >> "$GITHUB_ENV"
       - name: 웹 프로덕션 빌드
-        run: pnpm --filter @newsplatform/web build
+        run: pnpm --filter @newstrail/web build
       - name: Playwright·axe
-        run: pnpm --filter @newsplatform/web test:e2e
+        run: pnpm --filter @newstrail/web test:e2e
       - name: 접근성 결과·스크린샷·실패 trace
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

@@ -5,8 +5,8 @@ import {
   loadAssignmentArticles,
   type RuntimeDb,
   touchStory,
-} from "@newsplatform/db";
-import { type AssignmentResult, type EmbeddingClient, runAssignment } from "@newsplatform/pipeline";
+} from "@newstrail/db";
+import { type AssignmentResult, type EmbeddingClient, runAssignment } from "@newstrail/pipeline";
 
 /**
  * 사건 배정 함수 하나(#53): 배정할 기사 읽기 → 임베딩 → 사건 배정(파이프라인) → 저장(DB).

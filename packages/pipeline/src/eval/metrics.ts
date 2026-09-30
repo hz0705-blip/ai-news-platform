@@ -1,4 +1,4 @@
-import { sha256Hex } from "@newsplatform/domain";
+import { sha256Hex } from "@newstrail/domain";
 
 /**
  * 평가 지표(#149, 스펙 "골든셋과 평가"). 모두 결정론이며 분모가 0이면 null(리포트는 N/A)이다.

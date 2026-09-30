@@ -1,12 +1,12 @@
-import { createRuntimeDb } from "@newsplatform/db";
-import { createOpenAiEmbeddingClient } from "@newsplatform/pipeline";
+import { createRuntimeDb } from "@newstrail/db";
+import { createOpenAiEmbeddingClient } from "@newstrail/pipeline";
 import { assignStories } from "../src/assign.ts";
 
 /**
  * 수동 배정 명령(#53 수동 스모크): 실제 OpenAI 키로 dev DB의 사건 없는 기사를 임베딩해 사건에 배정한다.
  * 결과 줄에 사건 수·기사 수·임베딩 비용을 남긴다. 키 값은 출력하지 않는다.
  *
- * 실행: pnpm --filter @newsplatform/worker assign:stories [now ISO]
+ * 실행: pnpm --filter @newstrail/worker assign:stories [now ISO]
  * (DATABASE_MIGRATION_URL·OPENAI_API_KEY 필요. 인자 없으면 now = 지금)
  */
 const url = process.env.DATABASE_MIGRATION_URL;

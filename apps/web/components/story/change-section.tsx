@@ -1,5 +1,5 @@
 /** @jsxImportSource react */
-import type { ContradictionStatus } from "@newsplatform/domain";
+import type { ContradictionStatus } from "@newstrail/domain";
 import { Minus, PencilLine, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import {

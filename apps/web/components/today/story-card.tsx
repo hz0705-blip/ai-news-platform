@@ -1,6 +1,6 @@
 /** @jsxImportSource react */
-import type { TodayStoryCard } from "@newsplatform/db";
-import { formatRelativeTime } from "@newsplatform/domain/relative-time";
+import type { TodayStoryCard } from "@newstrail/db";
+import { formatRelativeTime } from "@newstrail/domain/relative-time";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {

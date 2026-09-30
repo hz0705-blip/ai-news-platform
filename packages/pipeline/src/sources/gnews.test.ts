@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { dedupeExact, type Source } from "@newsplatform/domain";
+import { dedupeExact, type Source } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import {
   buildGnewsRequest,

@@ -6,7 +6,7 @@ import type {
   RevisionSource,
   Source,
   Story,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import type { z } from "zod";
 
 /**

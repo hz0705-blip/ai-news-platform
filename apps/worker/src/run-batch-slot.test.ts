@@ -4,7 +4,7 @@ import {
   finishBatchRun,
   loadPublishedStory,
   startBatchRun,
-} from "@newsplatform/db";
+} from "@newstrail/db";
 import {
   articles,
   articleVersions,
@@ -17,15 +17,15 @@ import {
   storyEmbeddings,
   toSourceRow,
   toStoryRow,
-} from "@newsplatform/db/testing";
-import { createArticleVersion } from "@newsplatform/domain";
+} from "@newstrail/db/testing";
+import { createArticleVersion } from "@newstrail/domain";
 import {
   createRecordedGdeltFetch,
   createRecordedModelClient,
   LIVE_REFERENCE_TIME,
   loadDemoStoryFixture,
   MODEL_ID,
-} from "@newsplatform/pipeline";
+} from "@newstrail/pipeline";
 import { describe, expect, it } from "vitest";
 import { runBatchSlot } from "./run-batch-slot.ts";
 import { findMissedSlotKeys } from "./schedule.ts";

@@ -1,6 +1,6 @@
-import { createRuntimeDb } from "@newsplatform/db";
-import { createOpenAiEmbeddingClient, createOpenAiModelClient } from "@newsplatform/pipeline";
-import { createProviderUnlinker } from "@newsplatform/pipeline/provider-unlink";
+import { createRuntimeDb } from "@newstrail/db";
+import { createOpenAiEmbeddingClient, createOpenAiModelClient } from "@newstrail/pipeline";
+import { createProviderUnlinker } from "@newstrail/pipeline/provider-unlink";
 import { runAccountUnlinkSweep } from "./account-unlink.ts";
 import { pipelineDailyBudget } from "./budget.ts";
 import { runRequestCounterPurge } from "./request-counters.ts";
@@ -14,7 +14,7 @@ import { createShutdown } from "./shutdown.ts";
  * 워커 데몬(#55): pg-boss 스케줄(KST 05:00·17:00)로 배치를 돌고, 매분 계정 삭제의 연결 해제를 재시도하고(#106),
  * 매시 익명 요청 카운터를 정리하고(#125), 매시 보존 기한이 지난 기사 본문과 종료 사건의 기사 임베딩을 지운다(#144).
  * 실행: 배포(Railway)는 저장소 루트에서 `node apps/worker/src/index.ts`(pnpm 래퍼는 SIGTERM 종료를 실패로 보고한다, #66),
- * 로컬은 pnpm --filter @newsplatform/worker start(.env 로드).
+ * 로컬은 pnpm --filter @newstrail/worker start(.env 로드).
  * WORKER_DATABASE_URL(세션 풀러)·OPENAI_API_KEY·GNEWS_API_KEY 필수, WEB_REVALIDATE_URL·REVALIDATE_SECRET·
  * PIPELINE_DAILY_BUDGET_USD(일일 예산 덮어쓰기, 잘못된 값이면 시작 실패)·KAKAO_ADMIN_KEY(Kakao 연결 해제, 없으면 그 행은
  * 완료되지 않고 재시도 로그에 `kakao-admin-key-missing`으로 남는다) 선택.

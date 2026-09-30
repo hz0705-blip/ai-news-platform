@@ -4,7 +4,7 @@ import {
   type Revision,
   type RevisionChange,
   revisionWithSources,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import { commitRevision, confirmRevision, saveDemoStoryRecords } from "./publish.ts";
 import { loadClaimHistory, loadLatestRevision, loadRevisionChanges } from "./queries/revision.ts";

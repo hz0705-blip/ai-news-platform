@@ -1,4 +1,4 @@
-import type { StoryPageData } from "@newsplatform/db";
+import type { StoryPageData } from "@newstrail/db";
 import { expect, type Page, test } from "@playwright/test";
 import { build } from "esbuild";
 import { buildStoryView } from "../lib/story-view.ts";

@@ -1,4 +1,4 @@
-import { RELATION_LABELS } from "@newsplatform/domain";
+import { RELATION_LABELS } from "@newstrail/domain";
 import { z } from "zod";
 import type { Prompt } from "./prompt.ts";
 

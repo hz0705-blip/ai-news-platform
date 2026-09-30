@@ -1,4 +1,4 @@
-import { TOPICS, type Topic } from "@newsplatform/domain";
+import { TOPICS, type Topic } from "@newstrail/domain";
 
 /** 우선순위를 정하는 데 필요한 사건 하나의 값. */
 export interface PriorityInput {

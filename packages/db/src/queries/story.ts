@@ -5,7 +5,7 @@ import type {
   RevisionChange,
   Source,
   Topic,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { and, asc, count, eq, inArray, lte } from "drizzle-orm";
 import { toDomainSource } from "../mappers.ts";
 import type { RuntimeDb } from "../runtime.ts";

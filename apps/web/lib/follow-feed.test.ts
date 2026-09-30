@@ -1,4 +1,4 @@
-import type { FollowFeedStory } from "@newsplatform/db";
+import type { FollowFeedStory } from "@newstrail/db";
 import { describe, expect, it } from "vitest";
 import { arrangeFollowFeed, hasChangesSinceSeen } from "./follow-feed.ts";
 

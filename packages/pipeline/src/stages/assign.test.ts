@@ -1,4 +1,4 @@
-import { type AssignmentCandidate, cosineSimilarity, type Topic } from "@newsplatform/domain";
+import { type AssignmentCandidate, cosineSimilarity, type Topic } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import type { EmbeddingClient } from "../types.ts";
 import { type AssignmentArticle, type AssignmentStore, runAssignment } from "./assign.ts";

@@ -1,4 +1,4 @@
-import type { StoryPageData } from "@newsplatform/db";
+import type { StoryPageData } from "@newstrail/db";
 
 /** 링크만 등급으로 하향된 출처의 근거에 남아 있는 구간 텍스트. 화면·페이로드 어디에도 나오면 안 된다. */
 export const HIDDEN_SPAN = "The berth allocation was suspended pending review.";

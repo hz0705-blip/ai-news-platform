@@ -1,4 +1,4 @@
-import type { Topic } from "@newsplatform/domain";
+import type { Topic } from "@newstrail/domain";
 import { and, desc, eq, exists, ne, or, sql } from "drizzle-orm";
 import type { TodayStoryCard } from "./queries/today.ts";
 import type { RuntimeDb } from "./runtime.ts";

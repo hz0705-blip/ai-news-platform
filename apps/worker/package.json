@@ -1,5 +1,5 @@
 {
-  "name": "@newsplatform/worker",
+  "name": "@newstrail/worker",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -19,9 +19,9 @@
     "accounts:export-deletions": "node --env-file-if-exists=../../.env scripts/export-account-deletions.ts"
   },
   "dependencies": {
-    "@newsplatform/db": "workspace:*",
-    "@newsplatform/domain": "workspace:*",
-    "@newsplatform/pipeline": "workspace:*",
+    "@newstrail/db": "workspace:*",
+    "@newstrail/domain": "workspace:*",
+    "@newstrail/pipeline": "workspace:*",
     "pg-boss": "12.34.0"
   }
 }

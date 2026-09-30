@@ -4,7 +4,7 @@ import {
   deriveClaimStatus,
   RIGHTS_TIERS,
   reportingOrigins,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { z } from "zod";
 import * as prompt from "../prompts/contradiction-label.ts";
 import { buildRequest } from "../prompts/prompt.ts";

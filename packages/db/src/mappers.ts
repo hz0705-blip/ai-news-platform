@@ -9,8 +9,8 @@ import type {
   RightsTier,
   Source,
   Story,
-} from "@newsplatform/domain";
-import { normalizeArticleUrl } from "@newsplatform/domain";
+} from "@newstrail/domain";
+import { normalizeArticleUrl } from "@newstrail/domain";
 import type {
   ArticleRow,
   ArticleVersionRow,

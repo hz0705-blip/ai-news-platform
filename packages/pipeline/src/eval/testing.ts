@@ -1,4 +1,4 @@
-import type { Source, Topic } from "@newsplatform/domain";
+import type { Source, Topic } from "@newstrail/domain";
 import type { CandidateArticle, LocalPacket, StoryCandidate } from "./packet.ts";
 
 /** 테스트용 가상 기사(직접 쓴 텍스트). */

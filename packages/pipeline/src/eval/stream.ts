@@ -11,8 +11,8 @@ import {
   type Story,
   TOPICS,
   type Topic,
-} from "@newsplatform/domain";
-import { latestSlotAtOrBefore, slotKeyOf } from "@newsplatform/domain/batch-slot";
+} from "@newstrail/domain";
+import { latestSlotAtOrBefore, slotKeyOf } from "@newstrail/domain/batch-slot";
 import { runBatch } from "../batch-run.ts";
 import { type AssignmentOutcome, type AssignmentStore, runAssignment } from "../stages/assign.ts";
 import type {

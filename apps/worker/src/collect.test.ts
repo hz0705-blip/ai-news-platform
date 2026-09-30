@@ -1,7 +1,7 @@
-import { syncSourceRegistry } from "@newsplatform/db";
-import { articles, createMigrationDb, readTestDbUrl } from "@newsplatform/db/testing";
-import type { Source } from "@newsplatform/domain";
-import { createRecordedGnewsFetch } from "@newsplatform/pipeline";
+import { syncSourceRegistry } from "@newstrail/db";
+import { articles, createMigrationDb, readTestDbUrl } from "@newstrail/db/testing";
+import type { Source } from "@newstrail/domain";
+import { createRecordedGnewsFetch } from "@newstrail/pipeline";
 import { describe, expect, it } from "vitest";
 import { collectFromGnews } from "./collect.ts";
 

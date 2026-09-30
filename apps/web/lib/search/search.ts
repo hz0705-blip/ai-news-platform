@@ -1,5 +1,5 @@
-import { type RuntimeDb, type StorySearchHit, searchStoriesByEmbedding } from "@newsplatform/db";
-import { EMBEDDING_USD_PER_TOKEN, type EmbeddingClient } from "@newsplatform/pipeline/embedding";
+import { type RuntimeDb, type StorySearchHit, searchStoriesByEmbedding } from "@newstrail/db";
+import { EMBEDDING_USD_PER_TOKEN, type EmbeddingClient } from "@newstrail/pipeline/embedding";
 
 /** 검색 결과 사건 수 N(스펙 "개발 중 결정 항목" 검색 결과·한도 줄). */
 export const SEARCH_RESULT_LIMIT = 20;

@@ -1,4 +1,4 @@
-// 사용: pnpm --filter @newsplatform/pipeline eval:compare   (EVAL_DATA_DIR, #147)
+// 사용: pnpm --filter @newstrail/pipeline eval:compare   (EVAL_DATA_DIR, #147)
 // 두 초안을 항목별로 대조한다. 항목·검토 대상은 EVAL_DATA_DIR/review.json, 불일치 항목은 disagreements.json에,
 // 합의율·불일치율·기권율·카파(문장 없음)는 저장소 eval/agreement.json에 쓴다. 두 초안이 다 있는 패킷만 대조한다.
 import { GOLDEN_DRAFT_PROMPT } from "../eval/prompts/golden-draft.ts";

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { OWNERSHIP_TYPES, RIGHTS_TIERS, type Source } from "@newsplatform/domain";
+import { OWNERSHIP_TYPES, RIGHTS_TIERS, type Source } from "@newstrail/domain";
 import { z } from "zod";
 
 /**

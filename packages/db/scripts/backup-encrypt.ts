@@ -4,7 +4,7 @@ import { parseArgs } from "node:util";
 import { encryptBackupFile, parseBackupKey, SHA256_LINE } from "./backup-crypto.ts";
 
 /**
- * 평문 덤프를 NPBK1로 암호화한다(이슈 #18). 실행: pnpm --filter @newsplatform/db backup:encrypt -- --in <file> --out-dir <dir>
+ * 평문 덤프를 NPBK1로 암호화한다(이슈 #18). 실행: pnpm --filter @newstrail/db backup:encrypt -- --in <file> --out-dir <dir>
  * 산출: <dir>/<name>.enc, <dir>/<name>.enc.sha256(sha256sum -c 형식), <dir>/manifest.json. stdout JSON 한 줄.
  * 파일은 스트림으로 처리하므로 크기 상한이 없다(이슈 #31). 로그에 키·연결 정보는 없다. 실패는 stderr JSON + 종료 1.
  */

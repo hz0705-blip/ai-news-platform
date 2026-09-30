@@ -3,7 +3,7 @@ import {
   CONTRADICTION_STATUSES,
   MODALITIES,
   RELATION_LABELS,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { z } from "zod";
 import type { Prompt } from "../../src/prompts/prompt.ts";
 import { GATE_SUPPORT_LABELS } from "../../src/schemas.ts";

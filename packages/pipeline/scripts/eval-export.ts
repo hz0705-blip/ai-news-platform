@@ -1,10 +1,10 @@
-// 사용: pnpm --filter @newsplatform/pipeline eval:export   (DATABASE_MIGRATION_URL·EVAL_DATA_DIR, #147)
+// 사용: pnpm --filter @newstrail/pipeline eval:export   (DATABASE_MIGRATION_URL·EVAL_DATA_DIR, #147)
 // 프로덕션 DB를 읽기 전용 트랜잭션으로 읽어 골든셋 개발셋 20 패킷을 고정 시드로 표집한다. 기사 본문·제목·설명은
 // EVAL_DATA_DIR/packets/에만 쓰고, 저장소에는 본문 없는 목록 eval/dev-set.json만 쓴다(기사 텍스트 검사 뒤).
 // 개발셋 기사 쌍 60개(사건 안 30 + 같은 토픽의 어려운 부정 30, 기사 임베딩 코사인 순)도 함께 고른다.
 // 패킷 파일이 이미 있으면 덮어쓰지 않는다 — 초안이 그 본문의 좌표를 가리키므로, 같은 사건을 다시 고른 경우에만
 // 기존 패킷으로 쌍 목록과 dev-set.json을 다시 만들고, 다르면 멈춘다.
-import { TOPICS, type Topic } from "@newsplatform/domain";
+import { TOPICS, type Topic } from "@newstrail/domain";
 import postgres from "postgres";
 import {
   assertNoArticleText,

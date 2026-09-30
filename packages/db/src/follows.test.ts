@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import type { StoryLifecycle, Topic } from "@newsplatform/domain";
+import type { StoryLifecycle, Topic } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import {
   followStory,

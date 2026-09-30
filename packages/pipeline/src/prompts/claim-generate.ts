@@ -1,4 +1,4 @@
-import { CLAIM_TYPES, MODALITIES } from "@newsplatform/domain";
+import { CLAIM_TYPES, MODALITIES } from "@newstrail/domain";
 import { z } from "zod";
 import type { Prompt } from "./prompt.ts";
 

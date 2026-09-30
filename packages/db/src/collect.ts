@@ -7,7 +7,7 @@ import {
   normalizeArticleUrl,
   normalizeTitle,
   type Source,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { and, desc, eq, inArray, or } from "drizzle-orm";
 import { toArticleVersionRow, toSourceRow } from "./mappers.ts";
 import type { RuntimeDb } from "./runtime.ts";

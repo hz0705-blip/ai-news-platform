@@ -8,7 +8,7 @@ import {
   type Source,
   spanText,
   splitSentences,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import type { GateSupportLabel } from "../schemas.ts";
 import type { Label } from "./adjudicate.ts";
 import { alignClaims } from "./compare.ts";

@@ -1,7 +1,7 @@
 /** @jsxImportSource react */
 "use client";
 
-import { formatRelativeTime } from "@newsplatform/domain/relative-time";
+import { formatRelativeTime } from "@newstrail/domain/relative-time";
 import { CircleAlert, Gauge, Timer } from "lucide-react";
 import Link from "next/link";
 import { type FormEvent, useEffect, useRef, useState } from "react";

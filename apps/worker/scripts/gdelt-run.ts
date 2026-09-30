@@ -1,5 +1,5 @@
-import { createRuntimeDb, loadRecentlyPublishedStoryIds } from "@newsplatform/db";
-import { createOpenAiEmbeddingClient } from "@newsplatform/pipeline";
+import { createRuntimeDb, loadRecentlyPublishedStoryIds } from "@newstrail/db";
+import { createOpenAiEmbeddingClient } from "@newstrail/pipeline";
 import { runGdeltStage } from "../src/gdelt.ts";
 
 /**
@@ -7,7 +7,7 @@ import { runGdeltStage } from "../src/gdelt.ts";
  * 실제 GKG 15분 파일 읽기, 링크 제목 임베딩(OpenAI), 링크만 기사 저장, 출처 추가 개정판 발행. 모델 호출은 없다.
  * 결과 줄에 파일 수·바이트·소요·관측·붙음·버림·출처 추가 개정판을 남긴다. 키 값은 출력하지 않는다.
  *
- * 실행: pnpm --filter @newsplatform/worker gdelt:run [N]
+ * 실행: pnpm --filter @newstrail/worker gdelt:run [N]
  * (DATABASE_MIGRATION_URL·OPENAI_API_KEY 필요. DB에 쓰므로 프로덕션이 아닌 DB를 가리킬 때는 그 URL로 덮어쓴다.)
  */
 const url = process.env.DATABASE_MIGRATION_URL;

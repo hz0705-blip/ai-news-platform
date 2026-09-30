@@ -1,5 +1,5 @@
-import { createRuntimeDb } from "@newsplatform/db";
-import { SOURCES_FILE_PATH } from "@newsplatform/db/sources-file";
+import { createRuntimeDb } from "@newstrail/db";
+import { SOURCES_FILE_PATH } from "@newstrail/db/sources-file";
 import { createCacheInvalidator } from "../src/revalidate.ts";
 import { setSourceTier } from "../src/source-tier.ts";
 
@@ -8,7 +8,7 @@ import { setSourceTier } from "../src/source-tier.ts";
  * (고친 파일은 커밋한다). 표에 없는 출처(`gnews:*`·`gdelt:*`)는 DB 행만 고친다. 등급이 바뀌면 영향받는 사건의
  * 최신·과거 개정판 캐시를 즉시 만료한다.
  *
- * 실행: pnpm --filter @newsplatform/worker source:set-tier <출처 식별자> <"본문 처리 + 발췌 표시" | 링크만>
+ * 실행: pnpm --filter @newstrail/worker source:set-tier <출처 식별자> <"본문 처리 + 발췌 표시" | 링크만>
  * (DATABASE_MIGRATION_URL·WEB_REVALIDATE_URL·REVALIDATE_SECRET 필요. 무효화 경로가 없으면 아무것도 쓰지 않고 거부한다.
  * 만료가 중간에 실패하면 같은 명령을 다시 돌린다 — 등급이 같아도 영향받는 사건 캐시를 다시 만료한다.)
  */

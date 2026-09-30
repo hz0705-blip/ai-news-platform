@@ -8,7 +8,7 @@ import {
 
 /**
  * Wikidata 보조 명령(#76): 도메인마다 행 초안을 만들어 출처 표 파일과의 차이만 출력한다. 파일은 쓰지 않는다.
- * 실행: pnpm --filter @newsplatform/db sources:wikidata <도메인…>  (예 yna.co.kr reuters.com)
+ * 실행: pnpm --filter @newstrail/db sources:wikidata <도메인…>  (예 yna.co.kr reuters.com)
  */
 const domains = process.argv.slice(2).map((d) => d.toLowerCase().replace(/^www\./, ""));
 if (domains.length === 0) {

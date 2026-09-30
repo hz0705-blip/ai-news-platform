@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { kstDayRange } from "@newsplatform/domain/batch-slot";
+import { kstDayRange } from "@newstrail/domain/batch-slot";
 import { and, count, eq, gt, lte, sql } from "drizzle-orm";
 import type { RuntimeDb } from "./runtime.ts";
 import { requestBudgets, requestCounters, requestLeases } from "./schema/index.ts";

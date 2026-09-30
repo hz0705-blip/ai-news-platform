@@ -1,4 +1,4 @@
-import type { TodayStoryCard } from "@newsplatform/db";
+import type { TodayStoryCard } from "@newstrail/db";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";

@@ -1,5 +1,5 @@
 {
-  "name": "@newsplatform/web",
+  "name": "@newstrail/web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "@base-ui/react": "1.8.0",
-    "@newsplatform/db": "workspace:*",
-    "@newsplatform/domain": "workspace:*",
-    "@newsplatform/pipeline": "workspace:*",
+    "@newstrail/db": "workspace:*",
+    "@newstrail/domain": "workspace:*",
+    "@newstrail/pipeline": "workspace:*",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.117.2",
     "class-variance-authority": "0.7.1",

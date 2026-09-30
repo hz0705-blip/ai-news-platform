@@ -1,4 +1,4 @@
-import { sha256Hex, splitSentences } from "@newsplatform/domain";
+import { sha256Hex, splitSentences } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import type { Label } from "./adjudicate.ts";
 import type { Draft } from "./draft.ts";

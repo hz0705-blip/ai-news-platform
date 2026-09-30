@@ -1,11 +1,11 @@
-import { createRuntimeDb } from "@newsplatform/db";
+import { createRuntimeDb } from "@newstrail/db";
 import { RETENTION_BATCH_LIMIT, runRetention } from "../src/retention.ts";
 
 /**
  * 보존 정책 수동 실행(#144): 워커의 `retention` 잡과 같은 함수를, 기한 지난 본문이 남지 않을 때까지 상한 단위로 되풀이한다.
  * 인자는 없다(pnpm 12가 `--` 뒤 인자를 버린다). 결과 한 줄 JSON(지운 본문·임베딩 수). 다시 돌려도 안전하다.
  *
- * 실행: pnpm --filter @newsplatform/worker retention:run
+ * 실행: pnpm --filter @newstrail/worker retention:run
  * (DATABASE_MIGRATION_URL 필요. 0016 마이그레이션 뒤.)
  */
 const url = process.env.DATABASE_MIGRATION_URL;

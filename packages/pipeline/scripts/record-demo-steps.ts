@@ -6,7 +6,7 @@
 // 키는 요청 헤더에만 있고 기록에는 남지 않는다. 끝에 단계별 호출 수·사용량·실제 지출(USD)을 출력한다.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import type { Revision } from "@newsplatform/domain";
+import type { Revision } from "@newstrail/domain";
 import {
   createOpenAiModelClient,
   createRecordingModelClient,

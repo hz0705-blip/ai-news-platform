@@ -4,8 +4,8 @@ import {
   type RuntimeDb,
   type SearchEmbeddingRow,
   saveSearchEmbeddings,
-} from "@newsplatform/db";
-import type { EmbeddingClient } from "@newsplatform/pipeline";
+} from "@newstrail/db";
+import type { EmbeddingClient } from "@newstrail/pipeline";
 
 /** 임베딩 요청 하나이자 DB 쓰기 한 번에 넣는 문장 수(#124 Ruling). 중간에 실패해도 앞 묶음은 남는다. */
 export const SEARCH_EMBEDDING_CHUNK = 100;

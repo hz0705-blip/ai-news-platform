@@ -5,7 +5,7 @@ import type {
   RevisionChange,
   Source,
   Story,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { and, eq } from "drizzle-orm";
 import {
   toArticleRow,

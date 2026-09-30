@@ -1,5 +1,5 @@
 {
-  "name": "@newsplatform/db",
+  "name": "@newstrail/db",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -18,7 +18,7 @@
     "sources:wikidata": "node scripts/sources-wikidata.ts"
   },
   "dependencies": {
-    "@newsplatform/domain": "workspace:*",
+    "@newstrail/domain": "workspace:*",
     "drizzle-orm": "0.45.2",
     "postgres": "3.4.9",
     "zod": "4.6.5"

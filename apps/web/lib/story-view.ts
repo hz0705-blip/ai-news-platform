@@ -1,4 +1,4 @@
-import type { StoryPageData } from "@newsplatform/db";
+import type { StoryPageData } from "@newstrail/db";
 import {
   CHANGE_KINDS,
   type ChangeKind,
@@ -9,7 +9,7 @@ import {
   type RightsTier,
   type Topic,
   toUtf16Range,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 
 /** 근거 행의 공통 필드. 기사 본문은 없다. */
 export interface EvidenceViewBase {

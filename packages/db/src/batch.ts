@@ -6,9 +6,9 @@ import type {
   RevisionSource,
   Source,
   Story,
-} from "@newsplatform/domain";
-import { deriveReprocessContext } from "@newsplatform/domain";
-import { slotAtOf } from "@newsplatform/domain/batch-slot";
+} from "@newstrail/domain";
+import { deriveReprocessContext } from "@newstrail/domain";
+import { slotAtOf } from "@newstrail/domain/batch-slot";
 import { and, desc, eq, gt, gte, inArray, lt, lte, ne, sql } from "drizzle-orm";
 import { toDomainSource, toDomainStory } from "./mappers.ts";
 import { loadClaimHistory, loadRevision } from "./queries/revision.ts";

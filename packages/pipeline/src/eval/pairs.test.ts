@@ -1,4 +1,4 @@
-import type { Topic } from "@newsplatform/domain";
+import type { Topic } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import type { LocalPacket } from "./packet.ts";
 import { buildPairRequest, comparePairs, selectDevPairs } from "./pairs.ts";

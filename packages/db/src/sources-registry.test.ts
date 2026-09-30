@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import type { Source } from "@newsplatform/domain";
+import type { Source } from "@newstrail/domain";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { loadPublishedStory } from "./queries/story.ts";

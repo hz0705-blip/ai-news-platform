@@ -36,7 +36,7 @@
           "level": "error",
           "options": {
             "paths": {
-              "@newsplatform/db/testing": "@newsplatform/db/testing는 테스트 전용이다(마이그레이션 자격 연결·테이블 비우기). *.test.ts에서만 import한다"
+              "@newstrail/db/testing": "@newstrail/db/testing는 테스트 전용이다(마이그레이션 자격 연결·테이블 비우기). *.test.ts에서만 import한다"
             }
           }
         }
@@ -60,12 +60,12 @@
               "level": "error",
               "options": {
                 "paths": {
-                  "@newsplatform/worker": "웹은 워커를 import하지 않는다 (docs/spec/v1.md 시스템 구조)",
-                  "@newsplatform/db/testing": "@newsplatform/db/testing는 테스트 전용이다(마이그레이션 자격 연결·테이블 비우기). *.test.ts에서만 import한다"
+                  "@newstrail/worker": "웹은 워커를 import하지 않는다 (docs/spec/v1.md 시스템 구조)",
+                  "@newstrail/db/testing": "@newstrail/db/testing는 테스트 전용이다(마이그레이션 자격 연결·테이블 비우기). *.test.ts에서만 import한다"
                 },
                 "patterns": [
                   {
-                    "group": ["@newsplatform/worker/*"]
+                    "group": ["@newstrail/worker/*"]
                   }
                 ]
               }
@@ -83,12 +83,12 @@
               "level": "error",
               "options": {
                 "paths": {
-                  "@newsplatform/web": "워커는 웹을 import하지 않는다 (docs/spec/v1.md 시스템 구조)",
-                  "@newsplatform/db/testing": "@newsplatform/db/testing는 테스트 전용이다(마이그레이션 자격 연결·테이블 비우기). *.test.ts에서만 import한다"
+                  "@newstrail/web": "워커는 웹을 import하지 않는다 (docs/spec/v1.md 시스템 구조)",
+                  "@newstrail/db/testing": "@newstrail/db/testing는 테스트 전용이다(마이그레이션 자격 연결·테이블 비우기). *.test.ts에서만 import한다"
                 },
                 "patterns": [
                   {
-                    "group": ["@newsplatform/web/*"]
+                    "group": ["@newstrail/web/*"]
                   }
                 ]
               }
@@ -116,11 +116,11 @@
               "level": "error",
               "options": {
                 "paths": {
-                  "@newsplatform/worker": "웹은 워커를 import하지 않는다 (docs/spec/v1.md 시스템 구조)"
+                  "@newstrail/worker": "웹은 워커를 import하지 않는다 (docs/spec/v1.md 시스템 구조)"
                 },
                 "patterns": [
                   {
-                    "group": ["@newsplatform/worker/*"]
+                    "group": ["@newstrail/worker/*"]
                   }
                 ]
               }
@@ -138,11 +138,11 @@
               "level": "error",
               "options": {
                 "paths": {
-                  "@newsplatform/web": "워커는 웹을 import하지 않는다 (docs/spec/v1.md 시스템 구조)"
+                  "@newstrail/web": "워커는 웹을 import하지 않는다 (docs/spec/v1.md 시스템 구조)"
                 },
                 "patterns": [
                   {
-                    "group": ["@newsplatform/web/*"]
+                    "group": ["@newstrail/web/*"]
                   }
                 ]
               }

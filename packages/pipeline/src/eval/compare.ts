@@ -1,4 +1,4 @@
-import { spanText } from "@newsplatform/domain";
+import { spanText } from "@newstrail/domain";
 import type { Draft, DraftClaim, DraftSide } from "./draft.ts";
 import { type LocalPacket, seededRank } from "./packet.ts";
 

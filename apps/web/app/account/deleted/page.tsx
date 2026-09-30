@@ -1,4 +1,4 @@
-import { loadDeletionStatus } from "@newsplatform/db";
+import { loadDeletionStatus } from "@newstrail/db";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { type ReactElement, Suspense } from "react";

@@ -2,7 +2,7 @@ import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres, { type Sql } from "postgres";
 
 /**
- * 실 DB 테스트용 연결(DATABASE_TEST_URL, 이슈 #42). 테스트 전용이며 `@newsplatform/db/testing`으로만 나간다.
+ * 실 DB 테스트용 연결(DATABASE_TEST_URL, 이슈 #42). 테스트 전용이며 `@newstrail/db/testing`으로만 나간다.
  * 마이그레이션 자격(프로덕션 Supabase)은 읽지 않는다. 테스트 URL은 로컬 컨테이너(localhost)만 받는다.
  *
  * 여러 테스트 파일(packages/db·apps/worker)이 같은 DB의 같은 테이블을 비우므로, 연결마다

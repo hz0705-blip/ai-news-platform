@@ -1,4 +1,4 @@
-import { sha256Hex, spanText, splitSentences } from "@newsplatform/domain";
+import { sha256Hex, spanText, splitSentences } from "@newstrail/domain";
 import { z } from "zod";
 import type { Prompt } from "./prompt.ts";
 

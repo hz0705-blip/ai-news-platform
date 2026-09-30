@@ -7,7 +7,7 @@ import {
   orderForAssignment,
   storyIdForFirstArticle,
   type Topic,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import type { EmbeddingClient } from "../types.ts";
 
 export const STAGE = "story-assign";

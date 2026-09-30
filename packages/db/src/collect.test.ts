@@ -1,4 +1,4 @@
-import type { CollectedArticle, Source } from "@newsplatform/domain";
+import type { CollectedArticle, Source } from "@newstrail/domain";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { saveCollectedArticles } from "./collect.ts";

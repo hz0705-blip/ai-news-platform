@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { normalizeBody } from "@newsplatform/domain";
+import { normalizeBody } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import { loadDemoStoryInputs } from "../fixtures.ts";
 import * as evidencePrompt from "../prompts/evidence-extract.ts";

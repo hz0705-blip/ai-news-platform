@@ -199,13 +199,13 @@ importers:
       '@base-ui/react':
         specifier: 1.8.0
         version: 1.8.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@newsplatform/db':
+      '@newstrail/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@newsplatform/domain':
+      '@newstrail/domain':
         specifier: workspace:*
         version: link:../../packages/domain
-      '@newsplatform/pipeline':
+      '@newstrail/pipeline':
         specifier: workspace:*
         version: link:../../packages/pipeline
       '@supabase/ssr':
@@ -281,13 +281,13 @@ importers:
 
   apps/worker:
     dependencies:
-      '@newsplatform/db':
+      '@newstrail/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@newsplatform/domain':
+      '@newstrail/domain':
         specifier: workspace:*
         version: link:../../packages/domain
-      '@newsplatform/pipeline':
+      '@newstrail/pipeline':
         specifier: workspace:*
         version: link:../../packages/pipeline
       pg-boss:
@@ -296,7 +296,7 @@ importers:
 
   packages/db:
     dependencies:
-      '@newsplatform/domain':
+      '@newstrail/domain':
         specifier: workspace:*
         version: link:../domain
       drizzle-orm:
@@ -317,7 +317,7 @@ importers:
 
   packages/pipeline:
     dependencies:
-      '@newsplatform/domain':
+      '@newstrail/domain':
         specifier: workspace:*
         version: link:../domain
       openai:

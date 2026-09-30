@@ -1,4 +1,4 @@
-import type { ContradictionStatus, Topic } from "@newsplatform/domain";
+import type { ContradictionStatus, Topic } from "@newstrail/domain";
 import { desc, eq, sql } from "drizzle-orm";
 import type { RuntimeDb } from "../runtime.ts";
 import { articles, claimRevisions, stories, storyRevisions } from "../schema/index.ts";

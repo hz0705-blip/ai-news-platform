@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
-import type { BatchNotice } from "@newsplatform/domain/batch-status";
-import { TOPICS } from "@newsplatform/domain/topic";
+import type { BatchNotice } from "@newstrail/domain/batch-status";
+import { TOPICS } from "@newstrail/domain/topic";
 import { expect, type Page, test } from "@playwright/test";
 import { build } from "esbuild";
 import { expectNoAxeViolations } from "./axe.ts";

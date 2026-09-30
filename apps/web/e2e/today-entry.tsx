@@ -1,5 +1,5 @@
 /** @jsxImportSource react */
-import type { BatchNotice } from "@newsplatform/domain/batch-status";
+import type { BatchNotice } from "@newstrail/domain/batch-status";
 import { createRoot } from "react-dom/client";
 import { BatchNoticeAlert } from "../components/today/batch-notice.tsx";
 import { TodayScreen } from "../components/today/today-screen.tsx";

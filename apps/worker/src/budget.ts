@@ -1,4 +1,4 @@
-import type { Budget } from "@newsplatform/pipeline";
+import type { Budget } from "@newstrail/pipeline";
 
 /** 파이프라인 일일 예산(USD; 스펙 "개발 중 결정 항목" 토큰 계량). 시도가 실제로 도는 KST 날짜의 모든 실행이 나눠 쓴다. */
 export const DAILY_PIPELINE_BUDGET_USD = 1.2;

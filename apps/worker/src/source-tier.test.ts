@@ -1,8 +1,8 @@
 import { copyFileSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parseSourceRegistry, SOURCES_FILE_PATH } from "@newsplatform/db/sources-file";
-import { createMigrationDb, readTestDbUrl, sources } from "@newsplatform/db/testing";
+import { parseSourceRegistry, SOURCES_FILE_PATH } from "@newstrail/db/sources-file";
+import { createMigrationDb, readTestDbUrl, sources } from "@newstrail/db/testing";
 import { describe, expect, it } from "vitest";
 import type { CacheInvalidator } from "./revalidate.ts";
 import {

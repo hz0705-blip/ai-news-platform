@@ -9,7 +9,7 @@ import {
   STORY_LIFECYCLES,
   TOPICS,
   UNLINK_PROVIDERS,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import {
   boolean,
   doublePrecision,

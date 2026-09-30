@@ -1,4 +1,4 @@
-import type { StoryLifecycle } from "@newsplatform/domain";
+import type { StoryLifecycle } from "@newstrail/domain";
 import { sql } from "drizzle-orm";
 import type { RuntimeDb } from "./runtime.ts";
 

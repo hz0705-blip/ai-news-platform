@@ -1,4 +1,4 @@
-import type { AdmitInput, AdmitResult, StorySearchHit } from "@newsplatform/db";
+import type { AdmitInput, AdmitResult, StorySearchHit } from "@newstrail/db";
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -10,15 +10,15 @@ const { admit, settle, searchDb, embed, clientOptions } = vi.hoisted(() => ({
   clientOptions: [] as unknown[],
 }));
 
-vi.mock("@newsplatform/db", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@newsplatform/db")>()),
+vi.mock("@newstrail/db", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@newstrail/db")>()),
   admitAnonymousRequest: admit,
   settleAnonymousRequest: settle,
   searchStoriesByEmbedding: searchDb,
   createRuntimeDb: () => ({ db: {}, sql: {} }),
 }));
-vi.mock("@newsplatform/pipeline/embedding", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@newsplatform/pipeline/embedding")>()),
+vi.mock("@newstrail/pipeline/embedding", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@newstrail/pipeline/embedding")>()),
   createOpenAiEmbeddingClient: (options: unknown) => {
     clientOptions.push(options);
     return { embed };

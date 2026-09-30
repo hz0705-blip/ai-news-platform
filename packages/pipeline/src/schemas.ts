@@ -13,7 +13,7 @@ import {
   STORY_LIFECYCLES,
   type Story,
   TOPICS,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { z } from "zod";
 import type { ArticleInput, BatchInput, BatchReport, Budget, StoryState } from "./types.ts";
 

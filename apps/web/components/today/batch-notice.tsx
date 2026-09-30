@@ -1,5 +1,5 @@
 /** @jsxImportSource react */
-import type { BatchNotice } from "@newsplatform/domain/batch-status";
+import type { BatchNotice } from "@newstrail/domain/batch-status";
 import { CircleAlert, Clock, Gauge, RefreshCw } from "lucide-react";
 import {
   BATCH_CAP_REACHED,

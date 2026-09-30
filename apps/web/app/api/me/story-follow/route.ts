@@ -1,4 +1,4 @@
-import { followStory, unfollowStory } from "@newsplatform/db";
+import { followStory, unfollowStory } from "@newstrail/db";
 import type { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { personalPost } from "../../../../lib/auth/personal-route.ts";

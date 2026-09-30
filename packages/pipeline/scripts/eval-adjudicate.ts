@@ -1,4 +1,4 @@
-// 사용: pnpm --filter @newsplatform/pipeline eval:adjudicate   (EVAL_DATA_DIR, #147, 터미널 대화형)
+// 사용: pnpm --filter @newstrail/pipeline eval:adjudicate   (EVAL_DATA_DIR, #147, 터미널 대화형)
 // eval:compare의 검토 대상을 하나씩 보여 주고 A·B·직접 입력·판정 불가 중 고르게 한다. 결정마다
 // EVAL_DATA_DIR/adjudication.json에 저장하므로 q로 멈추고 다시 실행하면 남은 항목부터 잇는다.
 // 모두 끝나면 저장소 eval/labels.json(문장 없음, 라벨 출처 모델 합의 / 운영자 판정 / 운영자 감사)을 쓴다.

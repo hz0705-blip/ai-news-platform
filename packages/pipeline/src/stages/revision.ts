@@ -3,7 +3,7 @@ import {
   deriveStoryStatus,
   type Revision,
   sha256Hex,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { z } from "zod";
 import {
   ClaimGenerateResponseSchema,

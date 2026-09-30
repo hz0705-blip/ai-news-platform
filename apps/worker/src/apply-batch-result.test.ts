@@ -4,8 +4,8 @@ import {
   stories,
   storyRevisions,
   toStoryRow,
-} from "@newsplatform/db/testing";
-import type { Revision } from "@newsplatform/domain";
+} from "@newstrail/db/testing";
+import type { Revision } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import { applyBatchResult } from "./apply-batch-result.ts";
 

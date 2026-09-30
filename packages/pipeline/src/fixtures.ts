@@ -13,7 +13,7 @@ import {
   type RevisionSource,
   type Source,
   type Story,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { MODEL_ID } from "./openai/client.ts";
 import { createRecordedModelClient } from "./recorded.ts";
 import type { BatchInput, ModelClient } from "./types.ts";

@@ -7,7 +7,7 @@ import {
   type RevisionChange,
   type Source,
   type Story,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { commitRevision, saveDemoStoryRecords } from "./publish.ts";
 import type { RuntimeDb } from "./runtime.ts";
 

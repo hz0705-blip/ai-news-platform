@@ -5,7 +5,7 @@ import {
   type RevisionChange,
   type RevisionSource,
   type Source,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import { runBatch } from "../batch-run.ts";
 import { LIVE_REFERENCE_TIME, loadDemoStoryFixture } from "../fixtures.ts";

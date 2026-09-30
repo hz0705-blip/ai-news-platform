@@ -1,4 +1,4 @@
-import type { FollowFeedStory } from "@newsplatform/db";
+import type { FollowFeedStory } from "@newstrail/db";
 
 /** 마지막으로 본 개정판 뒤에 발행된 개정판이 있으면 참. 본 적 없는 사건은 기준이 없어 거짓이다(Ruling, lib/last-seen.ts). */
 export const hasChangesSinceSeen = (story: FollowFeedStory): boolean =>
