@@ -19,10 +19,10 @@ test("핵심 루프: 주장 → 근거 펼침 → 원문 링크 → 변화 구�
   await expect(page.getByText("데모 사건", { exact: true })).toBeVisible();
 
   // 사건 갱신 시각: 라벨 + 절대 시각 형식 + 기계 가독 datetime
-  const updated = page.locator("header").getByRole("time");
+  const updated = page.getByRole("main").locator("header").getByRole("time");
   await expect(updated).toHaveAttribute("datetime", "2026-09-17T00:30:00.000Z");
   await expect(updated).toHaveText(ABSOLUTE_TIME);
-  await expect(page.locator("header")).toContainText("사건 갱신");
+  await expect(page.getByRole("main").locator("header")).toContainText("사건 갱신");
 
   // 첫 진입: 모든 펼침 버튼이 접혀 있고 근거 영역이 하나도 없다
   const triggers = page.getByRole("button", { name: /근거 \d+개 보기/ });
@@ -60,7 +60,7 @@ test("핵심 루프: 주장 → 근거 펼침 → 원문 링크 → 변화 구�
 
 test("사건 머리에 상태 설명 문구와 상태별 개수 링크가 있다", async ({ page }) => {
   await page.goto(STORY_URL);
-  const header = page.locator("header");
+  const header = page.getByRole("main").locator("header");
   await expect(header.getByText("여러 출처의 보도가 이 주장에 일치합니다.")).toBeVisible();
   const counts = page.getByRole("list", { name: "주장 상태별 개수" });
   await expect(counts.getByRole("link", { name: /복수 출처 일치 4개/ })).toHaveAttribute(

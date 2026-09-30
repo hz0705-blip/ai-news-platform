@@ -1,6 +1,6 @@
 /**
  * 로그인 뒤 돌아갈 주소 검증(스펙 "계정"): 같은 출처의 허용 경로만 받는다.
- * 허용 경로는 오늘(`/`)·팔로우(`/follows`)·계정(`/account`)·사건(`/story/<slug>`)·개정판(`/story/<slug>/revision/<id>`)의 경로뿐이다.
+ * 허용 경로는 오늘(`/`)·팔로우(`/follows`)·계정(`/account`)·검색(`/search`)·소개(`/about`)·처리방침(`/privacy`)·약관(`/terms`)·사건(`/story/<slug>`)·개정판(`/story/<slug>/revision/<id>`)의 경로뿐이다.
  * 질의는 사건·개정판 경로의 하려던 팔로우 동작(`?intent=follow`, 사건은 경로의 slug) 하나만 받고 해시는 받지 않는다.
  * 프로토콜 상대(`//`), 역슬래시, 디코딩하면 `/`·`\`가 되는 인코딩, 외부 호스트는 모두 fallback으로 바뀐다.
  */
@@ -32,8 +32,19 @@ function isStoryPath(path: string): boolean {
   return parts.length === 5 && parts[3] === "revision" && isSafeSegment(parts[4] ?? "");
 }
 
+// 상단 계정 진입점(#155)이 어느 화면에서든 로그인을 열므로 공개 고정 경로도 받는다(질의는 받지 않는다).
+const FIXED_PATHS: ReadonlySet<string> = new Set([
+  "/",
+  "/follows",
+  "/account",
+  "/search",
+  "/about",
+  "/privacy",
+  "/terms",
+]);
+
 function isAllowedPath(path: string): boolean {
-  return path === "/" || path === "/follows" || path === "/account" || isStoryPath(path);
+  return FIXED_PATHS.has(path) || isStoryPath(path);
 }
 
 export function safeReturnPath(raw: string | null | undefined, fallback = "/"): string {
