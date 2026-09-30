@@ -1,11 +1,12 @@
 ---
 status: accepted
 date: 2026-09-17
+revised: 2026-09-30
 ---
 
 # 서울 배치 호스팅(Vercel Hobby + Supabase Pro)과 일일 복구 지점
 
-월 $150 상한(GNews €49.99 + OpenAI + 호스팅) 안에서 웹·상시 워커·PostgreSQL/pgvector를 운영해야 한다. 웹은 Vercel Hobby 서울(`icn1`), DB는 Supabase Pro Micro 서울(PostgreSQL 17 + pgvector), 워커는 M2a부터 Railway 싱가포르 상시 서비스로 둔다. 복구 수준은 일일 복구 지점(RPO ≤ 24시간, RTO ≤ 60분 목표)이며 PITR은 쓰지 않는다. 공급자 밖 사본은 GitHub Actions가 야간과 마이그레이션 직전에 만드는 암호화 `pg_dump` 아티팩트다. 관측은 Sentry·Langfuse·Healthchecks.io 무료 구간이다.
+월 $150 상한(GNews €49.99 + OpenAI + 호스팅) 안에서 웹·상시 워커·PostgreSQL/pgvector를 운영해야 한다. 웹은 Vercel Hobby 서울(`icn1`), DB는 Supabase Pro Micro 서울(PostgreSQL 17 + pgvector), 워커는 M2a부터 Railway 싱가포르 상시 서비스로 둔다. 복구 수준은 일일 복구 지점(RPO ≤ 24시간, RTO ≤ 60분 목표)이며 PITR은 쓰지 않는다. 공급자 밖 사본은 GitHub Actions가 야간과 마이그레이션 직전에 만드는 암호화 `pg_dump` 아티팩트다. 관측은 Sentry·Langfuse·Healthchecks.io 무료 구간으로 정했으나 1차 완성 뒤로 미룬다(스펙 "범위와 성격" 완성 수준).
 
 Vercel Hobby는 개인 비상업 용도 조건이다. 이 서비스는 채용 지원용 포트폴리오로 광고·후원·유료 기능을 두지 않으며, 그 조건이 바뀌면 Vercel Pro로 전환하고 예산을 재산정한다.
 
@@ -22,6 +23,6 @@ Vercel Hobby는 개인 비상업 용도 조건이다. 이 서비스는 채용 �
 
 - 웹과 DB가 같은 서울 지역에 있어 SQL 왕복이 짧다. 워커만 싱가포르에 있으므로 배치는 기사 단위 왕복 대신 묶음 읽기·쓰기로 설계한다.
 - 복구 수준이 하루 단위이므로 계정 데이터가 생기는 M4 전에 RPO를 재확인한다. 필요하면 배치 직후 덤프를 추가해 12시간으로 좁힌다.
-- 리뷰어에게 보이는 증거는 백업 성공이 아니라 격리 DB 복원 훈련 기록(RPO·RTO 실측)이다. M2a에서 첫 훈련, 이후 월 1회.
+- 리뷰어에게 보이는 증거는 백업 성공이 아니라 격리 DB 복원 훈련 기록(RPO·RTO 실측)이다. M2a에서 첫 훈련 1회. 월 1회 훈련은 1차 완성 뒤로 미룬다(스펙 "범위와 성격" 완성 수준).
 - 절차 세부(스케줄·연결 분리·관측 필드·롤백 순서·배포 흐름)는 `docs/spec/v1.md` "배포와 운영" 절에 있다. 근거는 리서치 #6(커밋 87606af의 `docs/research/06-infra-hosting.md`, 스펙 "문서 수명"에 따라 흡수 후 삭제).
-- 렌더링·캐시 전략은 이 ADR의 범위가 아니며 리서치 #11 뒤에 정한다.
+- 렌더링·캐시 전략은 이 ADR의 범위가 아니다. 스펙 "배포와 운영"의 렌더링·캐시 항목이 정본이다.
