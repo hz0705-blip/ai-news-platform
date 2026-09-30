@@ -32,4 +32,20 @@ describe("StoryHeader", () => {
       "#claim-2",
     );
   });
+
+  it("데모 사건은 데모 기준 시각, 라이브 사건은 사건 갱신으로 시각을 표기한다", () => {
+    const header = {
+      title: "제목",
+      topics: [],
+      isDemo: true,
+      status: "복수 출처 일치",
+      sourceCount: 1,
+      updatedAt: new Date("2026-09-17T00:30:00.000Z"),
+      statusCounts: [],
+    } as const;
+    const { rerender } = render(<StoryHeader header={header} />);
+    expect(screen.getByRole("time").parentElement?.textContent).toMatch(/^데모 기준 시각 /);
+    rerender(<StoryHeader header={{ ...header, isDemo: false }} />);
+    expect(screen.getByRole("time").parentElement?.textContent).toMatch(/^사건 갱신 /);
+  });
 });
