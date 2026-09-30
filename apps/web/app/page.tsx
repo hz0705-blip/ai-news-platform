@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { BatchNoticeAlert } from "../components/today/batch-notice.tsx";
 import { TodayScreen } from "../components/today/today-screen.tsx";
 import { getDemoTodayData, getDueBatchRun, getTodayData } from "../lib/today-cache.ts";
-import { NEXT_UPDATE, SCREEN_TITLE, SEARCH_LINK, TODAY_LABEL } from "./copy.ts";
+import { ABOUT_LINK, NEXT_UPDATE, SCREEN_TITLE, SEARCH_LINK, TODAY_LABEL } from "./copy.ts";
 
 async function PublishedToday() {
   // 자격 없는 빌드에서는 공개 껍데기만 만들고, 요청 시 캐시를 읽는다.
@@ -35,6 +35,11 @@ export default function Page() {
           <p>
             <a href="/search" className="underline">
               {SEARCH_LINK}
+            </a>
+          </p>
+          <p>
+            <a href="/about" className="underline">
+              {ABOUT_LINK}
             </a>
           </p>
         </main>

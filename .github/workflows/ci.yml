@@ -77,6 +77,8 @@ jobs:
       DATABASE_MIGRATION_URL: postgresql://ci:ci-${{ github.run_id }}@localhost:5432/newsplatform_ci
       DATABASE_TEST_URL: postgresql://ci:ci-${{ github.run_id }}@localhost:5432/newsplatform_ci
       DATABASE_URL: postgresql://ci:ci-${{ github.run_id }}@localhost:5432/newsplatform_ci
+      # 소개의 정정·삭제 요청 메일(#127). 정적 페이지라 빌드 때 들어간다. 가짜 값이며 실제 주소를 쓰지 않는다.
+      CONTACT_EMAIL: contact@example.com
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

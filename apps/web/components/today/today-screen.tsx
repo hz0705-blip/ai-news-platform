@@ -7,6 +7,7 @@ import type { TodayData } from "@newsplatform/db";
 import { TOPICS } from "@newsplatform/domain/topic";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
+  ABOUT_LINK,
   DEMO_STORIES,
   FOLLOWS_LINK,
   LAST_UPDATED,
@@ -73,6 +74,11 @@ export function TodayScreen({
         <p>
           <a href="/search" className="underline">
             {SEARCH_LINK}
+          </a>
+        </p>
+        <p>
+          <a href="/about" className="underline">
+            {ABOUT_LINK}
           </a>
         </p>
         {operationalNotice}
