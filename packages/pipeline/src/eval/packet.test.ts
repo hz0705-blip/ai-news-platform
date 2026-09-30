@@ -9,6 +9,8 @@ import {
 } from "./packet.ts";
 import { fakeStory } from "./testing.ts";
 
+const NO_PAIRS = { method: "임베딩 코사인", pairs: [] } as const;
+
 function population(): StoryCandidate[] {
   const stories: StoryCandidate[] = [];
   TOPICS.forEach((topic, t) => {
@@ -29,7 +31,7 @@ describe("골든셋 개발셋 표집", () => {
       first.map((p) => p.storyId),
     );
 
-    const composition = toDevSet(first, DEV_SET_SEED).composition;
+    const composition = toDevSet(first, DEV_SET_SEED, NO_PAIRS).composition;
     expect(first).toHaveLength(20);
     expect(composition.actual).toEqual({ 단독: 4, "기사 2~4개": 12, "기사 5개 이상": 4 });
     expect(Object.values(composition.byTopic)).toEqual([5, 5, 5, 5]);
@@ -42,7 +44,7 @@ describe("골든셋 개발셋 표집", () => {
 
   it("저장소 산출물에 기사 본문·제목·설명 문자열이 없다", () => {
     const packets = sampleDevSet(population(), DEV_SET_SEED);
-    const output = JSON.stringify(toDevSet(packets, DEV_SET_SEED), null, 2);
+    const output = JSON.stringify(toDevSet(packets, DEV_SET_SEED, NO_PAIRS), null, 2);
     expect(() => assertNoArticleText(output, packets)).not.toThrow();
 
     const article = packets[0]?.articles[0];

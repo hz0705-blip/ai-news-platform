@@ -9,10 +9,11 @@ import {
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import type { DraftFile, DraftSide, SpendEntry } from "./draft.ts";
 import type { LocalPacket } from "./packet.ts";
+import type { PairDraftFile } from "./pairs.ts";
 
 /**
  * `EVAL_DATA_DIR`(저장소 밖 로컬 디렉터리, 필수)의 파일. 기사 본문·제목·설명·주장 문장은 여기에만 둔다.
- * - `packets/<packetId>.json`, `drafts/<packetId>.<A|B>.json`, `spend.json`(호출별 지출),
+ * - `packets/<packetId>.json`, `drafts/<packetId>.<A|B>.json`·`drafts/pairs.<A|B>.json`, `spend.json`(호출별 지출),
  *   `review.json`·`disagreements.json`(대조), `adjudication.json`(판정 진행).
  */
 export function evalDataDir(env: Readonly<Record<string, string | undefined>>): string {
@@ -63,6 +64,12 @@ export function createEvalStore(dir: string) {
     readDraft: (id: string, side: DraftSide): DraftFile | undefined =>
       existsSync(draftPath(id, side)) ? readJson<DraftFile>(draftPath(id, side)) : undefined,
     writeDraft: (file: DraftFile) => writeJson(draftPath(file.packetId, file.side), file),
+    readPairDraft: (side: DraftSide): PairDraftFile | undefined =>
+      existsSync(join(dir, "drafts", `pairs.${side}.json`))
+        ? readJson<PairDraftFile>(join(dir, "drafts", `pairs.${side}.json`))
+        : undefined,
+    writePairDraft: (file: PairDraftFile) =>
+      writeJson(join(dir, "drafts", `pairs.${file.side}.json`), file),
     readSpend: (): SpendEntry[] => (existsSync(spendPath) ? readJson<SpendEntry[]>(spendPath) : []),
     appendSpend(entry: SpendEntry) {
       const entries = existsSync(spendPath) ? readJson<SpendEntry[]>(spendPath) : [];

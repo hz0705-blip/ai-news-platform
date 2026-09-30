@@ -4,7 +4,7 @@ import { type LocalPacket, seededRank } from "./packet.ts";
 
 /**
  * 두 초안의 대조(#147, 스펙 "골든셋과 평가"). 항목은 다섯 종류다.
- * - `pair`: 기사 쌍 같은 사건 여부. 키 `pair:a1-a2`.
+ * - `pair`: 기사 쌍 같은 사건 여부. 개발셋 쌍 60개(`pairs.ts`), 키 `pairs/pair:dev-01/a1|dev-03/a2`.
  * - `claim`: 주장(유형·양상·근거 인용 키 집합). 두 초안의 주장은 근거 문장 집합의 Jaccard ≥ 0.5로 1:1 정렬하고
  *   (높은 것부터, 동률이면 A·B 순서), 한쪽에만 있는 주장은 다른 쪽 값이 없는 불일치 항목이다. 키 `claim:c1`.
  *   주장 문장은 두 모델이 다르게 쓰므로 비교하지 않는다.
@@ -37,7 +37,7 @@ export interface CompareItem {
   readonly a: ItemValue;
   readonly b: ItemValue;
   readonly agreed: boolean;
-  /** 수치·날짜·발언자 항목(운영자가 일치해도 검토한다). */
+  /** 수치·날짜·발언자 주장 항목(운영자가 일치해도 검토한다). 주장 항목에서만 참이다. */
   readonly sensitive: boolean;
   /** 이 항목이 속한 초안 주장의 순번(0부터). 판정 화면이 주장 문장을 보여 주는 데 쓴다. */
   readonly claimIndex?: { readonly a: number | null; readonly b: number | null };
@@ -99,7 +99,10 @@ const DATE_WORDS =
 const SPEAKER_WORDS =
   /\b(said|says|told|according to|stated|announced|spokesperson|spokesman|spokeswoman)\b/i;
 
-/** 수치·날짜·발언자 항목: 근거 원문에 숫자·날짜 낱말·발언 동사가 있거나 한쪽 유형이 귀속 입장인 주장. */
+/**
+ * 수치·날짜·발언자 항목: 근거 원문에 숫자·날짜 낱말·발언 동사가 있거나 한쪽 유형이 귀속 입장인 주장.
+ * 이 규칙은 주장 항목에만 건다(그 주장의 뒷받침·상충 관계 항목은 불일치·감사 표본으로만 검토한다).
+ */
 export function isSensitiveClaim(
   packet: LocalPacket,
   claims: readonly (DraftClaim | undefined)[],
@@ -151,16 +154,8 @@ export function compareDrafts(packet: LocalPacket, a: Draft, b: Draft): CompareI
       ...(claimIndex === undefined ? {} : { claimIndex }),
     });
 
-  const keys = packet.articles.map((article) => article.key);
-  const pairLabel = (draft: Draft, x: string, y: string) =>
-    draft.pairs.find((p) => p.a === x && p.b === y)?.label ?? null;
-  keys.forEach((x, i) => {
-    for (const y of keys.slice(i + 1)) {
-      const [p, q] = x < y ? [x, y] : [y, x];
-      push(`pair:${p}-${q}`, "pair", pairLabel(a, p, q), pairLabel(b, p, q));
-    }
-  });
-
+  // 패킷 초안의 기사 쌍 라벨(`draft.pairs`)은 대조하지 않는다. "한 사건으로 묶은 기사"라는 틀 안에서 붙인 라벨이라,
+  // 기사 쌍은 개발셋 쌍 60개를 틀 없는 `golden-pair` 프롬프트로 따로 라벨링해 대조한다(`pairs.ts`).
   alignClaims(a.claims, b.claims).forEach(([i, j], index) => {
     const claimId = `c${index + 1}`;
     const x = i === null ? undefined : a.claims[i];
@@ -177,7 +172,7 @@ export function compareDrafts(packet: LocalPacket, a: Draft, b: Draft): CompareI
         "support",
         quote.support,
         other.support,
-        sensitive,
+        false,
         claimIndex,
       );
     }
@@ -191,7 +186,7 @@ export function compareDrafts(packet: LocalPacket, a: Draft, b: Draft): CompareI
         const la = label(x);
         const lb = label(y);
         if (la === null && lb === null) continue;
-        push(`relation:${claimId}:${s}|${t}`, "relation", la, lb, sensitive, claimIndex);
+        push(`relation:${claimId}:${s}|${t}`, "relation", la, lb, false, claimIndex);
       }
     });
   });

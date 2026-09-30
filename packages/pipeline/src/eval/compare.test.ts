@@ -37,8 +37,8 @@ describe("두 초안 대조", () => {
     const packet = fakePacket();
     const same = draft([claim(["a1s2", "a2s2"])]);
     const items = compareDrafts(packet, same, same);
+    // 패킷 초안의 기사 쌍 라벨은 대조하지 않는다(기사 쌍은 golden-pair로 따로).
     expect(items.map((i) => i.itemId)).toEqual([
-      "dev-01/pair:a1-a2",
       "dev-01/claim:c1",
       "dev-01/support:c1:a1s2",
       "dev-01/support:c1:a2s2",
@@ -76,7 +76,7 @@ describe("두 초안 대조", () => {
     expect(selectReview([...items, ...many])).toEqual(review);
   });
 
-  it("수치·날짜·발언자 항목은 일치해도 검토 대상이다", () => {
+  it("수치·날짜·발언자 주장 항목은 일치해도 검토 대상이다", () => {
     const packet = fakePacket();
     const withDate = {
       ...packet.articles[0],
@@ -93,11 +93,9 @@ describe("두 초안 대조", () => {
     const speaker = draft([claim(["a2s3"], { claimType: "귀속 입장" })]);
     const sensitive = (d: Draft) =>
       selectReview(compareDrafts(p, d, d)).filter((r) => r.reasons.includes("수치·날짜·발언자"));
-    expect(sensitive(number).map((r) => r.itemId)).toEqual([
-      "dev-01/claim:c1",
-      "dev-01/support:c1:a1s2",
-    ]);
-    expect(sensitive(speaker).map((r) => r.kind)).toEqual(["claim", "support"]);
+    // 규칙은 주장 항목 단위다: 그 주장의 뒷받침 항목에는 걸지 않는다.
+    expect(sensitive(number).map((r) => r.itemId)).toEqual(["dev-01/claim:c1"]);
+    expect(sensitive(speaker).map((r) => r.kind)).toEqual(["claim"]);
     expect(sensitive(plain)).toEqual([]);
   });
 

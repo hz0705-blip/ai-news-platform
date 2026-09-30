@@ -56,8 +56,7 @@ const result = await runAdjudication(review, progress, {
   ask: (question) => rl.question(question),
   print: (text) => console.log(text),
   save: (next) => writeJson(progressPath, next),
-  render: (item, position, total) =>
-    renderItem(item, position, total, packetOf(item.packetId), draftsOf(item.packetId)),
+  render: (item, position, total) => renderItem(item, position, total, packetOf, draftsOf),
   isQuoteKey: (item, key) => isPacketQuoteKey(packetOf(item.packetId), key),
 });
 rl.close();

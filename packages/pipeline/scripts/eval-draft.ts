@@ -1,8 +1,11 @@
 // 사용: pnpm --filter @newsplatform/pipeline eval:draft   (OPENAI_API_KEY·EVAL_DATA_DIR, #147)
 // 패킷마다 상위(A)·하위(B) 모델이 golden-draft 프롬프트로 독립 라벨링한다. 이미 있는 초안은 건너뛴다(재개).
+// 이어서 개발셋 기사 쌍 60개(eval/dev-set.json)를 golden-pair 프롬프트로 모델마다 한 번 호출해 라벨링한다.
 // 호출 전 예약이 EVAL_DATA_DIR/spend.json의 누적 지출 + 진행 중 예약과 합쳐 $3을 넘으면 호출하지 않고 멈춘다.
 
+import { GOLDEN_PAIR_PROMPT } from "../eval/prompts/golden-pair.ts";
 import {
+  callWithinCap,
   DRAFT_MODELS,
   DRAFT_SPEND_CAP_USD,
   type DraftJob,
@@ -10,7 +13,13 @@ import {
   runDrafts,
   SpendLedger,
 } from "../src/eval/draft.ts";
-import { createEvalStore, evalDataDir } from "../src/eval/store.ts";
+import type { DevSet } from "../src/eval/packet.ts";
+import { buildPairRequest, type PairDraftFile } from "../src/eval/pairs.ts";
+import { createEvalStore, evalDataDir, REPO_EVAL_DIR, readJson } from "../src/eval/store.ts";
+
+/** 쌍 라벨링 요청의 기사·쌍 순서를 섞는 고정 시드. */
+const PAIR_REQUEST_SEED = "golden-pair@1";
+
 import { createOpenAiModelClient } from "../src/openai/client.ts";
 
 const apiKey = process.env.OPENAI_API_KEY;
@@ -49,6 +58,30 @@ const result = await runDrafts(jobs, {
   concurrency: 4,
 });
 
+const devSet = readJson<DevSet>(`${REPO_EVAL_DIR}/dev-set.json`);
+const pairResults: { side: DraftSide; outcome: string }[] = [];
+for (const side of sides) {
+  if (store.readPairDraft(side) !== undefined || result.notCalled.length > 0) continue;
+  const request = buildPairRequest(packets, devSet.pairs.pairs, PAIR_REQUEST_SEED, side);
+  const outcome = await callWithinCap("pairs", side, request, {
+    clientFor: (s) => clients[s],
+    ledger,
+    recordSpend: (entry) => store.appendSpend(entry),
+  });
+  pairResults.push({ side, outcome: outcome.kind === "failed" ? outcome.detail : outcome.kind });
+  if (outcome.kind !== "completed") continue;
+  const decoded = outcome.output as Pick<PairDraftFile, "labels" | "dropped">;
+  store.writePairDraft({
+    side,
+    model: DRAFT_MODELS[side],
+    promptVersion: GOLDEN_PAIR_PROMPT.version,
+    spendUsd: outcome.usage.spend,
+    tokens: outcome.usage.tokens,
+    ...decoded,
+  });
+  console.error(`pairs.${side} 완료 $${outcome.usage.spend.toFixed(4)}`);
+}
+
 const label = (j: DraftJob) => `${j.packet.packetId}.${j.side}`;
 console.log(
   JSON.stringify({
@@ -56,8 +89,15 @@ console.log(
     completed: result.completed.map(label),
     failed: result.failed.map((f) => ({ job: label(f), detail: f.detail })),
     notCalled: result.notCalled.map(label),
+    pairs: pairResults,
     spentBeforeUsd: Number(spentBefore.toFixed(4)),
     spentTotalUsd: Number(ledger.spentUsd.toFixed(4)),
   }),
 );
-if (result.failed.length > 0 || result.notCalled.length > 0) process.exitCode = 1;
+if (
+  result.failed.length > 0 ||
+  result.notCalled.length > 0 ||
+  pairResults.some((r) => r.outcome !== "completed")
+) {
+  process.exitCode = 1;
+}

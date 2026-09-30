@@ -12,8 +12,15 @@ import {
   selectReview,
 } from "../src/eval/compare.ts";
 import { DRAFT_MODELS } from "../src/eval/draft.ts";
-import { assertNoArticleText } from "../src/eval/packet.ts";
-import { createEvalStore, evalDataDir, REPO_EVAL_DIR, writeJson } from "../src/eval/store.ts";
+import { assertNoArticleText, type DevSet } from "../src/eval/packet.ts";
+import { comparePairs, PAIR_SET_ID, PAIR_SETS } from "../src/eval/pairs.ts";
+import {
+  createEvalStore,
+  evalDataDir,
+  REPO_EVAL_DIR,
+  readJson,
+  writeJson,
+} from "../src/eval/store.ts";
 
 const store = createEvalStore(evalDataDir(process.env));
 const packets = store.readPackets();
@@ -31,6 +38,15 @@ for (const packet of packets) {
   dropped.B += b.draft.dropped.length;
   items.push(...compareDrafts(packet, a.draft, b.draft));
 }
+const devSet = readJson<DevSet>(`${REPO_EVAL_DIR}/dev-set.json`);
+const pairA = store.readPairDraft("A");
+const pairB = store.readPairDraft("B");
+if (pairA === undefined || pairB === undefined) unprocessed.push(PAIR_SET_ID);
+else {
+  dropped.A += pairA.dropped.length;
+  dropped.B += pairB.dropped.length;
+  items.push(...comparePairs(devSet.pairs.pairs, pairA, pairB));
+}
 const review = selectReview(items);
 writeJson(store.path("review.json"), { items, review });
 writeJson(
@@ -45,8 +61,15 @@ const agreement = {
   models: DRAFT_MODELS,
   packets: {
     total: packets.length,
-    compared: packets.length - unprocessed.length,
+    compared: packets.length - unprocessed.filter((id) => id !== PAIR_SET_ID).length,
     unprocessed,
+  },
+  pairs: {
+    method: devSet.pairs.method,
+    total: devSet.pairs.pairs.length,
+    bySet: Object.fromEntries(
+      PAIR_SETS.map((set) => [set, devSet.pairs.pairs.filter((p) => p.set === set).length]),
+    ),
   },
   spendUsd: {
     total: Number(spend.reduce((sum, e) => sum + e.spentUsd, 0).toFixed(4)),

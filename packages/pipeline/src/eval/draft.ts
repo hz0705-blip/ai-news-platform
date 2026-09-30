@@ -18,7 +18,13 @@ import { requestReservationUsd } from "../openai/client.ts";
 import type { PricedModel } from "../openai/pricing.ts";
 import { buildRequest } from "../prompts/prompt.ts";
 import type { GateSupportLabel } from "../schemas.ts";
-import { type ModelClient, ModelResponseError, ModelTransportError } from "../types.ts";
+import {
+  type ModelClient,
+  type ModelRequest,
+  ModelResponseError,
+  ModelTransportError,
+  type ModelUsage,
+} from "../types.ts";
 import type { LocalPacket } from "./packet.ts";
 
 /** 초안 두 모델: 상위(A)·하위(B). 날짜 스냅샷 ID다. */
@@ -235,6 +241,7 @@ export interface DraftJob {
 
 /** 호출 한 번의 지출 기록(`EVAL_DATA_DIR/spend.json`에 쌓인다). */
 export interface SpendEntry {
+  /** 패킷 식별자, 기사 쌍 라벨링이면 `pairs`. */
   readonly packetId: string;
   readonly side: DraftSide;
   readonly model: string;
@@ -259,9 +266,47 @@ export interface RunDraftsResult {
   readonly notCalled: readonly DraftJob[];
 }
 
+export type CallOutcome =
+  | { readonly kind: "completed"; readonly output: unknown; readonly usage: ModelUsage }
+  | { readonly kind: "failed"; readonly detail: string }
+  | { readonly kind: "notCalled" };
+
+/**
+ * 호출 하나를 상한 안에서 한다. 호출 전에 예약하고, 예약이 상한을 넘으면 호출하지 않는다(`notCalled`).
+ * 실패한 호출은 응답 사용량(없으면 과금 가능한 전송 오류의 예약액)을 지출로 센다. 지출은 `recordSpend`로 남긴다.
+ */
+export async function callWithinCap(
+  jobId: string,
+  side: DraftSide,
+  request: ModelRequest,
+  deps: Pick<RunDraftsDeps, "clientFor" | "ledger" | "recordSpend">,
+): Promise<CallOutcome> {
+  const model = DRAFT_MODELS[side];
+  const reservation = requestReservationUsd(request, model);
+  if (!deps.ledger.tryReserve(reservation)) return { kind: "notCalled" };
+  const base = { packetId: jobId, side, model, reservedUsd: reservation };
+  try {
+    const response = await deps.clientFor(side).complete(request);
+    deps.ledger.settle(reservation, response.usage.spend);
+    deps.recordSpend({ ...base, spentUsd: response.usage.spend, outcome: "완료" });
+    return { kind: "completed", output: response.output, usage: response.usage };
+  } catch (error) {
+    const spent =
+      error instanceof ModelResponseError
+        ? error.usage.spend
+        : error instanceof ModelTransportError && error.billable
+          ? reservation
+          : 0;
+    const detail = error instanceof Error ? error.message : String(error);
+    deps.ledger.settle(reservation, spent);
+    deps.recordSpend({ ...base, spentUsd: spent, outcome: "실패", detail });
+    return { kind: "failed", detail };
+  }
+}
+
 /**
  * 초안 작업을 돈다. 각 호출 전에 예약하고, 예약이 상한을 넘으면 그 작업과 남은 작업을 호출하지 않고 멈춘다
- * (진행 중 호출은 끝낸다). 실패한 호출은 응답 사용량(없으면 과금 가능한 전송 오류의 예약액)을 지출로 센다.
+ * (진행 중 호출은 끝낸다).
  */
 export async function runDrafts(
   jobs: readonly DraftJob[],
@@ -274,7 +319,6 @@ export async function runDrafts(
   let stopped = false;
 
   const runOne = async (job: DraftJob): Promise<void> => {
-    const model = DRAFT_MODELS[job.side];
     const request = buildRequest(
       GOLDEN_DRAFT_PROMPT,
       "golden-draft",
@@ -282,38 +326,27 @@ export async function runDrafts(
       renderDraftInput(job.packet),
       resolveDraft(job.packet),
     );
-    const reservation = requestReservationUsd(request, model);
-    if (stopped || !deps.ledger.tryReserve(reservation)) {
-      stopped = true;
+    if (stopped) {
       notCalled.push(job);
       return;
     }
-    const base = { packetId: job.packet.packetId, side: job.side, model, reservedUsd: reservation };
-    try {
-      const response = await deps.clientFor(job.side).complete(request);
-      deps.ledger.settle(reservation, response.usage.spend);
-      deps.recordSpend({ ...base, spentUsd: response.usage.spend, outcome: "완료" });
+    const outcome = await callWithinCap(job.packet.packetId, job.side, request, deps);
+    if (outcome.kind === "notCalled") {
+      stopped = true;
+      notCalled.push(job);
+    } else if (outcome.kind === "failed") {
+      failed.push({ ...job, detail: outcome.detail });
+    } else {
       deps.saveDraft({
         packetId: job.packet.packetId,
         side: job.side,
-        model,
+        model: DRAFT_MODELS[job.side],
         promptVersion: GOLDEN_DRAFT_PROMPT.version,
-        spendUsd: response.usage.spend,
-        tokens: response.usage.tokens,
-        draft: response.output as Draft,
+        spendUsd: outcome.usage.spend,
+        tokens: outcome.usage.tokens,
+        draft: outcome.output as Draft,
       });
       completed.push(job);
-    } catch (error) {
-      const spent =
-        error instanceof ModelResponseError
-          ? error.usage.spend
-          : error instanceof ModelTransportError && error.billable
-            ? reservation
-            : 0;
-      const detail = error instanceof Error ? error.message : String(error);
-      deps.ledger.settle(reservation, spent);
-      deps.recordSpend({ ...base, spentUsd: spent, outcome: "실패", detail });
-      failed.push({ ...job, detail });
     }
   };
 

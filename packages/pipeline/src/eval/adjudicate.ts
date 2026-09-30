@@ -9,6 +9,7 @@ import {
   splitSentences,
 } from "@newsplatform/domain";
 import { SAME_STORY_LABELS } from "../../eval/prompts/golden-draft.ts";
+import { PAIR_LEAD_SENTENCES } from "../../eval/prompts/golden-pair.ts";
 import { GATE_SUPPORT_LABELS } from "../schemas.ts";
 import type { CompareItem, ItemKind, ItemValue, ReviewItem } from "./compare.ts";
 import type { Draft } from "./draft.ts";
@@ -209,8 +210,12 @@ export function buildLabels(
 ): Label[] {
   const reviewed = new Map(review.map((item) => [item.itemId, item]));
   return items.map((item) => {
-    const packet = packets.find((p) => p.packetId === item.packetId);
-    if (packet === undefined) throw new Error(`없는 패킷: ${item.packetId}`);
+    // 기사 쌍 항목은 여러 패킷에 걸치고 값이 클래스뿐이라 패킷이 필요 없다.
+    const packetOf = () => {
+      const packet = packets.find((p) => p.packetId === item.packetId);
+      if (packet === undefined) throw new Error(`없는 패킷: ${item.packetId}`);
+      return packet;
+    };
     const reviewItem = reviewed.get(item.itemId);
     let value: ItemValue;
     let unresolvable = false;
@@ -227,7 +232,7 @@ export function buildLabels(
       labelSource = reviewItem.reasons.includes("불일치") ? "운영자 판정" : "운영자 감사";
     }
     const quotes = itemQuotes(item).map((quoteKey) => {
-      const coordinates = quoteCoordinates(packet, quoteKey);
+      const coordinates = quoteCoordinates(packetOf(), quoteKey);
       if (coordinates === null) throw new Error(`잘못된 인용 키: ${quoteKey}`);
       return { quoteKey, ...coordinates };
     });
@@ -235,7 +240,7 @@ export function buildLabels(
       itemId: item.itemId,
       packetId: item.packetId,
       kind: item.kind,
-      value: toLabelValue(packet, value),
+      value: value !== null && typeof value !== "string" ? toLabelValue(packetOf(), value) : value,
       labelSource,
       ...(unresolvable ? { unresolvable: true as const } : {}),
       ...(quotes.length === 0 ? {} : { quotes }),
@@ -271,32 +276,39 @@ export function renderItem(
   item: ReviewItem,
   position: number,
   total: number,
-  packet: LocalPacket,
-  drafts: { readonly A: Draft; readonly B: Draft },
+  packetOf: (packetId: string) => LocalPacket,
+  draftsOf: (packetId: string) => { readonly A: Draft; readonly B: Draft },
 ): string {
-  const lines = [
-    "",
-    `━━ [${position}/${total}] ${item.packetId} · ${KIND_NAMES[item.kind]} · 사유: ${item.reasons.join(", ")}`,
-    `   항목 ${item.itemId}`,
-  ];
+  const reasons = item.reasons.join(", ");
   if (item.kind === "pair") {
-    const [x, y] = (item.itemId.split("pair:")[1] ?? "").split("-");
-    for (const key of [x, y]) {
-      const article = packet.articles.find((a) => a.key === key);
-      if (article === undefined) continue;
+    // 쌍 식별자 `dev-01/a1|dev-03/a2`. 패킷 소속(같은 사건으로 묶였는지)은 보이지 않고 기사 두 건만 보인다.
+    const lines = ["", `━━ [${position}/${total}] ${KIND_NAMES.pair} · 사유: ${reasons}`];
+    const refs = (item.itemId.split("pair:")[1] ?? "").split("|");
+    refs.forEach((articleRef, index) => {
+      const [packetId, key] = articleRef.split("/");
+      const article = packetOf(packetId ?? "").articles.find((a) => a.key === key);
+      if (article === undefined) return;
       lines.push(
-        `── ${article.key} ${article.sourceId} ${article.publishedAt}`,
+        `── 기사 ${index === 0 ? "X" : "Y"} ${article.sourceId} ${article.publishedAt}`,
         `   제목: ${article.title}`,
       );
       splitSentences(article.body)
-        .slice(0, 3)
-        .forEach((span, index) => {
-          lines.push(
-            `   [${article.key}s${index + 1}] ${spanText(article.body, span).replace(/\s+/g, " ")}`,
-          );
+        .slice(0, PAIR_LEAD_SENTENCES)
+        .forEach((span) => {
+          lines.push(`   ${spanText(article.body, span).replace(/\s+/g, " ")}`);
         });
-    }
-  } else if (item.kind === "status") {
+    });
+    lines.push(`   A: ${formatValue(item.a)}`, `   B: ${formatValue(item.b)}`);
+    return lines.join("\n");
+  }
+  const packet = packetOf(item.packetId);
+  const drafts = draftsOf(item.packetId);
+  const lines = [
+    "",
+    `━━ [${position}/${total}] ${item.packetId} · ${KIND_NAMES[item.kind]} · 사유: ${reasons}`,
+    `   항목 ${item.itemId}`,
+  ];
+  if (item.kind === "status") {
     for (const side of ["A", "B"] as const) {
       lines.push(`── 초안 ${side}의 주장`);
       for (const claim of drafts[side].claims) {

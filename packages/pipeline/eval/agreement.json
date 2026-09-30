@@ -10,11 +10,19 @@
     "compared": 20,
     "unprocessed": []
   },
+  "pairs": {
+    "method": "임베딩 코사인",
+    "total": 60,
+    "bySet": {
+      "사건 안": 30,
+      "어려운 부정": 30
+    }
+  },
   "spendUsd": {
-    "total": 0.7636,
-    "A": 0.6648,
-    "B": 0.0988,
-    "calls": 40,
+    "total": 0.8036,
+    "A": 0.6975,
+    "B": 0.106,
+    "calls": 42,
     "failedCalls": 0
   },
   "droppedResponseFragments": {
@@ -22,29 +30,29 @@
     "B": 2
   },
   "overall": {
-    "items": 566,
-    "agreed": 375,
-    "disagreed": 191,
-    "agreementRate": 0.6625,
-    "disagreementRate": 0.3375,
+    "items": 555,
+    "agreed": 351,
+    "disagreed": 204,
+    "agreementRate": 0.6324,
+    "disagreementRate": 0.3676,
     "abstentionRate": {
-      "A": 0.0018,
+      "A": 0.0162,
       "B": 0
     }
   },
   "byKind": {
     "pair": {
-      "items": 71,
-      "agreed": 71,
-      "disagreed": 0,
-      "agreementRate": 1,
-      "disagreementRate": 0,
+      "items": 60,
+      "agreed": 47,
+      "disagreed": 13,
+      "agreementRate": 0.7833,
+      "disagreementRate": 0.2167,
       "abstentionRate": {
-        "A": 0,
+        "A": 0.1333,
         "B": 0
       },
-      "kappa": 1,
-      "kappaItems": 71
+      "kappa": 0.6139,
+      "kappaItems": 60
     },
     "claim": {
       "items": 205,
@@ -101,11 +109,11 @@
   },
   "review": {
     "auditRate": 0.2,
-    "total": 460,
+    "total": 305,
     "byReason": {
-      "불일치": 191,
-      "감사 표본": 75,
-      "수치·날짜·발언자": 389
+      "불일치": 204,
+      "감사 표본": 71,
+      "수치·날짜·발언자": 166
     }
   }
 }

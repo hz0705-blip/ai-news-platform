@@ -709,5 +709,400 @@
         }
       ]
     }
-  ]
+  ],
+  "pairs": {
+    "method": "임베딩 코사인",
+    "pairs": [
+      {
+        "pairId": "dev-02/a1|dev-02/a2",
+        "a": "dev-02/a1",
+        "b": "dev-02/a2",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-02/a1|dev-02/a3",
+        "a": "dev-02/a1",
+        "b": "dev-02/a3",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-02/a1|dev-02/a5",
+        "a": "dev-02/a1",
+        "b": "dev-02/a5",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-02/a2|dev-02/a3",
+        "a": "dev-02/a2",
+        "b": "dev-02/a3",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-02/a2|dev-02/a4",
+        "a": "dev-02/a2",
+        "b": "dev-02/a4",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-02/a2|dev-02/a6",
+        "a": "dev-02/a2",
+        "b": "dev-02/a6",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-02/a3|dev-02/a4",
+        "a": "dev-02/a3",
+        "b": "dev-02/a4",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-02/a3|dev-02/a6",
+        "a": "dev-02/a3",
+        "b": "dev-02/a6",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-02/a5|dev-04/a3",
+        "a": "dev-02/a5",
+        "b": "dev-04/a3",
+        "set": "어려운 부정",
+        "similarity": 0.4373
+      },
+      {
+        "pairId": "dev-02/a5|dev-04/a5",
+        "a": "dev-02/a5",
+        "b": "dev-04/a5",
+        "set": "어려운 부정",
+        "similarity": 0.4448
+      },
+      {
+        "pairId": "dev-03/a1|dev-04/a1",
+        "a": "dev-03/a1",
+        "b": "dev-04/a1",
+        "set": "어려운 부정",
+        "similarity": 0.4856
+      },
+      {
+        "pairId": "dev-03/a1|dev-04/a2",
+        "a": "dev-03/a1",
+        "b": "dev-04/a2",
+        "set": "어려운 부정",
+        "similarity": 0.483
+      },
+      {
+        "pairId": "dev-03/a1|dev-04/a3",
+        "a": "dev-03/a1",
+        "b": "dev-04/a3",
+        "set": "어려운 부정",
+        "similarity": 0.4762
+      },
+      {
+        "pairId": "dev-03/a1|dev-04/a4",
+        "a": "dev-03/a1",
+        "b": "dev-04/a4",
+        "set": "어려운 부정",
+        "similarity": 0.4856
+      },
+      {
+        "pairId": "dev-03/a1|dev-04/a5",
+        "a": "dev-03/a1",
+        "b": "dev-04/a5",
+        "set": "어려운 부정",
+        "similarity": 0.5028
+      },
+      {
+        "pairId": "dev-03/a2|dev-03/a3",
+        "a": "dev-03/a2",
+        "b": "dev-03/a3",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-03/a2|dev-03/a4",
+        "a": "dev-03/a2",
+        "b": "dev-03/a4",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-03/a2|dev-04/a1",
+        "a": "dev-03/a2",
+        "b": "dev-04/a1",
+        "set": "어려운 부정",
+        "similarity": 0.4529
+      },
+      {
+        "pairId": "dev-03/a2|dev-04/a2",
+        "a": "dev-03/a2",
+        "b": "dev-04/a2",
+        "set": "어려운 부정",
+        "similarity": 0.4656
+      },
+      {
+        "pairId": "dev-03/a2|dev-04/a3",
+        "a": "dev-03/a2",
+        "b": "dev-04/a3",
+        "set": "어려운 부정",
+        "similarity": 0.4628
+      },
+      {
+        "pairId": "dev-03/a2|dev-04/a4",
+        "a": "dev-03/a2",
+        "b": "dev-04/a4",
+        "set": "어려운 부정",
+        "similarity": 0.4529
+      },
+      {
+        "pairId": "dev-03/a2|dev-04/a5",
+        "a": "dev-03/a2",
+        "b": "dev-04/a5",
+        "set": "어려운 부정",
+        "similarity": 0.4871
+      },
+      {
+        "pairId": "dev-03/a3|dev-03/a5",
+        "a": "dev-03/a3",
+        "b": "dev-03/a5",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-03/a3|dev-04/a1",
+        "a": "dev-03/a3",
+        "b": "dev-04/a1",
+        "set": "어려운 부정",
+        "similarity": 0.4802
+      },
+      {
+        "pairId": "dev-03/a3|dev-04/a2",
+        "a": "dev-03/a3",
+        "b": "dev-04/a2",
+        "set": "어려운 부정",
+        "similarity": 0.4928
+      },
+      {
+        "pairId": "dev-03/a3|dev-04/a3",
+        "a": "dev-03/a3",
+        "b": "dev-04/a3",
+        "set": "어려운 부정",
+        "similarity": 0.4937
+      },
+      {
+        "pairId": "dev-03/a3|dev-04/a4",
+        "a": "dev-03/a3",
+        "b": "dev-04/a4",
+        "set": "어려운 부정",
+        "similarity": 0.4802
+      },
+      {
+        "pairId": "dev-03/a3|dev-04/a5",
+        "a": "dev-03/a3",
+        "b": "dev-04/a5",
+        "set": "어려운 부정",
+        "similarity": 0.511
+      },
+      {
+        "pairId": "dev-03/a4|dev-03/a5",
+        "a": "dev-03/a4",
+        "b": "dev-03/a5",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-03/a4|dev-04/a1",
+        "a": "dev-03/a4",
+        "b": "dev-04/a1",
+        "set": "어려운 부정",
+        "similarity": 0.4953
+      },
+      {
+        "pairId": "dev-03/a4|dev-04/a2",
+        "a": "dev-03/a4",
+        "b": "dev-04/a2",
+        "set": "어려운 부정",
+        "similarity": 0.4862
+      },
+      {
+        "pairId": "dev-03/a4|dev-04/a3",
+        "a": "dev-03/a4",
+        "b": "dev-04/a3",
+        "set": "어려운 부정",
+        "similarity": 0.4999
+      },
+      {
+        "pairId": "dev-03/a4|dev-04/a4",
+        "a": "dev-03/a4",
+        "b": "dev-04/a4",
+        "set": "어려운 부정",
+        "similarity": 0.4953
+      },
+      {
+        "pairId": "dev-03/a4|dev-04/a5",
+        "a": "dev-03/a4",
+        "b": "dev-04/a5",
+        "set": "어려운 부정",
+        "similarity": 0.5092
+      },
+      {
+        "pairId": "dev-03/a5|dev-03/a6",
+        "a": "dev-03/a5",
+        "b": "dev-03/a6",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-03/a5|dev-04/a1",
+        "a": "dev-03/a5",
+        "b": "dev-04/a1",
+        "set": "어려운 부정",
+        "similarity": 0.4984
+      },
+      {
+        "pairId": "dev-03/a5|dev-04/a2",
+        "a": "dev-03/a5",
+        "b": "dev-04/a2",
+        "set": "어려운 부정",
+        "similarity": 0.5131
+      },
+      {
+        "pairId": "dev-03/a5|dev-04/a3",
+        "a": "dev-03/a5",
+        "b": "dev-04/a3",
+        "set": "어려운 부정",
+        "similarity": 0.5036
+      },
+      {
+        "pairId": "dev-03/a5|dev-04/a4",
+        "a": "dev-03/a5",
+        "b": "dev-04/a4",
+        "set": "어려운 부정",
+        "similarity": 0.4984
+      },
+      {
+        "pairId": "dev-03/a5|dev-04/a5",
+        "a": "dev-03/a5",
+        "b": "dev-04/a5",
+        "set": "어려운 부정",
+        "similarity": 0.5291
+      },
+      {
+        "pairId": "dev-03/a6|dev-04/a2",
+        "a": "dev-03/a6",
+        "b": "dev-04/a2",
+        "set": "어려운 부정",
+        "similarity": 0.4342
+      },
+      {
+        "pairId": "dev-03/a6|dev-04/a3",
+        "a": "dev-03/a6",
+        "b": "dev-04/a3",
+        "set": "어려운 부정",
+        "similarity": 0.4346
+      },
+      {
+        "pairId": "dev-03/a6|dev-04/a5",
+        "a": "dev-03/a6",
+        "b": "dev-04/a5",
+        "set": "어려운 부정",
+        "similarity": 0.4877
+      },
+      {
+        "pairId": "dev-04/a1|dev-04/a3",
+        "a": "dev-04/a1",
+        "b": "dev-04/a3",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-04/a2|dev-04/a3",
+        "a": "dev-04/a2",
+        "b": "dev-04/a3",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-04/a3|dev-04/a4",
+        "a": "dev-04/a3",
+        "b": "dev-04/a4",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-04/a3|dev-04/a5",
+        "a": "dev-04/a3",
+        "b": "dev-04/a5",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-05/a1|dev-05/a3",
+        "a": "dev-05/a1",
+        "b": "dev-05/a3",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-05/a1|dev-05/a4",
+        "a": "dev-05/a1",
+        "b": "dev-05/a4",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-05/a1|dev-05/a6",
+        "a": "dev-05/a1",
+        "b": "dev-05/a6",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-05/a2|dev-05/a5",
+        "a": "dev-05/a2",
+        "b": "dev-05/a5",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-05/a3|dev-05/a4",
+        "a": "dev-05/a3",
+        "b": "dev-05/a4",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-05/a4|dev-05/a6",
+        "a": "dev-05/a4",
+        "b": "dev-05/a6",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-07/a1|dev-07/a2",
+        "a": "dev-07/a1",
+        "b": "dev-07/a2",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-08/a1|dev-08/a2",
+        "a": "dev-08/a1",
+        "b": "dev-08/a2",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-10/a1|dev-10/a2",
+        "a": "dev-10/a1",
+        "b": "dev-10/a2",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-10/a1|dev-10/a3",
+        "a": "dev-10/a1",
+        "b": "dev-10/a3",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-13/a1|dev-13/a2",
+        "a": "dev-13/a1",
+        "b": "dev-13/a2",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-14/a1|dev-14/a2",
+        "a": "dev-14/a1",
+        "b": "dev-14/a2",
+        "set": "사건 안"
+      },
+      {
+        "pairId": "dev-18/a1|dev-18/a2",
+        "a": "dev-18/a1",
+        "b": "dev-18/a2",
+        "set": "사건 안"
+      }
+    ]
+  }
 }

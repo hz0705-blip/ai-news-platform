@@ -1,4 +1,5 @@
 import { sha256Hex, spanLength, splitSentences, TOPICS, type Topic } from "@newsplatform/domain";
+import type { DevPairs } from "./pairs.ts";
 
 /**
  * 골든셋 개발셋(스펙 "골든셋과 평가", #147). 패킷 = 사건 하나의 기사 묶음.
@@ -83,6 +84,8 @@ export interface DevSet {
       readonly sentenceCount: number;
     }[];
   }[];
+  /** 개발셋 기사 쌍 60개(`pairs.ts`): 사건 안 30 + 어려운 부정 30. */
+  readonly pairs: DevPairs;
 }
 
 /** 시드 순위: 같은 시드·식별자면 늘 같은 값. 작은 값이 먼저 뽑힌다. */
@@ -168,7 +171,7 @@ function toPacket(story: StoryCandidate, packetId: string, seed: string): LocalP
 }
 
 /** 저장소에 커밋할 본문 없는 목록. */
-export function toDevSet(packets: readonly LocalPacket[], seed: string): DevSet {
+export function toDevSet(packets: readonly LocalPacket[], seed: string, pairs: DevPairs): DevSet {
   const actual = Object.fromEntries(
     SIZE_CLASSES.map((size) => [size, packets.filter((p) => p.sizeClass === size).length]),
   ) as Record<SizeClass, number>;
@@ -194,6 +197,7 @@ export function toDevSet(packets: readonly LocalPacket[], seed: string): DevSet 
         sentenceCount: splitSentences(a.body).length,
       })),
     })),
+    pairs,
   };
 }
 

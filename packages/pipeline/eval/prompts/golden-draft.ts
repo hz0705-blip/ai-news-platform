@@ -14,7 +14,8 @@ export const SAME_STORY_LABELS = ["같은 사건", "다른 사건", "판정 불�
 /**
  * 골든셋 정답 초안(#147). 상위·하위 모델이 이 프롬프트 하나로 패킷을 독립 라벨링한다. 모델은 문장 식별자
  * (`a<기사>s<문장>`)만 고르고 구간 좌표는 백엔드가 만든다(`evidence-extract`와 같은 방식).
- * strict 구조화 출력이라 선택 필드가 없다.
+ * strict 구조화 출력이라 선택 필드가 없다. `pairs`(패킷 안 기사 쌍)는 "한 사건으로 묶은 기사"라는 틀 안의 라벨이라
+ * 대조하지 않는다 — 기사 쌍은 틀 없는 `golden-pair` 프롬프트가 개발셋 쌍 60개로 따로 라벨링한다(문안은 `@1` 그대로).
  */
 export const DraftWireSchema = z.object({
   pairs: z.array(z.object({ a: z.string(), b: z.string(), label: z.enum(SAME_STORY_LABELS) })),
