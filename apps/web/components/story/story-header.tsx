@@ -1,4 +1,6 @@
 /** @jsxImportSource react */
+
+import { DEMO_TIME } from "../../app/copy.ts";
 import {
   DEMO_NOTICE,
   SHARE,
@@ -41,7 +43,8 @@ export function StoryHeader({ header }: { header: StoryView["header"] }) {
         <StatusBadge status={header.status} description="visible" />
         <span>{sourceCount(header.sourceCount)}</span>
         <span>
-          {STORY_UPDATED} <time dateTime={updated.dateTime}>{updated.text}</time>
+          {header.isDemo ? DEMO_TIME : STORY_UPDATED}{" "}
+          <time dateTime={updated.dateTime}>{updated.text}</time>
         </span>
       </p>
       <ul aria-label={STATUS_COUNTS_LABEL} className="flex flex-wrap gap-x-4 gap-y-1 text-meta">

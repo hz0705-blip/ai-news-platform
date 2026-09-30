@@ -18,11 +18,11 @@ test("핵심 루프: 주장 → 근거 펼침 → 원문 링크 → 변화 구�
   await expect(page.getByText("기능 설명을 위해 만든 데모 사건입니다.")).toBeVisible();
   await expect(page.getByText("데모 사건", { exact: true })).toBeVisible();
 
-  // 사건 갱신 시각: 라벨 + 절대 시각 형식 + 기계 가독 datetime
+  // 데모 기준 시각: 라벨 + 절대 시각 형식 + 기계 가독 datetime
   const updated = page.getByRole("main").locator("header").getByRole("time");
   await expect(updated).toHaveAttribute("datetime", "2026-09-17T00:30:00.000Z");
   await expect(updated).toHaveText(ABSOLUTE_TIME);
-  await expect(page.getByRole("main").locator("header")).toContainText("사건 갱신");
+  await expect(page.getByRole("main").locator("header")).toContainText("데모 기준 시각");
 
   // 첫 진입: 모든 펼침 버튼이 접혀 있고 근거 영역이 하나도 없다
   const triggers = page.getByRole("button", { name: /근거 \d+개 보기/ });
