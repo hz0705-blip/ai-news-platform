@@ -14,6 +14,8 @@ dirty="$(git status --porcelain | wc -l | tr -d ' ')"
 echo "- 브랜치 \`$branch\` = \`$sha\` ($upstream, $ahead_behind). 작업 트리: $([ "$dirty" = 0 ] && echo 깨끗 || echo "변경 ${dirty}개")."
 echo "- 로컬 ticket 브랜치:"
 git for-each-ref --format='  - %(refname:short) %(objectname:short)' 'refs/heads/ticket/*' | { grep . || echo "  - 없음"; }
+echo "- 티켓 워크트리:"
+git worktree list | tail -n +2 | sed 's/^/  - /' | { grep . || echo "  - 없음"; }
 echo "- 열린 PR:"
 gh pr list --state open --json number,title,headRefName --jq '.[] | "  - #\(.number) \(.title) [\(.headRefName)]"' | { grep . || echo "  - 없음"; }
 echo "- OPEN 이슈(라벨 · 담당자):"
