@@ -142,9 +142,11 @@ test("Tab·Enter·Space로 토픽을 선택하고 해제한다", async ({ page, 
   await mountToday(page);
   // macOS WebKit keyboard navigation preference uses Option-Tab for all controls.
   const tab = browserName === "webkit" && process.platform === "darwin" ? "Alt+Tab" : "Tab";
-  // 헤더의 검색 진입점 다음이 첫 타일이다.
+  // 헤더의 검색·소개 진입점 다음이 첫 타일이다.
   await page.keyboard.press(tab);
   await expect(page.getByRole("link", { name: "사건 검색" })).toBeFocused();
+  await page.keyboard.press(tab);
+  await expect(page.getByRole("link", { name: "서비스 소개" })).toBeFocused();
   await page.keyboard.press(tab);
   await expect(tiles(page).first()).toBeFocused();
   await page.keyboard.press("Enter");
@@ -263,9 +265,9 @@ test.describe("배치 상태", () => {
 
   test("today shows normal update time", async ({ page }) => {
     await mountToday(page, { kind: "none" });
-    // 정확히 이 텍스트: 상태 알림 없이 갱신 시각·약속 주기·검색 진입점만 보인다.
+    // 정확히 이 텍스트: 상태 알림 없이 갱신 시각·약속 주기·검색·소개 진입점만 보인다.
     await expect(header(page)).toHaveText(
-      "오늘사건으로 읽는 해외 보도마지막 갱신 2026. 9. 23. 오전 11:59 KST매일 오전 6시·오후 6시 갱신 예정사건 검색",
+      "오늘사건으로 읽는 해외 보도마지막 갱신 2026. 9. 23. 오전 11:59 KST매일 오전 6시·오후 6시 갱신 예정사건 검색서비스 소개",
     );
   });
 
