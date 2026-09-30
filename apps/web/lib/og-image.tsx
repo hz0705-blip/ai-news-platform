@@ -2,7 +2,7 @@
 import { readFile } from "node:fs/promises";
 import { ImageResponse } from "next/og";
 import type { ReactElement, ReactNode } from "react";
-import { DEMO_STORIES, DEMO_TIME, SCREEN_TITLE, STORY_UPDATED } from "../app/copy.ts";
+import { DEMO_STORIES, DEMO_TIME, SCREEN_TITLE, SERVICE_NAME, STORY_UPDATED } from "../app/copy.ts";
 import { formatAbsolute } from "./format-time.ts";
 import { OG_SIZE, type OgStoryCard } from "./share-card.ts";
 
@@ -88,6 +88,9 @@ function StoryCard({ card }: { card: OgStoryCard }) {
           </div>
         ) : null}
         <div style={{ display: "flex", fontWeight: 700 }}>{card.status}</div>
+        <div style={{ display: "flex", marginLeft: "auto", fontWeight: 700, color: COLOR.accent }}>
+          {SERVICE_NAME}
+        </div>
       </div>
       <div
         style={{
@@ -120,7 +123,7 @@ function StoryCard({ card }: { card: OgStoryCard }) {
   );
 }
 
-/** 안전 카드: 사이트 이름만. 폰트가 없으면 두부를 내지 않도록 글자 없이 배경·강조선만 그린다. */
+/** 안전 카드: 서비스 이름과 부제만. 폰트가 없으면 두부를 내지 않도록 글자 없이 배경·강조선만 그린다. */
 function SafeCard({ withText }: { withText: boolean }) {
   return (
     <Frame>
@@ -128,13 +131,15 @@ function SafeCard({ withText }: { withText: boolean }) {
         <div
           style={{
             display: "flex",
+            flexDirection: "column",
+            gap: 16,
             marginTop: "auto",
             marginBottom: "auto",
-            fontSize: 56,
             fontWeight: 700,
           }}
         >
-          {SCREEN_TITLE}
+          <div style={{ display: "flex", fontSize: 32, color: COLOR.accent }}>{SERVICE_NAME}</div>
+          <div style={{ display: "flex", fontSize: 56 }}>{SCREEN_TITLE}</div>
         </div>
       ) : null}
     </Frame>

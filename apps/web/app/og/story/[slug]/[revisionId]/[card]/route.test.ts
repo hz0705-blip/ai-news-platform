@@ -98,7 +98,7 @@ function view(overrides: { title?: string; summary?: string; isDemo?: boolean } 
 
 async function request(slug = "demo-1-agreement", revisionId = "rev%3A1") {
   const response = await GET(new Request("http://web.test/og"), {
-    params: Promise.resolve({ slug, revisionId, card: "ko-t1-f1.3.9.png" }),
+    params: Promise.resolve({ slug, revisionId, card: "ko-t2-f1.3.9.png" }),
   });
   const bytes = Buffer.from(await response.arrayBuffer());
   return { response, bytes, png: decodePng(bytes) };

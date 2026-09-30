@@ -1,4 +1,6 @@
 // Ruling 25-1: #26의 문구 매트릭스 확정 시 이 파일에서 교체한다.
+// 서비스 이름(스펙 "서비스 이름"). 문서 제목·공유 카드 사이트 이름에 쓰고, 오늘 화면 h1은 부제 SCREEN_TITLE을 유지한다.
+export const SERVICE_NAME = "Newstrail";
 export const SCREEN_TITLE = "사건으로 읽는 해외 보도";
 export const TODAY_LABEL = "오늘";
 export const LAST_UPDATED = "마지막 갱신";
