@@ -155,4 +155,48 @@ describe("deriveReprocessContext (#86·#90·#94)", () => {
     expect(unchanged.previousVersionBodies).toBeUndefined();
     expect(unchanged.openEpisodeClaims).toEqual([episode]);
   });
+
+  it("본문 없는 기사 버전에서는 새 근거를 뽑지 않는다", () => {
+    // 보존 기한이 지나 본문을 지운 버전(#144): a-1은 마지막 버전의 본문이 없어 입력이 아니고,
+    // a-2의 옛 근거 버전은 본문이 없어 좌표 정렬용 이전 본문으로도 넘기지 않는다.
+    const latest = revision(1, [
+      claim("s:c-1", "단일 출처", [["a-1", "v1a"]]),
+      claim("s:c-2", "단일 출처", [["a-2", "v2a"]]),
+    ]);
+    const deleted = (record: ArticleVersionRecord): ArticleVersionRecord => ({
+      ...record,
+      body: null,
+    });
+    const context = deriveReprocessContext({
+      latestRevision: latest,
+      latestCheckedAt: t(2),
+      claimHistory: [latest.claims],
+      articleVersions: [
+        deleted(version("a-1", "v1a", t(0))),
+        deleted(version("a-2", "v2a", t(0))),
+        version("a-2", "v2b", t(3)),
+      ],
+    });
+    expect([...context.currentVersions].map(([id, v]) => [id, v.articleVersionId])).toEqual([
+      ["a-2", "v2b"],
+    ]);
+    expect(context.previousVersionBodies).toBeUndefined();
+  });
+
+  it("본문이 지워진 기사에만 근거가 있던 주장은 옮겨 싣는 주장이다", () => {
+    const only = claim("s:c-1", "단일 출처", [["a-1", "v1"]]);
+    const mixed = claim("s:c-2", "복수 출처 일치", [
+      ["a-1", "v1"],
+      ["a-2", "v2"],
+    ]);
+    const live = claim("s:c-3", "단일 출처", [["a-2", "v2"]]);
+    const latest = revision(1, [only, mixed, live]);
+    const context = deriveReprocessContext({
+      latestRevision: latest,
+      latestCheckedAt: t(2),
+      claimHistory: [latest.claims],
+      articleVersions: [{ ...version("a-1", "v1", t(0)), body: null }, version("a-2", "v2", t(0))],
+    });
+    expect(context.carriedClaims).toEqual([only]);
+  });
 });

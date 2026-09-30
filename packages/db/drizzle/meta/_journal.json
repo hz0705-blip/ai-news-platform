@@ -113,6 +113,13 @@
       "when": 1790694607993,
       "tag": "0015_request_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790735103250,
+      "tag": "0016_article_body_retention",
+      "breakpoints": true
     }
   ]
 }

@@ -103,6 +103,7 @@ export {
   type RateWindow,
   settleAnonymousRequest,
 } from "./request-limits.ts";
+export { applyRetention, type RetentionReport } from "./retention.ts";
 export { createRuntimeDb, type RuntimeDb } from "./runtime.ts";
 export { type BatchRunRow, batchRuns } from "./schema/index.ts";
 export {

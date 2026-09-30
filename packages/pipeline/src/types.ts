@@ -59,6 +59,11 @@ export interface StoryState {
    * 다시 나오면 매칭 후보가 되어 식별자와 이전 상태(보도 상충)를 잇는다.
    */
   readonly openEpisodeClaims?: readonly Claim[];
+  /**
+   * 옮겨 싣는 주장(#144, `deriveReprocessContext`): 본문을 지운 기사에만 근거가 있는 마지막 개정판 주장. 모델을 거치지
+   * 않고 식별자·문장·유형·양상·상태·근거 그대로 새 개정판에 실린다.
+   */
+  readonly carriedClaims?: readonly Claim[];
 }
 
 /** 가드 ①로 이번 개정판에서 빠진 주장 하나(#22 Ruling 22-4). */

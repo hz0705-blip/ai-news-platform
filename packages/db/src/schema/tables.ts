@@ -83,7 +83,7 @@ export const stories = pgTable("stories", {
  * `topics`는 이 기사를 가져온 수집 쿼리 토픽의 합집합, `external_id`는 GNews 기사 id(보조 기록),
  * `description`은 임베딩 입력(스펙 "임베딩 모델·차원")이 될 응답의 설명이다.
  * `embedding`은 제목+설명의 임베딩(#53)이며 HNSW 코사인 인덱스로 후보를 찾는다. null을 허용하므로
- * 사건 종료 시 임베딩 삭제(스펙 "사건 수명")는 이 열을 null로 두면 된다(삭제 자체는 이 티켓 밖).
+ * 사건 종료 시 임베딩 삭제(스펙 "사건 수명")는 보존 잡(#144)이 이 열을 null로 둔다.
  */
 export const articles = pgTable(
   "articles",
@@ -116,7 +116,8 @@ export const articles = pgTable(
 /**
  * 기사 버전: 한 시점에 정규화한 기사 본문. `body`는 보존 기한이 있는 유일한 열이다 —
  * `body_expires_at` = 기사 발행 시각 + 30일, 발행 시각을 모르면 수집 시각 + 30일
- * (docs/spec/v1.md "데이터 보존", #21 Ruling 12). 근거가 영구 보존하는 값은 `evidence`에 따로 있다.
+ * (docs/spec/v1.md "데이터 보존", #21 Ruling 12). 기한이 지나면 보존 잡(#144)이 `body`를 null로 지운다.
+ * 근거가 영구 보존하는 값은 `evidence`에 따로 있다.
  */
 export const articleVersions = pgTable(
   "article_versions",
@@ -125,7 +126,8 @@ export const articleVersions = pgTable(
     article_id: text()
       .notNull()
       .references(() => articles.id),
-    body: text().notNull(),
+    // null = 보존 기한이 지나 지운 본문(#144). 해시·수집 시각·기한은 남는다.
+    body: text(),
     normalization_version: integer().notNull(),
     body_hash: text().notNull(),
     captured_at: timestamptz("captured_at").notNull(),
