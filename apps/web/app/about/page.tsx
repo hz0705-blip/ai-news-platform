@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactElement, ReactNode } from "react";
+import { ContactMail } from "../../components/contact-mail.tsx";
 import {
   ABOUT_LEAD,
   ABOUT_TITLE,
-  CONTACT_PENDING,
   CONTACT_PENDING_DETAIL,
   DEMO_SOURCE,
   GDELT_CREDIT,
@@ -56,11 +56,9 @@ function Section({ id, title, children }: { id: string; title: string; children:
 }
 
 /**
- * 소개(스펙 "화면과 경험", 렌더링은 정적). 요청 메일 주소는 서버 전용 `CONTACT_EMAIL`에서만 읽는다.
- * 정적 페이지라 빌드 때 값이 들어가므로 바꾸면 재배포해야 반영된다. 비어 있으면 "연락처 준비 중"을 보인다.
+ * 소개(스펙 "화면과 경험", 렌더링은 정적). 요청 메일 주소는 `ContactMail`이 서버 전용 `CONTACT_EMAIL`에서 읽는다.
  */
 export default function Page(): ReactElement {
-  const email = process.env.CONTACT_EMAIL?.trim();
   return (
     <main className="mx-auto flex max-w-[48rem] flex-col gap-8 px-4 py-12 lg:px-6">
       <header className="flex flex-col gap-3">
@@ -113,20 +111,11 @@ export default function Page(): ReactElement {
       </Section>
       <Section id="about-requests" title={SECTION_REQUESTS}>
         <p>{REQUEST_INTRO}</p>
-        {email ? (
-          <p>
-            <a
-              href={`mailto:${email}?subject=${encodeURIComponent(REQUEST_MAIL_SUBJECT)}`}
-              className="underline"
-            >
-              {requestMailLink(email)}
-            </a>
-          </p>
-        ) : (
-          <p>
-            <strong>{CONTACT_PENDING}</strong> {CONTACT_PENDING_DETAIL}
-          </p>
-        )}
+        <ContactMail
+          subject={REQUEST_MAIL_SUBJECT}
+          label={requestMailLink}
+          pendingDetail={CONTACT_PENDING_DETAIL}
+        />
         <p>{REQUEST_FIELDS_INTRO}</p>
         <ul className="list-disc pl-6">
           {REQUEST_FIELDS.map((line) => (
