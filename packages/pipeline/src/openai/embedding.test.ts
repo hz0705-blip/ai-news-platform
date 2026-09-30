@@ -1,4 +1,4 @@
-import { cosineSimilarity } from "@newsplatform/domain";
+import { cosineSimilarity } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import { createOpenAiEmbeddingClient, EMBEDDING_DIMENSIONS } from "./embedding.ts";
 import { createRecordedEmbeddingFetch, readRecordedEmbedding } from "./embedding-recorded.ts";

@@ -1,5 +1,5 @@
-import { admitAnonymousRequest, settleAnonymousRequest } from "@newsplatform/db";
-import { createOpenAiEmbeddingClient } from "@newsplatform/pipeline/embedding";
+import { admitAnonymousRequest, settleAnonymousRequest } from "@newstrail/db";
+import { createOpenAiEmbeddingClient } from "@newstrail/pipeline/embedding";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requestOrigin } from "../../../lib/auth/urls.ts";

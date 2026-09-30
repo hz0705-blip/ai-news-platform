@@ -1,4 +1,4 @@
-// 사용: pnpm --filter @newsplatform/pipeline eval:draft   (OPENAI_API_KEY·EVAL_DATA_DIR, #147)
+// 사용: pnpm --filter @newstrail/pipeline eval:draft   (OPENAI_API_KEY·EVAL_DATA_DIR, #147)
 // 패킷마다 상위(A)·하위(B) 모델이 golden-draft 프롬프트로 독립 라벨링한다. 이미 있는 초안은 건너뛴다(재개).
 // 이어서 개발셋 기사 쌍 60개(eval/dev-set.json)를 golden-pair 프롬프트로 모델마다 한 번 호출해 라벨링한다.
 // 호출 전 예약이 EVAL_DATA_DIR/spend.json의 누적 지출 + 진행 중 예약과 합쳐 $3을 넘으면 호출하지 않고 멈춘다.

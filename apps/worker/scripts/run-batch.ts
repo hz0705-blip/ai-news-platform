@@ -1,5 +1,5 @@
-import { createRuntimeDb } from "@newsplatform/db";
-import { createOpenAiEmbeddingClient, createOpenAiModelClient } from "@newsplatform/pipeline";
+import { createRuntimeDb } from "@newstrail/db";
+import { createOpenAiEmbeddingClient, createOpenAiModelClient } from "@newstrail/pipeline";
 import { pipelineDailyBudget } from "../src/budget.ts";
 import { createCacheInvalidator } from "../src/revalidate.ts";
 import { runBatchSlot } from "../src/run-batch-slot.ts";
@@ -8,7 +8,7 @@ import { runBatchSlot } from "../src/run-batch-slot.ts";
  * 수동 배치 명령(#55 수동 스모크): 스케줄러 없이 슬롯 하나의 배치를 그대로 돈다(원장·리스·예산 포함).
  * 결과 줄에 소요·비용·처리 수를 남긴다. 키 값은 출력하지 않는다.
  *
- * 실행: pnpm --filter @newsplatform/worker batch:run <슬롯 키> [--skip-collect]
+ * 실행: pnpm --filter @newstrail/worker batch:run <슬롯 키> [--skip-collect]
  * (예 2026-09-27T17:00+09:00. DATABASE_MIGRATION_URL·OPENAI_API_KEY 필수, 수집하면 GNEWS_API_KEY도.
  * WEB_REVALIDATE_URL·REVALIDATE_SECRET이 있으면 발행 뒤 캐시를 무효화한다. 일일 예산은 워커와 같이
  * PIPELINE_DAILY_BUDGET_USD로 덮어쓴다.)

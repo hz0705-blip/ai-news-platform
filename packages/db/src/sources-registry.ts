@@ -1,4 +1,4 @@
-import { matchSourceByDomain, type RightsTier, type Source } from "@newsplatform/domain";
+import { matchSourceByDomain, type RightsTier, type Source } from "@newstrail/domain";
 import { and, eq, inArray, like, ne, type SQLWrapper, sql } from "drizzle-orm";
 import { toDomainSource, toSourceRow } from "./mappers.ts";
 import type { RuntimeDb } from "./runtime.ts";

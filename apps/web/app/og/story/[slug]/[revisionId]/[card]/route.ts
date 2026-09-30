@@ -1,4 +1,4 @@
-import { DISPLAY_POLICY_VERSION } from "@newsplatform/domain";
+import { DISPLAY_POLICY_VERSION } from "@newstrail/domain";
 import { loadOgFonts, ogCardResponse } from "../../../../../../lib/og-image.tsx";
 import {
   decodeSegment,

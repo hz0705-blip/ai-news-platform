@@ -6,9 +6,9 @@ import {
   type SourceTierChange,
   syncSourceRegistry,
   updateUnregisteredSourceTier,
-} from "@newsplatform/db";
-import { parseSourceRegistry, toSource } from "@newsplatform/db/sources-file";
-import { DISPLAY_POLICY_VERSION, RIGHTS_TIERS, type RightsTier } from "@newsplatform/domain";
+} from "@newstrail/db";
+import { parseSourceRegistry, toSource } from "@newstrail/db/sources-file";
+import { DISPLAY_POLICY_VERSION, RIGHTS_TIERS, type RightsTier } from "@newstrail/domain";
 import type { CacheInvalidator } from "./revalidate.ts";
 
 /** 웹 무효화 라우트가 한 요청에 받는 태그 상한(`apps/web/lib/revalidate.ts`). */

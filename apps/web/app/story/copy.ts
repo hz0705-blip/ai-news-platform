@@ -1,5 +1,5 @@
 // 사건 화면 문구. 테스트는 스펙 문구를 리터럴로 단언한다.
-import type { ContradictionStatus } from "@newsplatform/domain";
+import type { ContradictionStatus } from "@newstrail/domain";
 
 export const DEMO_NOTICE = "기능 설명을 위해 만든 데모 사건입니다.";
 export const TOPICS_LABEL = "토픽";

@@ -4,9 +4,9 @@ import {
   type DeletionIdentity,
   deleteAccount,
   hasPendingDeletion,
-} from "@newsplatform/db";
-import { isUnlinkProvider, type UnlinkProvider } from "@newsplatform/domain";
-import { createProviderUnlinker } from "@newsplatform/pipeline/provider-unlink";
+} from "@newstrail/db";
+import { isUnlinkProvider, type UnlinkProvider } from "@newstrail/domain";
+import { createProviderUnlinker } from "@newstrail/pipeline/provider-unlink";
 import type { JwtPayload, User } from "@supabase/supabase-js";
 import type { NextRequest, NextResponse } from "next/server";
 import { getRuntimeDb } from "../db.ts";

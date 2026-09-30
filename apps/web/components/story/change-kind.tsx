@@ -1,5 +1,5 @@
 /** @jsxImportSource react */
-import type { ChangeKind } from "@newsplatform/domain";
+import type { ChangeKind } from "@newstrail/domain";
 import { ArrowRightLeft, FileDiff, type LucideIcon, Newspaper, PencilLine } from "lucide-react";
 import type { ReactNode } from "react";
 

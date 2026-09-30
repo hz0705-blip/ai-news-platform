@@ -1,4 +1,4 @@
-import type { AccountDeletionStatus, DeletionIdentity } from "@newsplatform/db";
+import type { AccountDeletionStatus, DeletionIdentity } from "@newstrail/db";
 import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 import {

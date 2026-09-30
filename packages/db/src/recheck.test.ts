@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { createArticleVersion, planRechecks } from "@newsplatform/domain";
+import { createArticleVersion, planRechecks } from "@newstrail/domain";
 import { asc, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { loadBatchStories } from "./batch.ts";

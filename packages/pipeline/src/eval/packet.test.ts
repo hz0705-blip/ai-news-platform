@@ -1,4 +1,4 @@
-import { TOPICS } from "@newsplatform/domain";
+import { TOPICS } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import {
   assertNoArticleText,

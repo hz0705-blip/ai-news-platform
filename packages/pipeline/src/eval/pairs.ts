@@ -1,4 +1,4 @@
-import { spanText, splitSentences } from "@newsplatform/domain";
+import { spanText, splitSentences } from "@newstrail/domain";
 import {
   GOLDEN_PAIR_PROMPT,
   PAIR_LEAD_SENTENCES,

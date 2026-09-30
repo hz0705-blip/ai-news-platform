@@ -1,4 +1,4 @@
-import type { Claim, Source } from "@newsplatform/domain";
+import type { Claim, Source } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import { runBatch } from "./batch-run.ts";
 import { DEMO_REFERENCE_TIME, LIVE_REFERENCE_TIME, loadDemoStoryFixture } from "./fixtures.ts";

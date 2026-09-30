@@ -3,7 +3,7 @@ import {
   accountDeletions,
   createMigrationDb,
   readTestDbUrl,
-} from "@newsplatform/db/testing";
+} from "@newstrail/db/testing";
 import { describe, expect, it, vi } from "vitest";
 import { runAccountUnlinkSweep } from "./account-unlink.ts";
 

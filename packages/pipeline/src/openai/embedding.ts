@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import type { EmbeddingClient, EmbeddingResult } from "../types.ts";
 
-// 웹(검색, #125)은 픽스처 경로를 읽는 패키지 루트 대신 이 서브패스(`@newsplatform/pipeline/embedding`)만 import한다.
+// 웹(검색, #125)은 픽스처 경로를 읽는 패키지 루트 대신 이 서브패스(`@newstrail/pipeline/embedding`)만 import한다.
 export type { EmbeddingClient } from "../types.ts";
 
 /**

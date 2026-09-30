@@ -7,7 +7,7 @@ import {
   sha256Hex,
   spanText,
   splitSentences,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { SAME_STORY_LABELS } from "../../eval/prompts/golden-draft.ts";
 import { PAIR_LEAD_SENTENCES } from "../../eval/prompts/golden-pair.ts";
 import { GATE_SUPPORT_LABELS } from "../schemas.ts";

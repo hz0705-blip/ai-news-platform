@@ -4,7 +4,7 @@ import {
   loadDemoStoryFixture,
   requestReservationUsd,
   runBatch,
-} from "@newsplatform/pipeline";
+} from "@newstrail/pipeline";
 import { describe, expect, it } from "vitest";
 import {
   DAILY_PIPELINE_BUDGET_TOKENS,

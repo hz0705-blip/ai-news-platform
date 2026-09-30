@@ -1,4 +1,4 @@
-import { sha256Hex, spanLength, splitSentences, TOPICS, type Topic } from "@newsplatform/domain";
+import { sha256Hex, spanLength, splitSentences, TOPICS, type Topic } from "@newstrail/domain";
 import type { DevPairs } from "./pairs.ts";
 
 /**

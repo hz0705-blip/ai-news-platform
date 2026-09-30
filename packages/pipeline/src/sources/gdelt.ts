@@ -7,7 +7,7 @@ import {
   properNounsOf,
   type Source,
   sourceHostOf,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 
 /**
  * GDELT GKG 2.1 15분 파일 수집 어댑터(docs/spec/v1.md "데이터 소스와 권리" GDELT, "개발 중 결정 항목" GDELT 수집,

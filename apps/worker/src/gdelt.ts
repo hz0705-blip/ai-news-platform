@@ -8,7 +8,7 @@ import {
   type RuntimeDb,
   recordArticleObservations,
   saveLinkOnlyArticle,
-} from "@newsplatform/db";
+} from "@newstrail/db";
 import {
   attachLinkOnlyArticles,
   type CollectGdeltDeps,
@@ -16,7 +16,7 @@ import {
   collectGdelt,
   type EmbeddingClient,
   type LinkOnlyStore,
-} from "@newsplatform/pipeline";
+} from "@newstrail/pipeline";
 
 export interface GdeltStageReport {
   /** 이번 배치에서 발행된 사건 중 대표 기사가 있는 것(상한 전). */

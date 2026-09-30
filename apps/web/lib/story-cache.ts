@@ -1,4 +1,4 @@
-import { loadPublishedStory } from "@newsplatform/db";
+import { loadPublishedStory } from "@newstrail/db";
 import { cacheTag } from "next/cache";
 import { getRuntimeDb } from "./db.ts";
 import { buildStoryView, type StoryView } from "./story-view.ts";

@@ -1,9 +1,4 @@
-import {
-  ACTIVE_WINDOW_MS,
-  type AssignmentCandidate,
-  TOPICS,
-  type Topic,
-} from "@newsplatform/domain";
+import { ACTIVE_WINDOW_MS, type AssignmentCandidate, TOPICS, type Topic } from "@newstrail/domain";
 import {
   and,
   cosineDistance,

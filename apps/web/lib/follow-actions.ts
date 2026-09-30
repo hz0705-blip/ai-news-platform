@@ -1,7 +1,7 @@
 "use server";
 
-import { followTopic, unfollowStory, unfollowTopic } from "@newsplatform/db";
-import { TOPICS } from "@newsplatform/domain/topic";
+import { followTopic, unfollowStory, unfollowTopic } from "@newstrail/db";
+import { TOPICS } from "@newstrail/domain/topic";
 import { refresh } from "next/cache";
 import { z } from "zod";
 import { getCurrentUserId } from "./auth/server.ts";

@@ -1,4 +1,4 @@
-import { loadGnewsLedgerDay, loadRevisionChanges } from "@newsplatform/db";
+import { loadGnewsLedgerDay, loadRevisionChanges } from "@newstrail/db";
 import {
   articleRechecks,
   articles,
@@ -9,20 +9,20 @@ import {
   stories,
   toSourceRow,
   toStoryRow,
-} from "@newsplatform/db/testing";
+} from "@newstrail/db/testing";
 import {
   articleVersionIdFor,
   createArticleVersion,
   normalizeBody,
   sha256Hex,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import {
   createRecordedModelClient,
   LIVE_REFERENCE_TIME,
   loadDemoStoryFixture,
   loadRecordedRecheck,
   MODEL_ID,
-} from "@newsplatform/pipeline";
+} from "@newstrail/pipeline";
 import { describe, expect, it } from "vitest";
 import { runBatchSlot } from "./run-batch-slot.ts";
 

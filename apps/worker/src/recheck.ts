@@ -6,7 +6,7 @@ import {
   loadRecheckTargets,
   type RuntimeDb,
   saveRecheckResult,
-} from "@newsplatform/db";
+} from "@newstrail/db";
 import {
   articleVersionIdFor,
   canStartRecheck,
@@ -17,8 +17,8 @@ import {
   judgeRecheckedBody,
   NORMALIZATION_VERSION,
   planRechecks,
-} from "@newsplatform/domain";
-import { type CollectGnewsDeps, searchByExactTitle } from "@newsplatform/pipeline";
+} from "@newstrail/domain";
+import { type CollectGnewsDeps, searchByExactTitle } from "@newstrail/pipeline";
 
 /** 원문 재수집 단계의 배치 리포트(#86). */
 export interface RecheckStageReport {

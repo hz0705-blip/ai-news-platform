@@ -1,4 +1,4 @@
-import { sha256Hex } from "@newsplatform/domain";
+import { sha256Hex } from "@newstrail/domain";
 import type { EmbeddingClient, ModelClient } from "../types.ts";
 
 /**

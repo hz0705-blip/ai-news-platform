@@ -1,4 +1,4 @@
-import { createRuntimeDb, type RuntimeDb } from "@newsplatform/db";
+import { createRuntimeDb, type RuntimeDb } from "@newstrail/db";
 
 let runtimeDb: RuntimeDb | undefined;
 

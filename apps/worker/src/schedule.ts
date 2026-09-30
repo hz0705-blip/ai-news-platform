@@ -1,5 +1,5 @@
-import { loadBatchRunsSince, type RuntimeDb } from "@newsplatform/db";
-import { latestSlotAtOrBefore, missedSlots, slotKeyOf } from "@newsplatform/domain/batch-slot";
+import { loadBatchRunsSince, type RuntimeDb } from "@newstrail/db";
+import { latestSlotAtOrBefore, missedSlots, slotKeyOf } from "@newstrail/domain/batch-slot";
 import { PgBoss } from "pg-boss";
 import { ACCOUNT_UNLINK_CRON, ACCOUNT_UNLINK_QUEUE } from "./account-unlink.ts";
 import { REQUEST_COUNTER_PURGE_CRON, REQUEST_COUNTER_PURGE_QUEUE } from "./request-counters.ts";

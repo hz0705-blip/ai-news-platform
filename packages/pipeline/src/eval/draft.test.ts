@@ -1,4 +1,4 @@
-import { spanText } from "@newsplatform/domain";
+import { spanText } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import type { DraftWire } from "../../eval/prompts/golden-draft.ts";
 import type { ModelClient, ModelRequest } from "../types.ts";

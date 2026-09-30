@@ -1,5 +1,5 @@
-import { type FollowFeedStory, loadFollowedTopics, loadFollowFeed } from "@newsplatform/db";
-import { TOPICS } from "@newsplatform/domain/topic";
+import { type FollowFeedStory, loadFollowedTopics, loadFollowFeed } from "@newstrail/db";
+import { TOPICS } from "@newstrail/domain/topic";
 import { Check, CircleDot, Plus } from "lucide-react";
 import type { Metadata } from "next";
 import { type ReactElement, Suspense } from "react";

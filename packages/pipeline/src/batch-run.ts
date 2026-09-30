@@ -5,7 +5,7 @@ import {
   type Revision,
   type RevisionChange,
   type RevisionSource,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { finalizeRevision, prepareContinuity } from "./continuity.ts";
 import { MODEL_MAX_RETRIES, MODEL_RETRY_DELAY_MS, requestReservationUsd } from "./openai/client.ts";
 import { prioritizeStories } from "./priority.ts";

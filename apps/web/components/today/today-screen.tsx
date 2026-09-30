@@ -3,8 +3,8 @@
 
 import { Toggle } from "@base-ui/react/toggle";
 import { ToggleGroup } from "@base-ui/react/toggle-group";
-import type { TodayData } from "@newsplatform/db";
-import { TOPICS } from "@newsplatform/domain/topic";
+import type { TodayData } from "@newstrail/db";
+import { TOPICS } from "@newstrail/domain/topic";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
   ABOUT_LINK,

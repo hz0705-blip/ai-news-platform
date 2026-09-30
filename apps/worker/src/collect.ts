@@ -1,6 +1,6 @@
-import { loadSourceRegistry, type RuntimeDb, saveCollectedArticles } from "@newsplatform/db";
-import type { ArticleVersion } from "@newsplatform/domain";
-import { type CollectGnewsDeps, collectGnews } from "@newsplatform/pipeline";
+import { loadSourceRegistry, type RuntimeDb, saveCollectedArticles } from "@newstrail/db";
+import type { ArticleVersion } from "@newstrail/domain";
+import { type CollectGnewsDeps, collectGnews } from "@newstrail/pipeline";
 
 export interface CollectInput {
   /** 이번 배치의 슬롯 시각. GNews `to`가 된다. */

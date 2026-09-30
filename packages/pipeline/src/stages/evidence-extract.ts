@@ -1,4 +1,4 @@
-import { findSpan } from "@newsplatform/domain";
+import { findSpan } from "@newstrail/domain";
 import { z } from "zod";
 import * as prompt from "../prompts/evidence-extract.ts";
 import { buildRequest } from "../prompts/prompt.ts";

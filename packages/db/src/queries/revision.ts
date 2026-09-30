@@ -1,4 +1,4 @@
-import type { Claim, Revision, RevisionChange } from "@newsplatform/domain";
+import type { Claim, Revision, RevisionChange } from "@newstrail/domain";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import {
   type RevisionSourceRow,

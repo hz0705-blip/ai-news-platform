@@ -1,5 +1,5 @@
 {
-  "name": "@newsplatform/pipeline",
+  "name": "@newstrail/pipeline",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -18,7 +18,7 @@
     "eval:score": "node --env-file-if-exists=../../.env scripts/eval-score.ts"
   },
   "dependencies": {
-    "@newsplatform/domain": "workspace:*",
+    "@newstrail/domain": "workspace:*",
     "openai": "7.23.0",
     "zod": "4.6.5"
   },

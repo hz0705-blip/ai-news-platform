@@ -1,4 +1,4 @@
-import type { UnlinkProvider, UnlinkResult } from "@newsplatform/domain";
+import type { UnlinkProvider, UnlinkResult } from "@newstrail/domain";
 
 /**
  * 계정 삭제의 제공자 연결 해제(스펙 "계정", #106). HTTP는 주입받은 `fetch`가 한다.

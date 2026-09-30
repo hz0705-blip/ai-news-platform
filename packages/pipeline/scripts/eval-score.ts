@@ -1,4 +1,4 @@
-// 사용: pnpm --filter @newsplatform/pipeline eval:score [<runId>] [--offline]   (EVAL_DATA_DIR·OPENAI_API_KEY, #149)
+// 사용: pnpm --filter @newstrail/pipeline eval:score [<runId>] [--offline]   (EVAL_DATA_DIR·OPENAI_API_KEY, #149)
 // eval:run 결과를 labels.json으로 채점해 docs/eval/report.md를 쓴다(runId를 비우면 가장 최근 실행).
 // 유료 호출은 주장 매칭 판정자뿐이며 결과는 EVAL_DATA_DIR/runs/<runId>/judge.json에 두어 다시 실행하면 부르지 않는다.
 // 판정 전 예약이 그 실행의 누적 지출(spend.json)과 합쳐 상한 $3을 넘으면 부르지 않고 미처리로 적는다.

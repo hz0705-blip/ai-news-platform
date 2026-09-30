@@ -4,7 +4,7 @@ import {
   normalizeArticleUrl,
   type Source,
   type Topic,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { z } from "zod";
 
 /**

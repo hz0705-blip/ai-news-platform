@@ -1,4 +1,4 @@
-import { deriveBatchNotice, dueSlotKeyOf } from "@newsplatform/domain/batch-status";
+import { deriveBatchNotice, dueSlotKeyOf } from "@newstrail/domain/batch-status";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { BatchNoticeAlert } from "../components/today/batch-notice.tsx";

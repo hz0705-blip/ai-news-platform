@@ -4,7 +4,7 @@ import {
   MODALITIES,
   RIGHTS_TIERS,
   spanText,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { z } from "zod";
 import * as prompt from "../prompts/gate.ts";
 import { buildRequest } from "../prompts/prompt.ts";

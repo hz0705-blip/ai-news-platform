@@ -10,7 +10,7 @@ import {
   RIGHTS_TIERS,
   sha256Hex,
   spanText,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import { DEMO_REFERENCE_TIME, listGoldenSetSlugs, loadDemoStoryFixture } from "./fixtures.ts";
 

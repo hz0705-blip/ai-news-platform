@@ -1,4 +1,4 @@
-import { commitRevision } from "@newsplatform/db";
+import { commitRevision } from "@newstrail/db";
 import {
   claimEmbeddings,
   createMigrationDb,
@@ -7,9 +7,9 @@ import {
   stories,
   storyEmbeddings,
   toStoryRow,
-} from "@newsplatform/db/testing";
-import type { Revision } from "@newsplatform/domain";
-import type { EmbeddingClient } from "@newsplatform/pipeline";
+} from "@newstrail/db/testing";
+import type { Revision } from "@newstrail/domain";
+import type { EmbeddingClient } from "@newstrail/pipeline";
 import { describe, expect, it } from "vitest";
 import { fillSearchEmbeddings } from "./search-embedding.ts";
 

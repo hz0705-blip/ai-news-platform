@@ -1,5 +1,5 @@
-import type { StoryPageData } from "@newsplatform/db";
-import type { ContradictionStatus } from "@newsplatform/domain";
+import type { StoryPageData } from "@newstrail/db";
+import type { ContradictionStatus } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import { MULTI_REV_1, MULTI_REV_2, multiRevisionFixture } from "../e2e/story-data.ts";
 import { buildCoverage, buildStoryView, diffWords } from "./story-view.ts";

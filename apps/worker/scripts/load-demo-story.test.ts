@@ -1,6 +1,6 @@
-import { loadPublishedStory } from "@newsplatform/db";
-import { createMigrationDb, readTestDbUrl } from "@newsplatform/db/testing";
-import { DEMO_REFERENCE_TIME, loadDemoStepGolden } from "@newsplatform/pipeline";
+import { loadPublishedStory } from "@newstrail/db";
+import { createMigrationDb, readTestDbUrl } from "@newstrail/db/testing";
+import { DEMO_REFERENCE_TIME, loadDemoStepGolden } from "@newstrail/pipeline";
 import { describe, expect, it } from "vitest";
 import { loadAllDemoStories, loadDemoStory } from "./load-demo-story.ts";
 

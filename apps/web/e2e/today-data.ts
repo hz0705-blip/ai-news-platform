@@ -1,5 +1,5 @@
-import type { TodayData, TodayStoryCard } from "@newsplatform/db";
-import { TOPICS } from "@newsplatform/domain/topic";
+import type { TodayData, TodayStoryCard } from "@newstrail/db";
+import { TOPICS } from "@newstrail/domain/topic";
 
 export const FIXED_NOW = new Date("2026-09-23T03:00:00.000Z");
 export const LONG_SUMMARY = `첫 주장 전문을 축약하지 않습니다. https://example.test/${"longURL한글Mixed123".repeat(30)} 마지막 문장도 DOM에 남습니다.`;

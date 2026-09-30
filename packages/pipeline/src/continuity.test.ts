@@ -1,4 +1,4 @@
-import type { Claim, ContradictionStatus, Revision, RevisionSource } from "@newsplatform/domain";
+import type { Claim, ContradictionStatus, Revision, RevisionSource } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
 import {
   type ContinuityArticleVersion,

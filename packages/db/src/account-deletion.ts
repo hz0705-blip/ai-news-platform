@@ -6,7 +6,7 @@ import {
   UNLINK_PROVIDERS,
   type UnlinkProvider,
   type UnlinkResult,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import { and, asc, eq, inArray, lt, lte, or, sql } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";

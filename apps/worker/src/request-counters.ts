@@ -1,4 +1,4 @@
-import { purgeRequestCounters, type RuntimeDb } from "@newsplatform/db";
+import { purgeRequestCounters, type RuntimeDb } from "@newstrail/db";
 
 /**
  * 익명 요청 남용 방지 카운터 정리 잡(#125, 스펙 "배치와 비용"·"데이터 보존": 카운터는 48시간 안에 지운다).

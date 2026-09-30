@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import { type AdmitInput, kstDateOf } from "@newsplatform/db";
+import { type AdmitInput, kstDateOf } from "@newstrail/db";
 
 /**
  * 익명 유료 요청(번역·검색)의 카운터 키(#125, 스펙 "배치와 비용" 익명 요청 남용 방지).

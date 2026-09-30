@@ -1,4 +1,4 @@
-import { applyRetention, type RetentionReport, type RuntimeDb } from "@newsplatform/db";
+import { applyRetention, type RetentionReport, type RuntimeDb } from "@newstrail/db";
 import type { PgBoss } from "pg-boss";
 
 /**

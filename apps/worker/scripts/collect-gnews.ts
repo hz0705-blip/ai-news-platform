@@ -1,11 +1,11 @@
-import { createRuntimeDb } from "@newsplatform/db";
+import { createRuntimeDb } from "@newstrail/db";
 import { collectFromGnews } from "../src/collect.ts";
 
 /**
  * 수동 수집 명령(#52 수동 스모크): 실제 GNews 키로 토픽 넷을 수집해 dev DB에 저장한다.
  * 요청은 최대 8회(재시도 제외). 직전 `to`의 보관·스케줄은 #55이므로 인자로 받는다.
  *
- * 실행: pnpm --filter @newsplatform/worker collect:gnews [previousTo ISO] [slotAt ISO]
+ * 실행: pnpm --filter @newstrail/worker collect:gnews [previousTo ISO] [slotAt ISO]
  * (DATABASE_MIGRATION_URL·GNEWS_API_KEY 필요. 인자 없으면 slotAt = 지금, previousTo = 12시간 전)
  */
 const url = process.env.DATABASE_MIGRATION_URL;

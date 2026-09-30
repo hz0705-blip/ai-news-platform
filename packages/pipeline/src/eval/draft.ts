@@ -6,7 +6,7 @@ import {
   type RelationLabel,
   spanText,
   splitSentences,
-} from "@newsplatform/domain";
+} from "@newstrail/domain";
 import {
   type DraftWire,
   GOLDEN_DRAFT_PROMPT,

@@ -1,4 +1,4 @@
-import type { Revision, Source } from "@newsplatform/domain";
+import type { Revision, Source } from "@newstrail/domain";
 import { and, desc, eq, inArray, not, sql } from "drizzle-orm";
 import { storyNeedsReprocess } from "./batch.ts";
 import { toSourceRow } from "./mappers.ts";

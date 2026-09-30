@@ -4,15 +4,15 @@ import {
   loadLatestRevision,
   loadPublishedStory,
   saveDemoStoryRecords,
-} from "@newsplatform/db";
-import { canProcessBody, createArticleVersion } from "@newsplatform/domain";
+} from "@newstrail/db";
+import { canProcessBody, createArticleVersion } from "@newstrail/domain";
 import {
   createDemoStepModelClient,
   demoStepBatchInput,
   listGoldenSetSlugs,
   loadDemoStorySteps,
   runBatch,
-} from "@newsplatform/pipeline";
+} from "@newstrail/pipeline";
 import { applyBatchResult } from "../src/apply-batch-result.ts";
 
 /**
@@ -20,7 +20,7 @@ import { applyBatchResult } from "../src/apply-batch-result.ts";
  * 시계) → 데모 사건·출처·기사·기사 버전 저장 → 배치 결과 반영(워커 슬롯과 같은 `applyBatchResult`). 도메인·DB·
  * 파이프라인을 잇는 자리는 워커뿐이다. 멱등은 개정판 커밋이 한 트랜잭션에서 보장한다. 재실행은 개정판을 만들지 않고 `checked_at`만 갱신한다(스펙 134행).
  *
- * 실행: pnpm --filter @newsplatform/worker demo:load [slug] (DATABASE_MIGRATION_URL 필요, 인자
+ * 실행: pnpm --filter @newstrail/worker demo:load [slug] (DATABASE_MIGRATION_URL 필요, 인자
  * 없으면 골든셋 전체)
  */
 export async function loadDemoStory(params: {
