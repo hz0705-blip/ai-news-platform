@@ -29,3 +29,8 @@ export const IN_APP_MENU: Readonly<Record<"kakaotalk" | "naver", string>> = {
   naver: "열리지 않으면 오른쪽 아래 ⋯ 메뉴에서 ‘기본 브라우저로 열기’를 누르세요.",
 };
 export const OTHER_LOGIN = "다른 방법 보기";
+
+/** 모든 화면 우측 상단 계정 진입점(스펙 "계정"). */
+export const HEADER_LOGIN = "로그인";
+export const ACCOUNT_NAV = "계정 메뉴";
+export const HEADER_FOLLOWS = "팔로우";

@@ -27,7 +27,7 @@ test("M4 인수: 로그인 → 팔로우 → 계정 삭제 → 로그아웃 상�
 
   await page.goto("/follows");
   await expect(page.getByRole("region", { name: "데모 사건" })).toBeVisible();
-  await page.getByRole("link", { name: "계정", exact: true }).click();
+  await page.getByRole("main").getByRole("link", { name: "계정", exact: true }).click();
   await expect(page).toHaveURL(/\/account$/);
   await expect(page.getByRole("heading", { name: "계정 삭제" })).toBeVisible();
   await expectNoAxeViolations(page, testInfo, "account");

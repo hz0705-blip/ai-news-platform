@@ -8,6 +8,10 @@ describe("safeReturnPath — 로그인 뒤 돌아갈 주소", () => {
     "/story/demo-1-agreement/revision/story-demo-1%3Arev-1",
     "/follows",
     "/account",
+    "/search",
+    "/about",
+    "/privacy",
+    "/terms",
     "/story/demo-1-agreement?intent=follow",
     "/story/demo-1-agreement/revision/story-demo-1%3Arev-1?intent=follow",
   ])("같은 출처 허용 경로 %s는 그대로 통과한다", (path) => {
@@ -59,6 +63,8 @@ describe("safeReturnPath — 로그인 뒤 돌아갈 주소", () => {
     "/follows/x",
     "/account/deleted",
     "/account?intent=follow",
+    "/search?q=x",
+    "/about/x",
     "/story/X-Upper",
     "",
   ])("허용 목록 밖 경로·질의·해시 %s는 fallback으로 바꾼다", (path) => {
