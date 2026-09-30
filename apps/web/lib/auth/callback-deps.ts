@@ -4,7 +4,7 @@ import { isRegistrationBlocked, runAccountDeletion } from "../account/deletion.t
 import type { CallbackDeps } from "./callback.ts";
 import { routeAuthClient } from "./route.ts";
 
-/** 두 인증 콜백 Route Handler(`/auth/callback`, `/auth/callback/kakao`)의 실제 의존성. */
+/** 인증 콜백 Route Handler(`/auth/callback/kakao`, `/auth/callback/google`)의 실제 의존성. */
 export function callbackDeps(request: NextRequest): CallbackDeps {
   const { client, respond } = routeAuthClient(request);
   const env = deletionEnv();

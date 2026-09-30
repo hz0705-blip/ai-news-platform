@@ -39,13 +39,9 @@ enabled = false
 
 [auth]
 enabled = true
-# 개발 서버(3000)와 Playwright 웹 서버(3100). 콜백은 앱 /auth/callback.
+# 개발 서버(3000). 로그인은 앱 직접 OIDC → signInWithIdToken이라 Supabase 리디렉션 허용 목록을 쓰지 않는다.
 site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = [
-  "http://127.0.0.1:3000/auth/callback",
-  "http://localhost:3000/auth/callback",
-  "http://127.0.0.1:3100/auth/callback",
-]
+additional_redirect_urls = []
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10

@@ -8,7 +8,7 @@ export type LoginError = "unavailable" | "failed" | "pending-deletion";
 
 /**
  * 요청의 출처. `nextUrl.origin`은 서버가 듣는 이름(`localhost`)으로 바뀔 수 있어 브라우저가 보낸 Host를 쓴다 —
- * 콜백이 로그인 시작과 다른 호스트로 가면 PKCE 검증자 쿠키가 따라오지 않는다.
+ * 콜백이 로그인 시작과 다른 호스트로 가면 state·nonce 쿠키가 따라오지 않는다.
  */
 export function requestOrigin(request: NextRequest): string {
   const host = request.headers.get("host") ?? request.nextUrl.host;
@@ -23,7 +23,7 @@ export function loginPageUrl(request: NextRequest, next: string, error?: LoginEr
   return url;
 }
 
-/** 같은 출처 로그인 시작 경로(외부 브라우저에서도 이 경로로 PKCE를 새로 시작한다). */
+/** 같은 출처 로그인 시작 경로(외부 브라우저에서도 이 경로로 인가를 새로 시작한다). */
 export function loginStartPath(provider: "kakao" | "google", next: string): string {
   const params = new URLSearchParams({ provider, next });
   return `/auth/login/start?${params.toString()}`;

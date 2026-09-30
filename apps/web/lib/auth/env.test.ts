@@ -13,7 +13,7 @@ describe("Supabase 세션 쿠키 이름", () => {
         },
       },
     });
-    // Google 로그인 시작과 같은 호출: PKCE 코드 검증자를 저장 키 접두로 쿠키에 쓴다(네트워크 없음).
+    // 네트워크 없이 저장 키를 관찰한다: PKCE 인가 URL 생성은 코드 검증자를 저장 키 접두의 쿠키로 쓴다.
     await client.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: "http://localhost/auth/callback", skipBrowserRedirect: true },
