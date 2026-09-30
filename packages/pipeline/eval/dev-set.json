@@ -1,0 +1,713 @@
+{
+  "seed": "golden-dev@1",
+  "composition": {
+    "target": {
+      "단독": 4,
+      "기사 2~4개": 12,
+      "기사 5개 이상": 4
+    },
+    "actual": {
+      "단독": 4,
+      "기사 2~4개": 12,
+      "기사 5개 이상": 4
+    },
+    "byTopic": {
+      "한국 관련 해외 보도": 5,
+      "국제 정치·외교·안보": 5,
+      "세계 경제·금융": 5,
+      "기술·AI": 5
+    }
+  },
+  "packets": [
+    {
+      "packetId": "dev-01",
+      "topic": "한국 관련 해외 보도",
+      "sizeClass": "단독",
+      "storyArticleCount": 1,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://timesofindia.indiatimes.com/defence/international/south-koreas-kf-21-boramae-is-flying-amca-still-on-paper-the-stark-fighter-jet-race-india-cannot-afford-to-lose/articleshow/134502861.cms",
+          "normalizedUrlHash": "27aa64549acd0142aa7f648fdf9a72fc3d6d5619cd5758293c6881655555e67a",
+          "sourceId": "timesofindia.indiatimes.com",
+          "publishedAt": "2026-09-27T10:30:00.000Z",
+          "bodyHash": "d6eab8b3f98942b0cdde2aca4ef4318b97bfbdbc59abebea0a8f6f99781e82d4",
+          "codePointLength": 9818,
+          "sentenceCount": 75
+        }
+      ]
+    },
+    {
+      "packetId": "dev-02",
+      "topic": "한국 관련 해외 보도",
+      "sizeClass": "기사 5개 이상",
+      "storyArticleCount": 14,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://www.sootoday.com/world-news/south-korea-says-border-blasts-that-injured-3-officers-was-likely-caused-by-north-korean-mines-12829192",
+          "normalizedUrlHash": "e07f841cc1a5d545132210b0dd71c33af71cad320e1de63f6a9999f32c63c8e9",
+          "sourceId": "gnews:0ce70f407e0fa82ddaeeb29243aa8210",
+          "publishedAt": "2026-09-28T11:49:45.000Z",
+          "bodyHash": "e0c7428a2c2200e45302e5d28609eec0764d374e8167681549878d45ab78ed99",
+          "codePointLength": 983,
+          "sentenceCount": 8
+        },
+        {
+          "key": "a2",
+          "url": "https://www.sfgate.com/news/world/article/south-korea-says-border-blasts-that-injured-3-22452300.php",
+          "normalizedUrlHash": "b01ba1d3c957b7ecbc879ee4496828b82ecfc10bf3ca2b90610828a0bf5dc817",
+          "sourceId": "gnews:384b3c633f1aa3e0a1bcb208f94d519d",
+          "publishedAt": "2026-09-28T12:30:40.000Z",
+          "bodyHash": "5f95d2d0d14603b2a0589e45d05d28a6a18ee5404b3a7a3728a9349acf043f3e",
+          "codePointLength": 2609,
+          "sentenceCount": 19
+        },
+        {
+          "key": "a3",
+          "url": "https://timesofindia.indiatimes.com/world/rest-of-world/north-korean-mines-likely-behind-blasts-that-injured-3-south-korean-personnel-seoul-says/articleshow/134543288.cms",
+          "normalizedUrlHash": "8722e80fb06b27c4023a09b0a57de0ed601979f0ca22bb5397215dd99d85dd41",
+          "sourceId": "timesofindia.indiatimes.com",
+          "publishedAt": "2026-09-28T13:08:00.000Z",
+          "bodyHash": "2b65b7221aae21a9925854e4724b4ebc53eb6fcbbe8056b6ef10c14602fcf98f",
+          "codePointLength": 1975,
+          "sentenceCount": 13
+        },
+        {
+          "key": "a4",
+          "url": "https://www.bangkokpost.com/world/3327665/seoul-says-north-korean-mines-highly-suspected-as-cause-of-dmz-blast",
+          "normalizedUrlHash": "6af130d3e6c4a6f07d1594757197f9f0cc8bf6fbce1cdb3f0f37406cc66976ad",
+          "sourceId": "bangkokpost.com",
+          "publishedAt": "2026-09-28T13:45:00.000Z",
+          "bodyHash": "d2adb62c6712092fd98aa32e25d7ff12d888370f5ec3587b1d56495c89772cba",
+          "codePointLength": 3449,
+          "sentenceCount": 21
+        },
+        {
+          "key": "a5",
+          "url": "https://www.livemint.com/news/world/seoul-says-north-korea-s-mines-likely-behind-dmz-explosions-11790651183835.html",
+          "normalizedUrlHash": "734b753978bc4a8adbc892641a47fd2b1cfc0237ef7cbdb5f6a6018f5c3593fe",
+          "sourceId": "gnews:3bd4bd306c42647825fa42989624c036",
+          "publishedAt": "2026-09-29T03:06:23.000Z",
+          "bodyHash": "b49acffe15650ef850ad2ecb16edb075c08e9c2947180dc452f3318ea68f4124",
+          "codePointLength": 2508,
+          "sentenceCount": 20
+        },
+        {
+          "key": "a6",
+          "url": "https://www.canberratimes.com.au/story/9359834/south-korea-says-north-korean-mine-likely-caused-blast/",
+          "normalizedUrlHash": "d214116a020a113648e0fa0a340f02d2c35b9a692ffdda4f514781b74ca6b7b4",
+          "sourceId": "gnews:92021aca7322dc2b29226023c35d9a4a",
+          "publishedAt": "2026-09-29T15:52:05.000Z",
+          "bodyHash": "4aa6229365ffe30ebf530f4648b69039968acb6c26546f5b8ccf14f75aad8b0e",
+          "codePointLength": 3522,
+          "sentenceCount": 39
+        }
+      ]
+    },
+    {
+      "packetId": "dev-03",
+      "topic": "한국 관련 해외 보도",
+      "sizeClass": "기사 5개 이상",
+      "storyArticleCount": 32,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://www.aljazeera.com/news/2026/9/27/south-korea-ukraine-relations-sour-over-north-korean-pow-transfer",
+          "normalizedUrlHash": "a12d6f7003adbc0b214176ff19ec1dfb7690734326d4a5b2f3c4f18455bbd42d",
+          "sourceId": "gnews:8ed6c6b6dec4f35a4963354fb78b9754",
+          "publishedAt": "2026-09-27T18:30:53.000Z",
+          "bodyHash": "3ca1100b57dad8e3ab79e20b289ae9ac4354a4308c13f04177f0618a8aa466a8",
+          "codePointLength": 3504,
+          "sentenceCount": 19
+        },
+        {
+          "key": "a2",
+          "url": "https://edition.cnn.com/2026/09/27/asia/south-korea-ukraine-north-pows-latam-intl",
+          "normalizedUrlHash": "bb5003ae622637aecb1aa0580bcc20b476431c064de6c55af85b79ae7787d746",
+          "sourceId": "gnews:26269dbc42635df9af8c24f3cdab8e37",
+          "publishedAt": "2026-09-27T22:52:17.000Z",
+          "bodyHash": "3fe0380f39f66464639e15f085fcf25e7a6da9abe1b4fc995d628c93758e21d7",
+          "codePointLength": 2990,
+          "sentenceCount": 18
+        },
+        {
+          "key": "a3",
+          "url": "https://www.abc.net.au/news/2026-09-28/south-korea-demands-apology-from-ukraine-over-pow-announcement/107202624",
+          "normalizedUrlHash": "3a65c2b068f4cbdba02cb3734cfb6b9238684db054a6a93cb1c1ea6bb20bcd26",
+          "sourceId": "abc.net.au",
+          "publishedAt": "2026-09-27T23:36:25.000Z",
+          "bodyHash": "2633bb282ed4bf0b526a32afde64b37a7aedb21bc25cc7c5939e358ad131af19",
+          "codePointLength": 2992,
+          "sentenceCount": 18
+        },
+        {
+          "key": "a4",
+          "url": "https://www.firstpost.com/world/south-korea-demands-apology-from-ukraine-over-disclosure-of-north-korean-soldiers-transfer-14048710.html",
+          "normalizedUrlHash": "82d16b985d1f9cd564941728ade57c995bf150872b0e8f7f3d7f28abf42bd19b",
+          "sourceId": "gnews:a7ae5ecb2b2c41a3addf1d2e51ceb032",
+          "publishedAt": "2026-09-28T00:40:14.000Z",
+          "bodyHash": "df9659259e0e48f345e9004b2cd6b629214d0eabe91e902e4f9cbe5c2634acab",
+          "codePointLength": 2742,
+          "sentenceCount": 17
+        },
+        {
+          "key": "a5",
+          "url": "https://www.livemint.com/news/world/south-korea-ukraine-ties-sour-over-north-korean-pow-transfer-why-seoul-wants-an-apology-11790566987780.html",
+          "normalizedUrlHash": "92df0b186be0d7e694b5d6e2a5cd26ebb67611e802ad78982756c166f6834396",
+          "sourceId": "gnews:3bd4bd306c42647825fa42989624c036",
+          "publishedAt": "2026-09-28T04:29:03.000Z",
+          "bodyHash": "c3de284de0eb258f8d4f2922c14582825ede5f167070e182de191566cd938baf",
+          "codePointLength": 1559,
+          "sentenceCount": 14
+        },
+        {
+          "key": "a6",
+          "url": "https://www.aljazeera.com/news/2026/9/28/why-south-korea-is-demanding-an-apology-from-ukraine-over-north-korean-pows",
+          "normalizedUrlHash": "2065a0684befc6b82abd5db3fe69be536213b449e1fd50dfda789e4b71775ada",
+          "sourceId": "gnews:8ed6c6b6dec4f35a4963354fb78b9754",
+          "publishedAt": "2026-09-28T12:09:23.000Z",
+          "bodyHash": "71b2e290b96108996297e4171a29698f4af93f5fad5d8a366feefe163e85af96",
+          "codePointLength": 5939,
+          "sentenceCount": 43
+        }
+      ]
+    },
+    {
+      "packetId": "dev-04",
+      "topic": "한국 관련 해외 보도",
+      "sizeClass": "기사 5개 이상",
+      "storyArticleCount": 5,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://www.devdiscourse.com/article/international/3983506-ukraines-zelenskiy-says-north-korea-prepares-to-deploy-another-10000-troops-to-russia",
+          "normalizedUrlHash": "882b5517b0df86cd351785c5f67d8526f44f501b238f947c2b779a9095626195",
+          "sourceId": "gnews:c6a01ba91c1a2bc3f53f4707110bfee5",
+          "publishedAt": "2026-09-28T23:02:12.000Z",
+          "bodyHash": "4de47f0175dd69ceda2a4db6766821009bacad73987819ccd743529f23fef3e5",
+          "codePointLength": 1665,
+          "sentenceCount": 10
+        },
+        {
+          "key": "a2",
+          "url": "https://www.straitstimes.com/asia/ukraines-zelenskiy-says-north-korea-prepares-to-deploy-another-10000-troops-to-russia",
+          "normalizedUrlHash": "1eaf6e1f177aff0b15a9228e972680ca2be3c22e6a08066a54f1d050de278f44",
+          "sourceId": "straitstimes.com",
+          "publishedAt": "2026-09-28T23:07:45.000Z",
+          "bodyHash": "5f104ab2afe01ff833690921dac78c6a5224e9b5a30abfaf713fdf94c793efd2",
+          "codePointLength": 1570,
+          "sentenceCount": 10
+        },
+        {
+          "key": "a3",
+          "url": "https://www.straitstimes.com/world/europe/ukraines-zelenskiy-says-north-korea-prepares-to-deploy-another-10000-troops-to-russia",
+          "normalizedUrlHash": "db96c007a8a53afe9b1a817a8691819dd83cef9cd27189c1318344813c40a2fd",
+          "sourceId": "straitstimes.com",
+          "publishedAt": "2026-09-28T23:07:45.000Z",
+          "bodyHash": "864489d58bb2e2257ded0419d2e64f7365e4512d2286ea1266b61b5209312120",
+          "codePointLength": 1578,
+          "sentenceCount": 10
+        },
+        {
+          "key": "a4",
+          "url": "https://www.devdiscourse.com/article/international/3983525-ukraines-zelenskiy-says-north-korea-prepares-to-deploy-another-10000-troops-to-russia",
+          "normalizedUrlHash": "5b9570ea5af32853354303cdfa7be1af5efebe511bef2313a0ae7e3c2557626a",
+          "sourceId": "gnews:c6a01ba91c1a2bc3f53f4707110bfee5",
+          "publishedAt": "2026-09-29T00:53:49.000Z",
+          "bodyHash": "5da82552435813782d59a7e0624c12b002e3d5c31f6a74a1ed3a72197b90c677",
+          "codePointLength": 1678,
+          "sentenceCount": 10
+        },
+        {
+          "key": "a5",
+          "url": "https://www.patrika.com/en/world-news/north-korean-army-russia-ukraine-zelensky-kursk-latest-news-20944738",
+          "normalizedUrlHash": "6e029e3edca61422aaaaef5c818f4f2036941edde04a38bad24554663882d860",
+          "sourceId": "gnews:9a1d5b164276d1c4f3394dd496e931e0",
+          "publishedAt": "2026-09-29T04:10:54.000Z",
+          "bodyHash": "c3a30d13a530bbb099581eeef9d54c1586a713617df554476455698d03e89bcd",
+          "codePointLength": 2275,
+          "sentenceCount": 18
+        }
+      ]
+    },
+    {
+      "packetId": "dev-05",
+      "topic": "한국 관련 해외 보도",
+      "sizeClass": "기사 5개 이상",
+      "storyArticleCount": 9,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://www.sfgate.com/news/article/in-a-relatively-mild-speech-north-korea-uses-un-22453227.php",
+          "normalizedUrlHash": "4a5b401ff1d71b35cb0f2829be96b90fdf234b0ba743b72da5389fed387ddb53",
+          "sourceId": "gnews:384b3c633f1aa3e0a1bcb208f94d519d",
+          "publishedAt": "2026-09-28T19:00:23.000Z",
+          "bodyHash": "e5a6692959a601d36be19fdd05cf19e55ba7d65d12aa16a9336a63de0d2f9010",
+          "codePointLength": 4539,
+          "sentenceCount": 26
+        },
+        {
+          "key": "a2",
+          "url": "https://wtop.com/news/2026/09/in-a-relatively-mild-speech-north-korea-uses-un-platform-to-lament-mutual-distrust-and-tension/",
+          "normalizedUrlHash": "5608d24dcf713d4752f62e0e2f6818602976e2e5cb4985b45e098aec458c7a7e",
+          "sourceId": "gnews:f0fc90dfc09bbf76d69b287e66a5d09d",
+          "publishedAt": "2026-09-28T19:03:28.000Z",
+          "bodyHash": "367d93da2575254c8b329eb55c0d719a196d500f76896980e0a915163da79c3f",
+          "codePointLength": 4433,
+          "sentenceCount": 26
+        },
+        {
+          "key": "a3",
+          "url": "https://www.newindianexpress.com/world/2026/Sep/28/in-a-relatively-mild-speech-north-korea-uses-un-platform-to-lament-mutual-distrust-and-tension",
+          "normalizedUrlHash": "6c9d058efe95741fe1eeb6fca6ac7693b9fed04c55d2284559d6d0fe2e96ceb7",
+          "sourceId": "gnews:448094ed3f9461bb87a99a218cdaecfe",
+          "publishedAt": "2026-09-28T19:14:37.000Z",
+          "bodyHash": "f3f5a169893920c755d588f3c2cffac044eff5e9bbca7b48654a76669b511c10",
+          "codePointLength": 4297,
+          "sentenceCount": 25
+        },
+        {
+          "key": "a4",
+          "url": "https://www.cp24.com/news/world/2026/09/28/in-a-relatively-mild-speech-north-korea-uses-un-platform-to-lament-mutual-distrust-and-tension/",
+          "normalizedUrlHash": "90e79a78e72deac4671b9a6170579b188a778e352edde84c76bfd552d3c6b228",
+          "sourceId": "gnews:85e5403407038478a5e7d8d100ff8e8f",
+          "publishedAt": "2026-09-28T19:15:50.000Z",
+          "bodyHash": "aff6aa2652c6a3560be698ec844bde966df1a2f1940c8708240735db7f08310c",
+          "codePointLength": 4301,
+          "sentenceCount": 26
+        },
+        {
+          "key": "a5",
+          "url": "https://www.nbcnews.com/world/north-korea/relatively-mild-speech-north-korea-uses-un-platform-lament-mutual-dist-rcna600353",
+          "normalizedUrlHash": "6e1179a4d78b7682d8eeb9995cf7ae475e506fc83058f163fd1a70e706ebe54a",
+          "sourceId": "gnews:77b86639d1384ac68141803ec5db27c0",
+          "publishedAt": "2026-09-28T20:13:57.000Z",
+          "bodyHash": "9ec51bcac7d94ac23e1b4b073f96368dab695be2274a13c7345460d9aab2867b",
+          "codePointLength": 3966,
+          "sentenceCount": 23
+        },
+        {
+          "key": "a6",
+          "url": "https://www.pbs.org/newshour/world/in-a-relatively-mild-speech-north-korea-uses-un-platform-to-lament-mutual-distrust-and-tension",
+          "normalizedUrlHash": "ea19a1ce10b14f56341aeae2f34cd8ef72d0c75d1c48624ee394daa8ea54b2e9",
+          "sourceId": "gnews:31177620c1e6e610b5d2b67916ed3615",
+          "publishedAt": "2026-09-28T20:20:31.000Z",
+          "bodyHash": "bac08de8f7882a31f8187f476d18bd63bcfe407c99b205032a94b67c44a9bad9",
+          "codePointLength": 4031,
+          "sentenceCount": 24
+        }
+      ]
+    },
+    {
+      "packetId": "dev-06",
+      "topic": "국제 정치·외교·안보",
+      "sizeClass": "단독",
+      "storyArticleCount": 1,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://www.irishtimes.com/ireland/2026/09/28/garvaghy-road-standoff-orange-order-march-drumcree/",
+          "normalizedUrlHash": "c9f1ab7a8c8d858b0d3d04d20d4043c78b9b3bf5484cb84f65c67bdae887900d",
+          "sourceId": "irishtimes.com",
+          "publishedAt": "2026-09-28T18:08:39.000Z",
+          "bodyHash": "f9abac7868ccfd525461558df31e291c727a4393a969233ae955cec0b6b72f8b",
+          "codePointLength": 40521,
+          "sentenceCount": 274
+        }
+      ]
+    },
+    {
+      "packetId": "dev-07",
+      "topic": "국제 정치·외교·안보",
+      "sizeClass": "기사 2~4개",
+      "storyArticleCount": 2,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://globalnews.ca/news/12075902/cornell-gang-rape-investigation-reopened-lawsuit/",
+          "normalizedUrlHash": "6f81099cb1ceb4d6945363a3924d4a2ef8a93a84d430bad2ba32a94e3bcb232f",
+          "sourceId": "gnews:a301f1a787ffad153a758085184d4bbb",
+          "publishedAt": "2026-09-28T17:14:12.000Z",
+          "bodyHash": "3d48a67f446fd2189dd779f08766aa3388db83eb9c3a8b79c67205e672b23fd8",
+          "codePointLength": 3285,
+          "sentenceCount": 21
+        },
+        {
+          "key": "a2",
+          "url": "https://www.bbc.co.uk/news/articles/c5wyzrm0n74ro",
+          "normalizedUrlHash": "aa9d2330b3ab5f7973053f705df560d98ef1538030b0e8beb1fa89c6bd21c00c",
+          "sourceId": "gnews:da05009467a13bbcc84557ea09d86db3",
+          "publishedAt": "2026-09-28T18:11:07.000Z",
+          "bodyHash": "371fbf6ca335c14709a862b7df4e7b2c31a1996ee706b14f7135f7f4ca7628d1",
+          "codePointLength": 5735,
+          "sentenceCount": 37
+        }
+      ]
+    },
+    {
+      "packetId": "dev-08",
+      "topic": "국제 정치·외교·안보",
+      "sizeClass": "기사 2~4개",
+      "storyArticleCount": 3,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://www.reuters.com/world/europe/serbias-president-vucic-resigns-paving-way-early-elections-2026-09-27/",
+          "normalizedUrlHash": "399fe33cac593094fd69c80136b9421afb795068ab0f1b71da754793916ffbc2",
+          "sourceId": "gnews:880922db02816158732477822da6d07f",
+          "publishedAt": "2026-09-27T18:33:57.000Z",
+          "bodyHash": "d30a657af15a0cf4c1fd137aa7eb9d89add7f445a609b03eec61f2c821542d87",
+          "codePointLength": 1632,
+          "sentenceCount": 14
+        },
+        {
+          "key": "a2",
+          "url": "https://www.cbc.ca/news/world/vucic-resigns-serbia-president-9.7360341",
+          "normalizedUrlHash": "2931e1d50fc74c04c7ea9b482810331893e16a4599d988a4b9d351d9cde3451d",
+          "sourceId": "cbc.ca",
+          "publishedAt": "2026-09-27T19:08:34.000Z",
+          "bodyHash": "faf9c0d3c9cedab2f136e8a821723b914b3414aa6aed2cb513136832199f0e3d",
+          "codePointLength": 4092,
+          "sentenceCount": 31
+        },
+        {
+          "key": "a3",
+          "url": "https://www.theguardian.com/world/2026/sep/27/serbia-president-aleksandar-vucic-resigns-run-prime-minister",
+          "normalizedUrlHash": "dbe606758708ea4e6ebd97107aee633463a02fc888501f6d1c8c4a2d6c1451ad",
+          "sourceId": "theguardian.com",
+          "publishedAt": "2026-09-27T19:09:00.000Z",
+          "bodyHash": "e4549506865ef146891a4896e72f4a487c95d7a1b993e21567744d2e6e5e3ce4",
+          "codePointLength": 3951,
+          "sentenceCount": 28
+        }
+      ]
+    },
+    {
+      "packetId": "dev-09",
+      "topic": "국제 정치·외교·안보",
+      "sizeClass": "기사 2~4개",
+      "storyArticleCount": 2,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://nilepost.co.ug/news/373965/ugandan-vaccine-scientist-dr-magoola-named-among-africas-top-100-influential-people",
+          "normalizedUrlHash": "ce99c05b1093180f3f1515ac02f23662813a1560911b0af95a750850c30ea106",
+          "sourceId": "gnews:97c17edbb51d71204348d86fb9cf5453",
+          "publishedAt": "2026-09-28T05:31:03.000Z",
+          "bodyHash": "bdc0f46d90930a03ee835977b89e095c14ff1da961ac7c9f7d1821f895e078a1",
+          "codePointLength": 5043,
+          "sentenceCount": 42
+        },
+        {
+          "key": "a2",
+          "url": "https://allafrica.com/stories/202609280058.html",
+          "normalizedUrlHash": "93a5be2c51e73f78bd98209e5e81d9d6df8e3f57264141379ed544aae6b1c4b9",
+          "sourceId": "allafrica.com",
+          "publishedAt": "2026-09-28T07:57:23.000Z",
+          "bodyHash": "8b3e92ec83c6a7dab7bdf3251bfc5a966046f897616b3a7a686019a91f75086f",
+          "codePointLength": 5100,
+          "sentenceCount": 42
+        }
+      ]
+    },
+    {
+      "packetId": "dev-10",
+      "topic": "국제 정치·외교·안보",
+      "sizeClass": "기사 2~4개",
+      "storyArticleCount": 3,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://www.smh.com.au/traveller/reviews-and-advice/europe-s-new-entry-system-is-shambolic-and-it-could-see-you-mistakenly-deported-20260928-p610ip.html",
+          "normalizedUrlHash": "27b3a90a1784e35d3dfc569d4bc74c8246bedd352d5b8ad53f4696b5c43ce321",
+          "sourceId": "smh.com.au",
+          "publishedAt": "2026-09-27T19:00:00.000Z",
+          "bodyHash": "ec89f00a4a9fdddbfe4b08fc7d004c5f018f7cfb73dfbfc5c547c1b4ab8313f8",
+          "codePointLength": 7927,
+          "sentenceCount": 61
+        },
+        {
+          "key": "a2",
+          "url": "https://www.theage.com.au/traveller/reviews-and-advice/europe-s-new-entry-system-is-shambolic-and-it-could-see-you-mistakenly-deported-20260928-p610ip.html",
+          "normalizedUrlHash": "5288be3c184d834bcf625cae2633ea463de4ea89ebd72ce2b65a3ce7b4544a2d",
+          "sourceId": "theage.com.au",
+          "publishedAt": "2026-09-27T19:00:00.000Z",
+          "bodyHash": "37b2531ef78fccc889d31eb0bbada95abf19820618810f0cbd54d329e9881e91",
+          "codePointLength": 7926,
+          "sentenceCount": 61
+        },
+        {
+          "key": "a3",
+          "url": "https://www.brisbanetimes.com.au/traveller/reviews-and-advice/europe-s-new-entry-system-is-shambolic-and-it-could-see-you-mistakenly-deported-20260928-p610ip.html",
+          "normalizedUrlHash": "6632c8ba26c9bdddd0837eb2aa144f2e61525c2a9d7cbafbd0ee8432c52edf35",
+          "sourceId": "gnews:c603a60ac40ff998dd7aeead5e4953dc",
+          "publishedAt": "2026-09-27T19:00:00.000Z",
+          "bodyHash": "ec89f00a4a9fdddbfe4b08fc7d004c5f018f7cfb73dfbfc5c547c1b4ab8313f8",
+          "codePointLength": 7927,
+          "sentenceCount": 61
+        }
+      ]
+    },
+    {
+      "packetId": "dev-11",
+      "topic": "세계 경제·금융",
+      "sizeClass": "단독",
+      "storyArticleCount": 1,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://www.interest.co.nz/currencies/140429/roger-j-kerr-says-global-bond-market-mayhem-has-implications-locally-us-and-rbnz",
+          "normalizedUrlHash": "16eb785c12961aab84f2de3efc7dde2a1458f0ed9ac58a30b73b86711e3f7e59",
+          "sourceId": "interest.co.nz",
+          "publishedAt": "2026-09-27T19:00:00.000Z",
+          "bodyHash": "2d2361104072b0970c2d7abb3cfb22342f52800afaecfee8c5cce25d9a4a8ab5",
+          "codePointLength": 13479,
+          "sentenceCount": 81
+        }
+      ]
+    },
+    {
+      "packetId": "dev-12",
+      "topic": "세계 경제·금융",
+      "sizeClass": "기사 2~4개",
+      "storyArticleCount": 2,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://www.wired.com/story/openai-dots-always-on-ai-agents-that-proactively-help/",
+          "normalizedUrlHash": "b8923e28b80145a3aa101656da84b93456f0408855801efb63d018460c701713",
+          "sourceId": "gnews:6036b9272b66a58d0545f8d039247dd4",
+          "publishedAt": "2026-09-29T17:15:00.000Z",
+          "bodyHash": "6b27ccb5a6f4e71420610dfbad4aa8689443ebf2dc1e77200caf9f7151b4e818",
+          "codePointLength": 2177,
+          "sentenceCount": 16
+        },
+        {
+          "key": "a2",
+          "url": "https://www.theverge.com/ai-artificial-intelligence/1002033/openai-dots-launch-muse-competitor",
+          "normalizedUrlHash": "d6b210b8990a9dc022c46a62fa033d3ce6560aa4642af33dd733e004f74acded",
+          "sourceId": "gnews:6904b5b083966b8966bdfd85ba5b9220",
+          "publishedAt": "2026-09-29T17:15:00.000Z",
+          "bodyHash": "426c5ef9abbbaee982d67a512fe8003616bf97f8883454c878846e0f58e7d78e",
+          "codePointLength": 582,
+          "sentenceCount": 6
+        }
+      ]
+    },
+    {
+      "packetId": "dev-13",
+      "topic": "세계 경제·금융",
+      "sizeClass": "기사 2~4개",
+      "storyArticleCount": 2,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://www.bbc.co.uk/news/articles/cjwyz5v190qwo",
+          "normalizedUrlHash": "ded2cffb3adc7a260f90f421bf300da1d17622de00c5f66c682fc7c5f6bc966c",
+          "sourceId": "gnews:da05009467a13bbcc84557ea09d86db3",
+          "publishedAt": "2026-09-29T17:17:07.000Z",
+          "bodyHash": "68b4476546bd4ea35d56ad994899829ab4d7ec062bf7465f37272c161c16fe01",
+          "codePointLength": 2971,
+          "sentenceCount": 21
+        },
+        {
+          "key": "a2",
+          "url": "https://www.bbc.com/news/articles/cjwyz5v190qwo",
+          "normalizedUrlHash": "fef0d3ec8ba2255100b3e6c3dc71b603a7fa35a4594d8b5889cc9820dee3217c",
+          "sourceId": "bbc.com",
+          "publishedAt": "2026-09-29T17:17:07.000Z",
+          "bodyHash": "e21c5aca0878b241d89a8decca763b8600e26e450fa7f845daacd65f2d1db0e4",
+          "codePointLength": 2649,
+          "sentenceCount": 19
+        }
+      ]
+    },
+    {
+      "packetId": "dev-14",
+      "topic": "세계 경제·금융",
+      "sizeClass": "기사 2~4개",
+      "storyArticleCount": 2,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://www.cnbc.com/2026/09/29/disney-layoffs-josh-damaro.html",
+          "normalizedUrlHash": "e1eeb7bd8ff149a536607a77ba8a0a9f948bf249dfa9d3779a42d692f56f6adc",
+          "sourceId": "cnbc.com",
+          "publishedAt": "2026-09-29T17:36:13.000Z",
+          "bodyHash": "942d5f691bc7344e7929bdd006aa3dc9f420ba4d694991fc47d634449831e6ed",
+          "codePointLength": 2129,
+          "sentenceCount": 14
+        },
+        {
+          "key": "a2",
+          "url": "https://www.hollywoodreporter.com/business/business-news/disney-layoffs-corporate-cuts-1236714541/",
+          "normalizedUrlHash": "f10bd02b5a877f8755dbeaaa33e33e07f024e9c9375b6fbd27bc1e42e9ed75f0",
+          "sourceId": "gnews:58f309465dc77c95e88cbb1d72f55e72",
+          "publishedAt": "2026-09-29T18:55:47.000Z",
+          "bodyHash": "b5349df8f2c296f5a10afb5195ea16a4309223b114d9aece36668b982409e09b",
+          "codePointLength": 2704,
+          "sentenceCount": 20
+        }
+      ]
+    },
+    {
+      "packetId": "dev-15",
+      "topic": "세계 경제·금융",
+      "sizeClass": "기사 2~4개",
+      "storyArticleCount": 2,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://www.bbc.co.uk/news/articles/c3kg84qyv24wo",
+          "normalizedUrlHash": "18d020cadbedc509b1839b87e3fcbf4e83300892aa9d5e095ac9e7a4a9d0c137",
+          "sourceId": "gnews:da05009467a13bbcc84557ea09d86db3",
+          "publishedAt": "2026-09-28T05:28:34.000Z",
+          "bodyHash": "76e5c880eeb55dd6f41f2136caf93699e5961fc1fead1b832d0565f1d2c40f57",
+          "codePointLength": 2504,
+          "sentenceCount": 24
+        },
+        {
+          "key": "a2",
+          "url": "https://www.bbc.com/news/articles/c3kg84qyv24wo",
+          "normalizedUrlHash": "a2204495cc941f6da5260be5b15f7314e64aaab0b0a0fdc455968044818c46a6",
+          "sourceId": "bbc.com",
+          "publishedAt": "2026-09-28T05:28:34.000Z",
+          "bodyHash": "16b469287318dafe00900261703181be9424d4ccb66b52be486768f56a5f33d3",
+          "codePointLength": 2201,
+          "sentenceCount": 20
+        }
+      ]
+    },
+    {
+      "packetId": "dev-16",
+      "topic": "기술·AI",
+      "sizeClass": "단독",
+      "storyArticleCount": 1,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://www.creativebloq.com/art/digital-art/the-wacom-intuos-pro-is-back-to-its-lowest-price-ever-with-usd80-off-at-amazon",
+          "normalizedUrlHash": "886521b49c5fc6d8aa29ea6a4badf43ecc130a477732f23db51329137796168f",
+          "sourceId": "gnews:252603d46765571a10e0a71af0e09c3f",
+          "publishedAt": "2026-09-28T17:15:36.000Z",
+          "bodyHash": "743fe1ce6ac47fcbd832e0b827bcd0846f261c09a6e293f46982cab2bb2a0107",
+          "codePointLength": 1519,
+          "sentenceCount": 10
+        }
+      ]
+    },
+    {
+      "packetId": "dev-17",
+      "topic": "기술·AI",
+      "sizeClass": "기사 2~4개",
+      "storyArticleCount": 2,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://petapixel.com/2026/09/29/final-cut-camera-gets-major-update-including-expanded-prores-support/",
+          "normalizedUrlHash": "2f00154c3a855bcaf7ff7a154ffe0ee4c65e0a4aec084e9484c1db63ac35535e",
+          "sourceId": "gnews:7c9bbb3c4e144038df75cf7bda3c256e",
+          "publishedAt": "2026-09-29T17:00:29.000Z",
+          "bodyHash": "3023ea154502493b66fea1ed40b8203b70a33f4ff01e8963b020624d93e1d267",
+          "codePointLength": 2456,
+          "sentenceCount": 18
+        },
+        {
+          "key": "a2",
+          "url": "https://www.cnet.com/tech/mobile/apples-final-cut-camera-app-gets-updated-for-iphone-18-pros-signature-feature/",
+          "normalizedUrlHash": "44a061f26b1713cfd00e675e1e7f3678f2cd5ae3b5e32d06a8fc384f0a1b04fe",
+          "sourceId": "gnews:f262b4e25cc8e3206db7723c77d4fd60",
+          "publishedAt": "2026-09-29T19:05:23.000Z",
+          "bodyHash": "528819bfbb3693f877d9e96272f100308966eba61060f93f9b3727b614c81c5d",
+          "codePointLength": 1622,
+          "sentenceCount": 9
+        }
+      ]
+    },
+    {
+      "packetId": "dev-18",
+      "topic": "기술·AI",
+      "sizeClass": "기사 2~4개",
+      "storyArticleCount": 2,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://www.ndtvprofit.com/sports/god-of-war-laufey-pre-orders-begin-price-editions-release-date-and-where-to-buy-12112396",
+          "normalizedUrlHash": "95facf2094377c28407191b5c0181ff935e7449dffdde0f95ee553014e2d52d0",
+          "sourceId": "gnews:fb56a981561569b8ad82c8e57b4e18bf",
+          "publishedAt": "2026-09-29T04:01:20.000Z",
+          "bodyHash": "2f0da594507cbb53756c59774807964c6f40dcfbaf73e21215a0edf2c432768c",
+          "codePointLength": 2811,
+          "sentenceCount": 16
+        },
+        {
+          "key": "a2",
+          "url": "https://variety.com/2026/gaming/news/gaming-news-roundup-september-28-1236877473/",
+          "normalizedUrlHash": "7a80d5154e28c57aa607057f2a2ac24c60f506de32ecb1bc8c299693b8b2efee",
+          "sourceId": "gnews:c96d85bc8a846b5845a5420fe892ac16",
+          "publishedAt": "2026-09-29T18:28:00.000Z",
+          "bodyHash": "0970a477e15b0c342e69b43b98cc97882e2cc87a5d9eae281c0c9163faf0da99",
+          "codePointLength": 1800,
+          "sentenceCount": 24
+        }
+      ]
+    },
+    {
+      "packetId": "dev-19",
+      "topic": "기술·AI",
+      "sizeClass": "기사 2~4개",
+      "storyArticleCount": 2,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://vhio.net/2026/09/29/blood-could-serve-as-a-main-source-for-finding-cancer-specific-proteins-needed-to-develop-personalized-treatment/",
+          "normalizedUrlHash": "71c4c4cfc6b4e2c2692a08b31134f7b3281772886170323c1875dc4f61107729",
+          "sourceId": "gnews:db2937ba97f219bb6c3588ee5c5b5f65",
+          "publishedAt": "2026-09-29T04:02:29.000Z",
+          "bodyHash": "33a4121da2132746068425ffff698ec4626c9f38b0409aaf47da0b0802878f6e",
+          "codePointLength": 6111,
+          "sentenceCount": 31
+        },
+        {
+          "key": "a2",
+          "url": "https://www.aacr.org/about-the-aacr/newsroom/news-releases/blood-could-serve-as-a-main-source-for-finding-cancer-specific-proteins-needed-to-develop-personalized-treatment/",
+          "normalizedUrlHash": "2ea8c26b694c911234179a97a0e30fe9ed0b91363cbaa15d376d662a9d4b3544",
+          "sourceId": "gnews:6bd41b465109cac6d31bee69936852be",
+          "publishedAt": "2026-09-29T04:08:06.000Z",
+          "bodyHash": "ead7d45904604cfc4037ffe8f3f90a646741a8529c7668db7f134334b05ad0e0",
+          "codePointLength": 6409,
+          "sentenceCount": 35
+        }
+      ]
+    },
+    {
+      "packetId": "dev-20",
+      "topic": "기술·AI",
+      "sizeClass": "기사 2~4개",
+      "storyArticleCount": 2,
+      "articles": [
+        {
+          "key": "a1",
+          "url": "https://www.gsmarena.com/heres_our_first_look_at_the_huawei_mate_90_series_including_the_mate_90_rs-news-74805.php",
+          "normalizedUrlHash": "1ee765324bc4fc8a475c00a528e60aa0e1032fb427e91ce7771d394338207edf",
+          "sourceId": "gnews:5e3c34855a7a20621cdd65325f423eb1",
+          "publishedAt": "2026-09-29T05:01:02.000Z",
+          "bodyHash": "3c124c416645419b943fa7ca4382975c718202a92e1ef5975b672e743b499927",
+          "codePointLength": 1317,
+          "sentenceCount": 12
+        },
+        {
+          "key": "a2",
+          "url": "https://www.gsmarena.com/huawei_starts_teasing_the_mate90_series_and_reveals_the_launch_date_while_teleconverter_leaks-news-74820.php",
+          "normalizedUrlHash": "87260e29029855380415609ea70c926c12882381a707b6b44c51f67f49fe7cf2",
+          "sourceId": "gnews:5e3c34855a7a20621cdd65325f423eb1",
+          "publishedAt": "2026-09-29T18:02:01.000Z",
+          "bodyHash": "e49c5a9e0a604a2b4188789ec71622b1c65ab92cd36f2387b723e1745032672a",
+          "codePointLength": 1000,
+          "sentenceCount": 8
+        }
+      ]
+    }
+  ]
+}

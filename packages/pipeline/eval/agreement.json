@@ -1,0 +1,111 @@
+{
+  "note": "동일 계열 두 모델 교차 검증, 단일 어노테이터. 모델 합의는 라벨 구성 방법이지 사람 검증이 아니다.",
+  "promptVersion": "golden-draft@1",
+  "models": {
+    "A": "gpt-5-2025-08-07",
+    "B": "gpt-5-mini-2025-08-07"
+  },
+  "packets": {
+    "total": 20,
+    "compared": 20,
+    "unprocessed": []
+  },
+  "spendUsd": {
+    "total": 0.7636,
+    "A": 0.6648,
+    "B": 0.0988,
+    "calls": 40,
+    "failedCalls": 0
+  },
+  "droppedResponseFragments": {
+    "A": 0,
+    "B": 2
+  },
+  "overall": {
+    "items": 566,
+    "agreed": 375,
+    "disagreed": 191,
+    "agreementRate": 0.6625,
+    "disagreementRate": 0.3375,
+    "abstentionRate": {
+      "A": 0.0018,
+      "B": 0
+    }
+  },
+  "byKind": {
+    "pair": {
+      "items": 71,
+      "agreed": 71,
+      "disagreed": 0,
+      "agreementRate": 1,
+      "disagreementRate": 0,
+      "abstentionRate": {
+        "A": 0,
+        "B": 0
+      },
+      "kappa": 1,
+      "kappaItems": 71
+    },
+    "claim": {
+      "items": 205,
+      "agreed": 41,
+      "disagreed": 164,
+      "agreementRate": 0.2,
+      "disagreementRate": 0.8,
+      "abstentionRate": {
+        "A": 0,
+        "B": 0
+      },
+      "kappa": 0.4851,
+      "kappaItems": 84
+    },
+    "support": {
+      "items": 157,
+      "agreed": 141,
+      "disagreed": 16,
+      "agreementRate": 0.8981,
+      "disagreementRate": 0.1019,
+      "abstentionRate": {
+        "A": 0,
+        "B": 0
+      },
+      "kappa": 0.3944,
+      "kappaItems": 157
+    },
+    "relation": {
+      "items": 113,
+      "agreed": 107,
+      "disagreed": 6,
+      "agreementRate": 0.9469,
+      "disagreementRate": 0.0531,
+      "abstentionRate": {
+        "A": 0.0088,
+        "B": 0
+      },
+      "kappa": 0,
+      "kappaItems": 111
+    },
+    "status": {
+      "items": 20,
+      "agreed": 15,
+      "disagreed": 5,
+      "agreementRate": 0.75,
+      "disagreementRate": 0.25,
+      "abstentionRate": {
+        "A": 0,
+        "B": 0
+      },
+      "kappa": 0.5238,
+      "kappaItems": 20
+    }
+  },
+  "review": {
+    "auditRate": 0.2,
+    "total": 460,
+    "byReason": {
+      "불일치": 191,
+      "감사 표본": 75,
+      "수치·날짜·발언자": 389
+    }
+  }
+}

@@ -9,11 +9,18 @@
     "./embedding": "./src/openai/embedding.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "eval:export": "node --env-file-if-exists=../../.env scripts/eval-export.ts",
+    "eval:draft": "node --env-file-if-exists=../../.env scripts/eval-draft.ts",
+    "eval:compare": "node --env-file-if-exists=../../.env scripts/eval-compare.ts",
+    "eval:adjudicate": "node --env-file-if-exists=../../.env scripts/eval-adjudicate.ts"
   },
   "dependencies": {
     "@newsplatform/domain": "workspace:*",
     "openai": "7.23.0",
     "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "postgres": "3.4.9"
   }
 }
