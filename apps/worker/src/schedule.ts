@@ -3,6 +3,7 @@ import { latestSlotAtOrBefore, missedSlots, slotKeyOf } from "@newsplatform/doma
 import { PgBoss } from "pg-boss";
 import { ACCOUNT_UNLINK_CRON, ACCOUNT_UNLINK_QUEUE } from "./account-unlink.ts";
 import { REQUEST_COUNTER_PURGE_CRON, REQUEST_COUNTER_PURGE_QUEUE } from "./request-counters.ts";
+import { scheduleRetention } from "./retention.ts";
 
 /** 배치 잡 큐(스펙 "배포와 운영" 스케줄러: pg-boss가 유일한 스케줄 권한). */
 export const BATCH_QUEUE = "batch";
@@ -47,6 +48,8 @@ export interface SchedulerOptions {
   readonly sweepAccounts: () => Promise<unknown>;
   /** 익명 요청 카운터 정리(request-counters.ts). 매시 한 번, 한 번에 하나만 돈다. */
   readonly purgeRequestCounters: () => Promise<unknown>;
+  /** 보존 정책(retention.ts). 매시 한 번, 한 번에 하나만 돈다. */
+  readonly applyRetention: () => Promise<unknown>;
   readonly clock: () => Date;
   readonly log: (event: Record<string, unknown>) => void;
 }
@@ -111,6 +114,8 @@ export async function startScheduler(options: SchedulerOptions): Promise<PgBoss>
   await boss.work(REQUEST_COUNTER_PURGE_QUEUE, { batchSize: 1 }, async () => {
     await options.purgeRequestCounters();
   });
+
+  await scheduleRetention(boss, options.applyRetention);
 
   for (const slotKey of await findMissedSlotKeys(options.db, { now: options.clock() })) {
     const jobId = await boss.send(BATCH_QUEUE, { slotKey } satisfies BatchJobData, {

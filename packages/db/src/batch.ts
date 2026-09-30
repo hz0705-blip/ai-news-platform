@@ -229,7 +229,7 @@ export interface BatchStory {
   readonly articles: readonly BatchArticle[];
   readonly latestRevision?: Revision;
   readonly deferredSince?: Date;
-  /** 붙은 링크만 기사(#77, 본문 버전 없음)의 출처 구획 줄. 발행 시각·기사 식별자 순. */
+  /** 붙은 링크만 기사(#77, 본문 버전 없음)와 본문을 지운 기사(#144)의 출처 구획 줄. 발행 시각·기사 식별자 순. */
   readonly linkOnlySources?: readonly RevisionSource[];
   /** 최신 개정판과 열린 에피소드 근거가 가리키는 옛 기사 버전(지금 버전과 다른 것)의 본문 — 좌표 정렬용(#86). */
   readonly previousVersionBodies?: readonly {
@@ -253,8 +253,8 @@ export const storyNeedsReprocess = sql`(${stories.deferred_at} is not null or ${
 /**
  * 이번 배치가 처리할 라이브 사건: 종료가 아니고 재처리 필요(`storyNeedsReprocess`)인 사건. 사건마다 원자료(최신
  * 개정판·주장 개정판 이력·기사 버전 전부·최신 확인 시각)를 읽어 재처리 컨텍스트 규칙(`deriveReprocessContext`)으로
- * 기사 입력 버전·정정 표시·이전 본문·열린 에피소드를 정한다. 버전이 없는 기사는 뺀다(링크만 기사는
- * `linkOnlySources`로 따로 온다). 우선순위는 파이프라인이 정한다(`prioritizeStories`).
+ * 기사 입력 버전·정정 표시·이전 본문·열린 에피소드를 정한다. 버전이 없는 기사는 뺀다(링크만 기사와 본문을 지운
+ * 기사(#144)는 `linkOnlySources`로 따로 온다 — 출처 구획에만 들고 새 근거를 뽑지 않는다). 우선순위는 파이프라인이 정한다(`prioritizeStories`).
  */
 export async function loadBatchStories(
   db: RuntimeDb["db"],
@@ -319,8 +319,10 @@ export async function loadBatchStories(
     for (const article of storyArticles) {
       const version = context.currentVersions.get(article.id);
       if (version === undefined) {
+        // 링크만 기사와 마지막 버전의 본문을 지운 기사(#144)는 근거 추출 없이 출처 구획으로만 간다.
         const tier = tierById.get(article.source_id);
-        if (article.is_link_only && tier !== undefined) {
+        const bodyDeleted = versionRows.some((v) => v.articleId === article.id);
+        if ((article.is_link_only || bodyDeleted) && tier !== undefined) {
           linkOnlySources.push({
             sourceId: article.source_id,
             articleId: article.id,

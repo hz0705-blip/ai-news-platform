@@ -126,7 +126,7 @@ export async function loadDormantSampledToday(
   return counts;
 }
 
-/** 재수집 조회 대상: 기사 제목·URL·발행 시각과 마지막 기사 버전(본문·해시). */
+/** 재수집 조회 대상: 기사 제목·URL·발행 시각과 마지막 기사 버전(본문·해시). 마지막 버전의 본문을 지운 기사는 빠진다. */
 export interface RecheckTargetRow {
   readonly articleId: string;
   readonly storyId: string;
@@ -165,7 +165,8 @@ export async function loadRecheckTargets(
   const result: RecheckTargetRow[] = [];
   for (const row of rows) {
     const version = latestById.get(row.articleId);
-    if (version === undefined || row.storyId === null) continue;
+    // 본문을 지운 버전(보존 기한, #144)은 비교할 본문이 없으므로 재수집하지 않는다.
+    if (version === undefined || version.body === null || row.storyId === null) continue;
     result.push({
       articleId: row.articleId,
       storyId: row.storyId,

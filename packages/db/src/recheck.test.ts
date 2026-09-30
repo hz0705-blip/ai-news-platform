@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { createArticleVersion, planRechecks } from "@newsplatform/domain";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { loadBatchStories } from "./batch.ts";
 import { confirmRevision } from "./publish.ts";
@@ -12,7 +12,8 @@ import {
   loadRecheckTargets,
   saveRecheckResult,
 } from "./recheck.ts";
-import { articleRechecks, articleVersions, stories } from "./schema/index.ts";
+import { applyRetention } from "./retention.ts";
+import { articleRechecks, articles, articleVersions, evidence, stories } from "./schema/index.ts";
 import { createMigrationDb, readTestDbUrl } from "./test-db.ts";
 import { fixture, publishFixture } from "./test-fixtures.ts";
 
@@ -174,6 +175,73 @@ maybe("원문 재수집 저장(#86, 실 DB)", () => {
         ["av-legacy", false],
         ["av-meridian", false],
       ]);
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("본문이 지워진 버전은 재수집 대상에서 빠지고 무결성 재검사는 보존 구간만 본다", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      await seedLiveStory(db);
+      const expiredAt = new Date(fixture.revision.publishedAt.getTime() + 30 * 24 * HOUR);
+      const after = new Date(expiredAt.getTime() + HOUR);
+      // 기한 뒤에 붙은 새 기사(본문 있음) 하나가 사건을 재처리 대상으로 올린다.
+      await db.insert(articles).values({
+        id: "a-new",
+        source_id: "src-harbor",
+        story_id: fixture.story.id,
+        url: "https://harbor.invalid/new",
+        normalized_url: "https://harbor.invalid/new",
+        external_id: null,
+        title: "New",
+        description: null,
+        published_at: after,
+        topics: ["국제 정치·외교·안보"],
+        embedding: null,
+      });
+      await db.insert(articleVersions).values({
+        id: "av-new",
+        article_id: "a-new",
+        body: "New body.",
+        normalization_version: 1,
+        body_hash: "new-hash",
+        captured_at: after,
+        body_expires_at: new Date(after.getTime() + 30 * 24 * HOUR),
+      });
+      await db
+        .update(stories)
+        .set({ last_processed_at: after })
+        .where(eq(stories.id, fixture.story.id));
+      const evidenceBefore = await db.select().from(evidence).orderBy(asc(evidence.id));
+
+      expect(await applyRetention(db, { now: after, limit: 100 })).toEqual({
+        bodiesDeleted: 2,
+        embeddingsCleared: 0,
+      });
+
+      // 재수집: 본문을 지운 기사는 후보·대상이 아니다.
+      expect((await loadRecheckCandidates(db, after)).map((c) => c.articleId)).toEqual(["a-new"]);
+      expect(await loadRecheckTargets(db, ["a-meridian", "a-harbor"])).toEqual([]);
+
+      // 무결성 재검사: 근거 행은 그대로이고, 강조 구간 원문은 보존된 발췌에서 다시 확인된다(본문 없이).
+      const evidenceAfter = await db.select().from(evidence).orderBy(asc(evidence.id));
+      expect(evidenceAfter).toEqual(evidenceBefore);
+      expect(evidenceAfter.length).toBeGreaterThan(0);
+      for (const row of evidenceAfter) {
+        expect([...row.excerpt].slice(row.highlight_start, row.highlight_end).join("")).toBe(
+          row.span_text,
+        );
+      }
+
+      // 배치: 새 기사만 입력이고, 본문을 지운 기사는 출처 구획으로만 온다(좌표 정렬용 이전 본문도 없다).
+      const { stories: batch } = await loadBatchStories(db);
+      expect(batch[0]?.articles.map((a) => a.id)).toEqual(["a-new"]);
+      expect(batch[0]?.linkOnlySources?.map((s) => s.articleId).sort()).toEqual([
+        "a-harbor",
+        "a-meridian",
+      ]);
+      expect(batch[0]?.previousVersionBodies).toBeUndefined();
     } finally {
       await cleanup();
     }
