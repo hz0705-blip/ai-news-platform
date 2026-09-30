@@ -61,6 +61,7 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 - 검색 임베딩 백필: `pnpm --filter @newsplatform/worker search:backfill-embeddings`(인자 없음, `DATABASE_MIGRATION_URL`·`OPENAI_API_KEY`, 0014 뒤) — 임베딩이 빈 발행 사건(데모 포함)의 제목·주장 문장만 100개씩 채우고 결과 JSON 한 줄, 다시 돌리면 호출 0. 실패하면 종료 코드 1이며 다시 돌리면 남은 것만 채운다.
 - 보존 정책(#144): 워커 pg-boss 큐 `retention`(매시 23분, `exclusive`)이 보존 기한이 지난 기사 본문을 한 번에 1,000행까지(기한 오래된 순, 나머지는 다음 실행) 지우고 종료 사건 기사의 임베딩(`articles.embedding`)을 지운다. 지운 것이 있을 때만 잡 로그 `stage: "retention"`. 수동 실행 `pnpm --filter @newsplatform/worker retention:run`(인자 없음, `DATABASE_MIGRATION_URL`, 0016 뒤) — 남은 것이 없을 때까지 되풀이하고 결과 JSON 한 줄, 다시 돌려도 안전하다. 번역 캐시 표는 아직 없다.
 - 원문 재수집: 배치가 수집 뒤·배정 전 단계로 돈다(`GNEWS_API_KEY`, 수집을 건너뛰면 건너뜀). GNews 요청은 UTC 날짜 원장 `gnews_request_ledger`에 발견·재수집으로 쌓이고, 재수집은 몫 600을 넘기지 않는다. 조회 픽스처 기록은 `packages/pipeline/scripts/record-gnews-recheck.ts`(요청 1회).
+- 골든셋 개발셋(#147): `pnpm --filter @newsplatform/pipeline eval:export`(프로덕션 `DATABASE_MIGRATION_URL` 읽기 전용 트랜잭션, 고정 시드로 20 패킷) → `eval:draft`(`OPENAI_API_KEY`, 상위·하위 모델 초안, 있는 초안은 건너뛰어 재개, 호출 전 예약 누계 $3 상한) → `eval:compare`(대조, 저장소 `packages/pipeline/eval/agreement.json`) → `eval:adjudicate`(터미널 대화형 판정, `q`로 멈추고 다시 실행하면 잇는다, 끝나면 `eval/labels.json`). 모두 `EVAL_DATA_DIR`(저장소 밖 절대경로, 필수)을 읽는다 — 기사 본문·제목·설명·주장 문장·초안·지출(`spend.json`)·판정 진행은 여기에만 두고 커밋하지 않는다. 저장소 산출물은 쓰기 전에 기사 텍스트 20자 부분 문자열 검사를 거친다.
 - CI(`.github/workflows/ci.yml`)는 위 명령을 그대로 실행하므로 명령을 바꾸면 워크플로도 함께 고친다. `packages/db/scripts/ci-workflow.test.ts`에는 보안 계약(SHA 고정·권한·시크릿) 단언만 있다.
 
 ## 컨벤션

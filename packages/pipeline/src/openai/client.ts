@@ -27,24 +27,31 @@ export const MODEL_TIMEOUT_MS = 180_000;
 export interface OpenAiModelOptions {
   readonly apiKey: string;
   readonly fetch?: typeof fetch;
+  /** 기본 `MODEL_ID`. 골든셋 초안(#147)만 다른 모델을 준다. */
+  readonly model?: PricedModel;
+  /** 기본 `MODEL_TIMEOUT_MS`. */
+  readonly timeoutMs?: number;
 }
 
 /** 이 요청의 호출 전 예약액(USD): 지시문 + 입력의 토큰 추정 + 최대 출력 토큰. */
-export function requestReservationUsd(request: ModelRequest): number {
+export function requestReservationUsd(
+  request: ModelRequest,
+  model: PricedModel = MODEL_ID,
+): number {
   return reservationUsd(
-    MODEL_ID,
+    model,
     `${request.instructions}\n${request.input}`,
     request.maxOutputTokens,
   );
 }
 
 /** SDK 오류를 배치가 재시도 여부와 과금 여부를 알 수 있는 `ModelTransportError`로 바꾼다. */
-function toTransportError(request: ModelRequest, error: unknown): unknown {
+function toTransportError(request: ModelRequest, error: unknown, timeoutMs: number): unknown {
   if (error instanceof OpenAI.APIConnectionTimeoutError) {
     return new ModelTransportError(
       request.stage,
       request.key,
-      `제한 시간 초과 (${MODEL_TIMEOUT_MS / 1000}초)`,
+      `제한 시간 초과 (${timeoutMs / 1000}초)`,
       { retryable: false, billable: true },
     );
   }
@@ -73,19 +80,21 @@ function toTransportError(request: ModelRequest, error: unknown): unknown {
  * 시도마다 예약하며 재시도한다. HTTP는 주입받은 `fetch`가 하므로 테스트는 기록된 응답으로 네트워크 없이 돈다.
  */
 export function createOpenAiModelClient(options: OpenAiModelOptions): ModelClient {
+  const model = options.model ?? MODEL_ID;
+  const timeoutMs = options.timeoutMs ?? MODEL_TIMEOUT_MS;
   const client = new OpenAI({
     apiKey: options.apiKey,
     maxRetries: 0,
-    timeout: MODEL_TIMEOUT_MS,
+    timeout: timeoutMs,
     ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
   });
   return {
-    modelId: MODEL_ID,
+    modelId: model,
     async complete(request) {
       let response: Awaited<ReturnType<typeof client.responses.create>>;
       try {
         response = await client.responses.create({
-          model: MODEL_ID,
+          model,
           instructions: request.instructions,
           input: request.input,
           reasoning: { effort: request.reasoningEffort },
@@ -94,7 +103,7 @@ export function createOpenAiModelClient(options: OpenAiModelOptions): ModelClien
           store: false,
         });
       } catch (error) {
-        throw toTransportError(request, error);
+        throw toTransportError(request, error, timeoutMs);
       }
       const used = {
         inputTokens: response.usage?.input_tokens ?? 0,
@@ -103,7 +112,7 @@ export function createOpenAiModelClient(options: OpenAiModelOptions): ModelClien
       };
       const usage = {
         tokens: used.inputTokens + used.outputTokens,
-        spend: usageToUsd(MODEL_ID, used),
+        spend: usageToUsd(model, used),
       };
       const fail = (detail: string) =>
         new ModelResponseError(request.stage, request.key, detail, usage);

@@ -1,8 +1,9 @@
 /**
  * 모델별 단가표와 토큰 계량(스펙 "개발 중 결정 항목" 단계별 모델·Batch API·토큰 계량).
- * 단가는 OpenAI 가격표 실측(2026-09-27), USD / 1M 토큰.
+ * 단가는 OpenAI 가격표 실측(2026-09-27, `gpt-5`는 2026-09-30 골든셋 초안 상위 모델 #147), USD / 1M 토큰.
  */
 export const MODEL_PRICES = {
+  "gpt-5-2025-08-07": { input: 1.25, cachedInput: 0.125, output: 10.0 },
   "gpt-5-mini-2025-08-07": { input: 0.25, cachedInput: 0.025, output: 2.0 },
   "gpt-5-nano-2025-08-07": { input: 0.05, cachedInput: 0.005, output: 0.4 },
 } as const;
