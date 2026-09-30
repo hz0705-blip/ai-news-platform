@@ -20,6 +20,6 @@ echo "- 열린 PR:"
 gh pr list --state open --json number,title,headRefName --jq '.[] | "  - #\(.number) \(.title) [\(.headRefName)]"' | { grep . || echo "  - 없음"; }
 echo "- OPEN 이슈(라벨 · 담당자):"
 gh issue list --state open --limit 60 --json number,title,labels,assignees \
-  --jq 'sort_by(.number) | .[] | select((.labels|map(.name)|index("ready-for-agent")) or (.labels|map(.name)|index("needs-triage")) or (.labels|map(.name)|index("needs-info")) or (.assignees|length>0))
+  --jq 'sort_by(.number) | .[] | select((.labels|map(.name)|index("ready-for-agent")) or (.labels|map(.name)|index("needs-triage")) or (.labels|map(.name)|index("needs-info")) or (.labels|map(.name)|index("ready-for-human")) or (.assignees|length>0))
         | "  - #\(.number) \(.title) — \(.labels|map(.name)|join(","))\(if (.assignees|length)>0 then " · @" + (.assignees|map(.login)|join(",@")) else "" end)"' \
   | { grep . || echo "  - 없음"; }
