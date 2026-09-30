@@ -48,7 +48,7 @@
 ## 아키텍처
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph SRC["Sources"]
     GN["GNews API<br/>body processing + excerpt"]
     GD["GDELT GKG 2.1<br/>15-minute files, link only"]
