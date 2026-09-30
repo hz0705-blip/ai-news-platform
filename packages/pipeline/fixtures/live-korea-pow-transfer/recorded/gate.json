@@ -1,0 +1,52 @@
+{
+  "story-live-korea-pow-transfer:gate:c-1": {
+    "judgments": [
+      {
+        "quoteId": "q-6e93e9-1",
+        "label": "뒷받침",
+        "reason": "인용문이 솔베르그 홍보수석의 발언을 직접 전하며 칼테니아의 비밀 유지 약속 무시와 협의 없는 공개를 '심각한 위반'이라고 표현함."
+      }
+    ]
+  },
+  "story-live-korea-pow-transfer:gate:c-2": {
+    "judgments": [
+      {
+        "quoteId": "q-6e93e9-4",
+        "label": "뒷받침",
+        "reason": "문장이 주장과 일치함: 칼테니아 대사가 월요일 외무부로 불려 갔고 세린이 공식 사과와 경위 설명을 요구했다고 직접 명시함."
+      }
+    ]
+  },
+  "story-live-korea-pow-transfer:gate:c-3": {
+    "judgments": [
+      {
+        "quoteId": "q-6e93e9-2",
+        "label": "부분 뒷받침",
+        "reason": "문장 내용은 주장과 일치하나, 인용문에 발화자가 명시되어 있지 않아 '솔베르그 홍보수석이 말했다'는 귀속 부분은 확인되지 않음."
+      }
+    ]
+  },
+  "story-live-korea-pow-transfer:gate:c-4": {
+    "judgments": [
+      {
+        "quoteId": "q-6e93e9-7",
+        "label": "뒷받침",
+        "reason": "인용문은 린든연구소 알드마크 프로그램 책임자 마라 퀼이 멘스크의 발표로 아르벨 정부가 곤경에 처해 베스카르와의 긴장 완화 노력을 줄이거나 국내 반발에 부딪힐 것이라고 '말했다'고 명확히 귀속·예상하고 있음."
+      }
+    ]
+  },
+  "story-live-korea-pow-transfer:gate:c-5": {
+    "judgments": [
+      {
+        "quoteId": "q-6e93e9-11",
+        "label": "부분 뒷받침",
+        "reason": "송환이 인권 침해로 볼 수 있고 베스카르 당국이 탈주자에게 가혹하다는 가능성을 말하고 있으나, 발화자(마라 퀼) 표기가 인용문에 없다."
+      },
+      {
+        "quoteId": "q-6e93e9-12",
+        "label": "부분 뒷받침",
+        "reason": "퀼이 송환할 경우 고문·종신형·처형 등의 결과가 있을 수 있다고 설명하는 내용은 있으나, 그 근거로 베스카르 당국이 탈주자에게 가혹하다는 문장은 포함되어 있지 않다."
+      }
+    ]
+  }
+}

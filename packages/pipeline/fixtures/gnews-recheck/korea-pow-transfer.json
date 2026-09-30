@@ -1,0 +1,35 @@
+{
+  "request": {
+    "path": "/api/v4/search",
+    "params": {
+      "q": "\"Aldmark outraged by Mensk revealing Veskar POW transfer\"",
+      "in": "title",
+      "lang": "en",
+      "max": "10",
+      "from": "2026-09-27T19:41:58Z",
+      "to": "2026-09-29T19:41:58Z"
+    }
+  },
+  "status": 200,
+  "body": {
+    "totalArticles": 1,
+    "articles": [
+      {
+        "id": "f36325f76fc4e13612a412b5cbccfa63",
+        "title": "Aldmark outraged by Mensk revealing Veskar POW transfer",
+        "description": "Serin is furious that Kaltenian President Dario Mensk revealed two Veskar soldiers were transferred to Aldmark.",
+        "content": "“It is already a serious breach that the Kaltenian government ignored the secrecy pledge our two countries made and went public without consulting us,” Hana Solberg, senior presidential secretary for communications, said on Sunday evening. “Yet the Kaltenian presidential office’s untrue claim that no such pledge was ever made does even more harm to trust between the two governments and to the goodwill our countries have built.”\nThe secretary added that the Aldmark government is “reviewing any further steps that this matter may require,” but gave no details.\nKaltenia’s ambassador to Aldmark was called in to the Foreign Ministry on Monday as Serin seeks a formal apology and an account of how the disclosure came about.\n“People who broadcast the handover to the entire world with great fanfare to claim credit – with no thought for relations across the border, for lives at risk, or for our national interest – probably cannot grasp why our government tried to keep it quiet, and may even suspect we had something to hide,” Arvel wrote only hours after Mensk’s speech in Port Linden. “I cannot say why Kaltenia broke the non-disclosure pledge, but I find it deeply disappointing.”\nMara Quill, who heads the Aldmark Program at the Linden Institute, told the Capital Ledger that Mensk’s announcement has left Arvel and his government in a very difficult spot that will likely force them to scale back their push for détente with Veskar or face anger at home.\n“The present government in Serin wants to restart dialogue with Veskar, and accepting prisoners of war from Kaltenia would complicate that effort because Veskar would read it as siding with its enemy,” Quill said.\nChairman Obrin Tal’s government has not yet responded in public, but any demand to send the men back would be further complicated by the two prisoners’ request for asylum in Aldmark. Both have said they want to settle in Aldmark and lead ordinary lives.\n“[Sending the prisoners back] could well be seen as a human rights violation, since everyone knows the Veskar authorities show little mercy to anyone who defects or even voices a wish to do so. So returning them would in practice mean that they would face torture, a life sentence or even execution,” Quill explained.\nEstimated reading time: 4 minutes\n“Second, I think it exposes the weakness of the government — that it is not really negotiating with Veskar as an equal,” she continued. “And third … there is a conservative opposition that will seize on this kind of episode to turn it into a political weapon and brand the progressive government as soft on Veskar.”\nFAMILIES OF MISSING SAILORS PRESS COASTAL ALLIANCE TO HELP LOCATE CREW HELD BY VESKAR\nA similar controversy helped bring down an earlier government and left a lasting backlash that eventually ended in criminal convictions for senior officials.\nIn 2021, two fishermen were picked up by Aldmark’s coast guard off the northern shore. Then-President Corvin Hale and his government described the men as “violent offenders” and “a threat to the public” after investigators concluded they had killed several crewmates during an uprising against their skipper before crossing the sea boundary. They were sent back to Veskar.\nVeskar defectors who are returned to their country almost always face prison, torture or execution.\nHuman rights groups denounced the fishermen’s return as a de facto death sentence, while opposition politicians portrayed the handover as Serin giving in to Doravik.\nThe following government, led by since-impeached President Idris Varn, reopened the investigation in 2024. The Serin Central District Court convicted four former officials over the repatriation orders, though every one of them received a suspended sentence.",
+        "url": "https://www.capital-ledger.example/news/world/4745534/aldmark-outraged-mensk-revealing-veskar-pow-transfer/",
+        "image": "https://images.capital-ledger.example/uploads/2026/09/pow-transfer.jpg?resize=1200,683",
+        "publishedAt": "2026-09-28T19:41:58Z",
+        "lang": "en",
+        "source": {
+          "id": "eaeeaeaa1e329f65d3a921c9c867fd7b",
+          "name": "Capital Ledger",
+          "url": "https://www.capital-ledger.example",
+          "country": "us"
+        }
+      }
+    ]
+  }
+}

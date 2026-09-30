@@ -1,0 +1,18 @@
+{
+  "request": {
+    "path": "/api/v4/search",
+    "params": {
+      "q": "\"Marrenland says it will wait for official NU response after Oste rejects Strait of Kessel proposal\"",
+      "in": "title",
+      "lang": "en",
+      "max": "10",
+      "from": "2026-09-26T02:16:52Z",
+      "to": "2026-09-28T02:16:52Z"
+    }
+  },
+  "status": 200,
+  "body": {
+    "totalArticles": 0,
+    "articles": []
+  }
+}

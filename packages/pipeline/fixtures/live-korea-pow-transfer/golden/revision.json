@@ -1,0 +1,135 @@
+{
+  "id": "live-korea-pow-transfer:rev-1",
+  "storyId": "story-live-korea-pow-transfer",
+  "revisionNumber": 1,
+  "title": "멘스크 공개에 알드마크 정부 강력 반발",
+  "publishedAt": "2026-09-27T08:00:00.000Z",
+  "contradictionStatus": "단일 출처",
+  "promptVersions": {
+    "evidenceExtract": "evidence-extract@1",
+    "claimGenerate": "claim-generate@1",
+    "gate": "gate@1",
+    "contradictionLabel": "contradiction-label@1"
+  },
+  "modelId": "gpt-5-mini-2025-08-07",
+  "claims": [
+    {
+      "id": "live-korea-pow-transfer:c-1",
+      "text": "하나 솔베르그 홍보수석은 칼테니아 정부가 양국의 비밀 유지 약속을 무시하고 협의 없이 공개한 것은 이미 심각한 위반이라고 말했다.",
+      "claimType": "귀속 입장",
+      "modality": "단정",
+      "order": 0,
+      "contradictionStatus": "단일 출처",
+      "evidence": [
+        {
+          "id": "live-korea-pow-transfer:rev-1/live-korea-pow-transfer:c-1:q-6e93e9-1",
+          "claimId": "live-korea-pow-transfer:c-1",
+          "articleId": "article-korea-pow-1",
+          "articleVersionId": "av-korea-pow-1",
+          "sourceId": "gnews:eaeeaeaa1e329f65d3a921c9c867fd7b",
+          "span": {
+            "start": 0,
+            "end": 239
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "“It is already a serious breach that the Kaltenian government ignored the secrecy pledge our two countries made and went public without consulting us,” Hana Solberg, senior presidential secretary for communications, said on Sunday evening.",
+          "spanHash": "52498475d842581f839fc5c80a56318bcc0e27b017e156a8a60f4f9daa37f93c",
+          "excerpt": "“It is already a serious breach that the Kaltenian government ignored the secrecy pledge our two countries made and went public without consulting us,” Hana Solberg, senior presidential secretary for communications, said on Sunday evening.",
+          "excerptSpan": {
+            "start": 0,
+            "end": 239
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 239
+          },
+          "sourceUrl": "https://www.capital-ledger.example/news/world/4745534/aldmark-outraged-mensk-revealing-veskar-pow-transfer/",
+          "verifiedAt": "2026-09-27T08:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "live-korea-pow-transfer:c-2",
+      "text": "칼테니아 대사가 월요일 외무부로 불려 갔고, 세린이 공식 사과와 공개 경위 설명을 요구했다고 보도됐다.",
+      "claimType": "보도된 사실",
+      "modality": "단정",
+      "order": 1,
+      "contradictionStatus": "단일 출처",
+      "evidence": [
+        {
+          "id": "live-korea-pow-transfer:rev-1/live-korea-pow-transfer:c-2:q-6e93e9-4",
+          "claimId": "live-korea-pow-transfer:c-2",
+          "articleId": "article-korea-pow-1",
+          "articleVersionId": "av-korea-pow-1",
+          "sourceId": "gnews:eaeeaeaa1e329f65d3a921c9c867fd7b",
+          "span": {
+            "start": 564,
+            "end": 725
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Kaltenia’s ambassador to Aldmark was called in to the Foreign Ministry on Monday as Serin seeks a formal apology and an account of how the disclosure came about.",
+          "spanHash": "99f5119f3096fc9f34d363c8464c59d6b5a2f724ddfea36e66508a10acdb191f",
+          "excerpt": "Kaltenia’s ambassador to Aldmark was called in to the Foreign Ministry on Monday as Serin seeks a formal apology and an account of how the disclosure came about.",
+          "excerptSpan": {
+            "start": 564,
+            "end": 725
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 161
+          },
+          "sourceUrl": "https://www.capital-ledger.example/news/world/4745534/aldmark-outraged-mensk-revealing-veskar-pow-transfer/",
+          "verifiedAt": "2026-09-27T08:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "live-korea-pow-transfer:c-4",
+      "text": "린든연구소 알드마크 프로그램 책임자 마라 퀼은 멘스크의 발표가 아르벨 정부를 곤경에 빠뜨려 베스카르와의 긴장 완화 노력을 줄이거나 국내 반발에 부딪히게 할 것이라고 예상했다.",
+      "claimType": "귀속 입장",
+      "modality": "예상",
+      "order": 2,
+      "contradictionStatus": "단일 출처",
+      "evidence": [
+        {
+          "id": "live-korea-pow-transfer:rev-1/live-korea-pow-transfer:c-4:q-6e93e9-7",
+          "claimId": "live-korea-pow-transfer:c-4",
+          "articleId": "article-korea-pow-1",
+          "articleVersionId": "av-korea-pow-1",
+          "sourceId": "gnews:eaeeaeaa1e329f65d3a921c9c867fd7b",
+          "span": {
+            "start": 1187,
+            "end": 1462
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Mara Quill, who heads the Aldmark Program at the Linden Institute, told the Capital Ledger that Mensk’s announcement has left Arvel and his government in a very difficult spot that will likely force them to scale back their push for détente with Veskar or face anger at home.",
+          "spanHash": "d240e2820b0dfa735dcbdff77b1d70853e74bb74931b743c70e3b60b704b6f74",
+          "excerpt": "Mara Quill, who heads the Aldmark Program at the Linden Institute, told the Capital Ledger that Mensk’s announcement has left Arvel and his government in a very difficult spot that will likely force them to scale back their push for détente with Veskar or face anger at home.",
+          "excerptSpan": {
+            "start": 1187,
+            "end": 1462
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 275
+          },
+          "sourceUrl": "https://www.capital-ledger.example/news/world/4745534/aldmark-outraged-mensk-revealing-veskar-pow-transfer/",
+          "verifiedAt": "2026-09-27T08:00:00.000Z"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "sourceId": "gnews:eaeeaeaa1e329f65d3a921c9c867fd7b",
+      "articleId": "article-korea-pow-1",
+      "articleTitle": "Aldmark outraged by Mensk revealing Veskar POW transfer",
+      "articleUrl": "https://www.capital-ledger.example/news/world/4745534/aldmark-outraged-mensk-revealing-veskar-pow-transfer/",
+      "publishedAt": "2026-09-28T19:41:58.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    }
+  ]
+}

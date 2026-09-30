@@ -1,0 +1,65 @@
+{
+  "request": {
+    "path": "/api/v4/top-headlines",
+    "params": {
+      "category": "technology",
+      "lang": "en",
+      "max": "25",
+      "sortby": "publishedAt",
+      "from": "2026-09-26T15:07:39Z",
+      "to": "2026-09-27T04:07:39Z",
+      "page": "2"
+    }
+  },
+  "status": 200,
+  "body": {
+    "totalArticles": 132,
+    "articles": [
+      {
+        "id": "b8897e37ef79956bda8d62eb04c4fef3",
+        "title": "The Full Twelve Rounds",
+        "description": "Ada Wexler's Sunday puzzle keeps solvers moving in both directions.",
+        "content": "Sunday Puzzle — This week's grid rewards solvers who are willing to read some answers backward.\nAda Wexler, a music teacher who constructs puzzles in her spare time, said the idea came to her while listening to a boxing commentary.\nTricky clues\nSeveral of the longer entries only make sense once you spot the theme in the title.\nIf you are stuck, try working from the shorter answers in the corners first.\nWant more puzzles? Sign up for our weekly newsletter.\nAlready a subscriber? Log in.",
+        "url": "https://www.metro-daily.example/2026/09/26/crosswords/daily-puzzle-2026-09-27.html",
+        "image": "https://images.metro-daily.example/crosswords/26wordplay.jpg",
+        "publishedAt": "2026-09-26T22:00:05Z",
+        "lang": "en",
+        "source": {
+          "id": "2f580dc49292a1caf59cd86dd3c9e60b",
+          "name": "The Metropolitan Daily",
+          "url": "https://www.metro-daily.example"
+        }
+      },
+      {
+        "id": "14d0e81602bacee7961f076bc8ecbde0",
+        "title": "Velloni focused on hybrid future, not manual gearboxes",
+        "description": "The sports car maker admits some buyers still want a manual, but says its priority is refining its new hybrid drivetrain.",
+        "content": "Sports car maker Velloni says it has no plans to bring back a manual gearbox, even though some loyal customers keep asking for one.\nThe brand's engineering chief, Luca Fenwright, said development money was going into its new hybrid drivetrain instead.\n\"We hear the requests, and we understand the emotion behind them,\" he said at a media event.\n\"But the performance and emissions targets we have set mean the hybrid system comes first.\"\nVelloni's current range uses an eight-speed dual-clutch transmission paired with an electric motor.\nFenwright did not rule out a manual for a future special edition, saying such projects are often reserved for limited-run models.",
+        "url": "https://www.motor-review.example/car-news/velloni-focused-on-hybrid-future-not-manual-gearboxes",
+        "image": "https://images.motor-review.example/crop/velloni-static.jpg",
+        "publishedAt": "2026-09-26T21:30:00Z",
+        "lang": "en",
+        "source": {
+          "id": "15b4a0bd608c73f104cdd47b161726f7",
+          "name": "Motor Review",
+          "url": "https://www.motor-review.example"
+        }
+      },
+      {
+        "id": "87d24ab4beaa459dad758f98fe229ba0",
+        "title": "Corvane (CRVN) Unveils Auto And Edge AI Push At Developer Summit",
+        "description": "Corvane used its annual developer summit to show new automotive and edge AI chips.\nManagement described plans to run AI assistants directly in vehicles and home devices.\nThe firm also announced new laptop design wins.\nThese announcements...",
+        "content": "Corvane used its annual developer summit to show new chips for cars and connected devices.\nManagement said the company wants its processors to become the default computing layer for in-car assistants.\nThe firm also announced two new laptop design wins with mid-sized manufacturers.\nWhat it means for investors\nThe automotive business is still small, contributing less than a tenth of revenue.\nAnalysts expect it to grow faster than the rest of the company over the next three years.\nRisks\nCar makers take years to adopt new chips, so revenue from these deals may arrive slowly.\nCompetition from larger chip designers remains intense.\nThis article is general in nature and is not financial advice.\n·\n12 likes",
+        "url": "https://www.market-lens.example/stocks/semiconductors/crvn/corvane/news/corvane-unveils-auto-and-edge-ai-push",
+        "image": "https://images.market-lens.example/company-cover/corvane.jpg",
+        "publishedAt": "2026-09-26T21:26:40Z",
+        "lang": "en",
+        "source": {
+          "id": "5ad034d710ff74cbf858f6cb83ddc3ca",
+          "name": "market-lens.example",
+          "url": "https://www.market-lens.example"
+        }
+      }
+    ]
+  }
+}

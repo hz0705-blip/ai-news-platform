@@ -1,0 +1,68 @@
+{
+  "request": {
+    "path": "/api/v4/search",
+    "params": {
+      "q": "(\"South Korea\" OR \"North Korea\" OR Seoul OR Pyongyang) NOT \"Asian Games\" NOT football NOT baseball NOT \"K-pop\"",
+      "lang": "en",
+      "max": "25",
+      "sortby": "publishedAt",
+      "from": "2026-09-26T15:07:39Z",
+      "to": "2026-09-27T04:07:39Z",
+      "page": "1"
+    }
+  },
+  "status": 200,
+  "body": {
+    "totalArticles": 7,
+    "articles": [
+      {
+        "id": "89797d1a4ae482292cbb938ca9df9b36",
+        "title": "Business sentiment in Aldmark improves on strong chip and cosmetics exports",
+        "description": "Business sentiment in Aldmark improved for the coming quarter on robust exports of chips and cosmetics, a chamber survey showed.",
+        "content": "Business sentiment in Aldmark improved for the fourth quarter on the back of strong semiconductor and cosmetics exports, a survey showed on Sunday.\nThe business survey index compiled by the Aldmark Chamber of Commerce rose to 94 from 88 in the previous quarter.\nA reading below 100 means more companies expect conditions to worsen than to improve.\nChipmakers and cosmetics exporters reported the most optimism, while steel and chemical firms remained cautious.\nLarge exporters were more upbeat than smaller domestic-focused businesses.\nThe chamber said weak consumer spending at home and higher shipping costs were the main concerns.\n(This story was generated from a syndicated feed and has not been edited)",
+        "url": "https://www.lakeview-times.example/business/business-sentiment-in-aldmark-improves/",
+        "image": "https://images.lakeview-times.example/feed/aldmark-sentiment.jpg",
+        "publishedAt": "2026-09-27T03:34:11Z",
+        "lang": "en",
+        "source": {
+          "id": "f2ddccedc9e60d844e7a1045928cad48",
+          "name": "Lakeview Times",
+          "url": "https://www.lakeview-times.example",
+          "country": "in"
+        }
+      },
+      {
+        "id": "e1963976994da85d78600150db6fde65",
+        "title": "Tee plans: enthusiasts draw up blueprint for an 18-hole golf course in the Tarn Highlands",
+        "description": "The group hopes to put the Tarn Highlands on the regional golf map, with visitors flying in to play a course set among mountain lakes.",
+        "content": "A group of amateur golfers has drawn up plans for an 18-hole course in the Tarn Highlands, a region better known for trekking than for sport.\nThe proposed site sits on a plateau above Lake Orrin, about two hours by road from the regional capital.\nThe group has asked the provincial tourism board for a long-term lease on the land.\nOrganisers say the course would be designed to follow the natural slopes and would use rainwater collected in holding ponds.\nThey hope to attract visiting golfers from neighbouring countries during the dry season.\nLocal officials have welcomed the idea but said an environmental review would be needed first.\nThe group plans to host a small nine-hole tournament on a temporary layout next spring to test interest.",
+        "url": "https://business.meridian-times.example/news/sports/tee-plans-18-hole-golf-course-tarn-highlands/articleshow/134514240.cms",
+        "image": "https://images.meridian-times.example/thumb/134514319.jpg",
+        "publishedAt": "2026-09-27T03:27:00Z",
+        "lang": "en",
+        "source": {
+          "id": "5464668c1f0466950a0b2fab5249ec6c",
+          "name": "The Meridian Business Times",
+          "url": "https://business.meridian-times.example",
+          "country": "in"
+        }
+      },
+      {
+        "id": "ec112ed776aa96ff2e8268b2787445a0",
+        "title": "How regional property markets are drawing fresh capital despite rate uncertainty",
+        "description": "Three coastal cities emerge as key targets as investors adjust to a higher-rate environment, analysts say.",
+        "content": "Property investors are putting fresh money into offices and logistics warehouses in three coastal cities, according to a report released on Friday.\nDeal volumes in the region rose by about a fifth in the third quarter from a year earlier.\nAnalysts said buyers were betting that borrowing costs had peaked.\nLogistics assets drew the most interest because online retail keeps expanding.\nOffice deals were concentrated in newer buildings with lower energy costs.\nListen to this article\n0.75x1x1.25x1.5x\n00:00\nAI-generated voice",
+        "url": "https://www.harbor-post.example/business/article/3368796/regional-property-markets-fresh-capital",
+        "image": "https://images.harbor-post.example/canvas/2026/09/25/property.jpg",
+        "publishedAt": "2026-09-27T03:00:16Z",
+        "lang": "en",
+        "source": {
+          "id": "d6397b77175680e2678c0d60edcee7af",
+          "name": "The Harbor Post",
+          "url": "https://www.harbor-post.example",
+          "country": "hk"
+        }
+      }
+    ]
+  }
+}

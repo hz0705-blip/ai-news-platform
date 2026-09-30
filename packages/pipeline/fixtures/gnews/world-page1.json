@@ -1,0 +1,65 @@
+{
+  "request": {
+    "path": "/api/v4/top-headlines",
+    "params": {
+      "category": "world",
+      "lang": "en",
+      "max": "25",
+      "sortby": "publishedAt",
+      "from": "2026-09-26T15:07:39Z",
+      "to": "2026-09-27T04:07:39Z",
+      "page": "1"
+    }
+  },
+  "status": 200,
+  "body": {
+    "totalArticles": 162,
+    "articles": [
+      {
+        "id": "79ae77b8402f6fbfc0470b14b7760379",
+        "title": "Marrenland says it will wait for official NU response after Oste rejects Strait of Kessel proposal",
+        "description": "The Northern Union president earlier said that Varos only offered to open the strait within ten days because \"their position is collapsing\".",
+        "content": "Marrenland has said it will wait for a formal reply from Northern Union negotiators after President Halvard Oste turned down a plan to reopen the Strait of Kessel to cargo traffic within ten days.\nIn a message on the Relay channel, Marrenland's Foreign Minister Petra Lindqvar noted Oste's refusal, but charged that the president had sent conflicting signals in the past.\nEarlier, Oste told journalists at the Ashgrove Palace that the plan from Varos was not \"workable\" and that its leaders wanted an arrangement to open the strait at once because \"their position is collapsing\".\nOn Thursday at the Concord of Nations, Lindqvar told journalists that a settlement was possible if \"the required terms are honoured\" by both governments.\nLindqvar said the terms for reopening the strait matched those set out in a framework accord between the Northern Union and Marrenland that was initialled in April.\nMarrenland said it had brought up reopening the strait and a halt to naval clashes in talks held alongside the Concord assembly in Port Linden over the past week.\nThe narrow channel, which normally carries roughly a quarter of the region's grain and fuel shipments, has been largely shut since fighting broke out in March.\n\"I'm turning their plan down,\" Oste said on Friday, adding that the Northern Union already held \"full command\" of the strait, with \"huge volumes of cargo\" moving through it.\nLindqvar wrote on Relay that Oste \"has offered many hopeful remarks, and just as many contradictory ones, which sadly we have grown used to\".\n\"We are expecting the mediators to pass on the final positions to us, and we will decide on that basis,\" Lindqvar said.\nTalvia, which has served as a go-between for the Northern Union and Marrenland, urged every side to keep talking openly to end the standoff.\nTalvia's foreign minister, Osric Delamere-Vane, told the Concord general session that \"every party\" should work with Talvia to keep shipping safe in the contested channel.\nOste's refusal of the Marrenland plan was endorsed by the Northern Union envoy to the Coastal Alliance, Rowan Pellisier.\nSpeaking to the Harbor Broadcast Network on Friday, Pellisier said Marrenland had put forward \"partial steps\" and \"hollow offers meant to impress foreign audiences\".\n\"The president is right to refuse it,\" he said.\nSeparately, Finance Secretary Maud Iverholt said on Friday that trade pressure from the Northern Union was straining Varos.\nWriting on Quill, Iverholt said Talvia, Brennmoor and the Sorrel Isles had suspended flights by several Marrenland carriers, and some lenders in Brennmoor and the Sorrel Isles had frozen payments to Marrenland.\nThe Oste administration has named its trade embargo on Marrenland \"Operation Closed Harbor\", and is using penalties to push Varos to halt strikes on ships in the Strait of Kessel.\nBut some analysts have asked whether the newest penalties will work, since that depends on how Marrenland's biggest trading partners respond.\nThese include Castrell, the largest buyer of Marrenland fuel, which has disregarded earlier Northern Union penalties and kept trading with Varos.",
+        "url": "https://www.northgate.example/news/articles/k7r2m4x9qa",
+        "image": "https://images.northgate.example/branded_news/1200/k7r2m4x9qa.jpg",
+        "publishedAt": "2026-09-27T02:16:52Z",
+        "lang": "en",
+        "source": {
+          "id": "da05009467a13bbcc84557ea09d86db3",
+          "name": "Northgate",
+          "url": "https://www.northgate.example"
+        }
+      },
+      {
+        "id": "0d73cf771f7ac7ae2b51f0fccba1076d",
+        "title": "Marrenland says it will wait for official NU response after Oste rejects Strait of Kessel proposal",
+        "description": "The Northern Union president earlier said that Varos only offered to open the strait within ten days because \"their position is collapsing\".",
+        "content": "Marrenland has said it will wait for a formal reply from Northern Union negotiators after President Halvard Oste turned down a plan to reopen the Strait of Kessel to cargo traffic within ten days.\nEarlier, Oste told journalists at the Ashgrove Palace that the plan from Varos was not \"workable\" and that its leaders wanted an arrangement to open the strait at once because \"their position is collapsing\".\nOn Thursday at the Concord of Nations, Lindqvar told journalists that a settlement was possible if \"the required terms are honoured\" by both governments.\nLindqvar said the terms for reopening the strait matched those set out in a framework accord between the Northern Union and Marrenland that was initialled in April.\nMarrenland said it had brought up reopening the strait and a halt to naval clashes in talks held alongside the Concord assembly in Port Linden over the past week.\nThe narrow channel, which normally carries roughly a quarter of the region's grain and fuel shipments, has been largely shut since fighting broke out in March.\n\"I'm turning their plan down,\" Oste said on Friday, adding that the Northern Union already held \"full command\" of the strait, with \"huge volumes of cargo\" moving through it.\nLindqvar wrote on Relay that Oste \"has offered many hopeful remarks, and just as many contradictory ones, which sadly we have grown used to\".\n\"We are expecting the mediators to pass on the final positions to us, and we will decide on that basis,\" Lindqvar said.\nTalvia, which has served as a go-between for the Northern Union and Marrenland, urged every side to keep talking openly to end the standoff.\nTalvia's foreign minister, Osric Delamere-Vane, told the Concord general session that \"every party\" should work with Talvia to keep shipping safe in the contested channel.\nSpeaking to the Harbor Broadcast Network on Friday, Pellisier said Marrenland had put forward \"partial steps\" and \"hollow offers meant to impress foreign audiences\".\nSeparately, Finance Secretary Maud Iverholt said on Friday that trade pressure from the Northern Union was straining Varos.\nWriting on Quill, Iverholt said Talvia, Brennmoor and the Sorrel Isles had suspended flights by several Marrenland carriers, and some lenders in Brennmoor and the Sorrel Isles had frozen payments to Marrenland.\nThe Oste administration has named its trade embargo on Marrenland \"Operation Closed Harbor\", and is using penalties to push Varos to halt strikes on ships in the Strait of Kessel.",
+        "url": "https://www.northgate-world.example/news/articles/k7r2m4x9qa",
+        "image": "https://images.northgate.example/news/1024/branded_news/k7r2m4x9qa.jpg",
+        "publishedAt": "2026-09-27T02:16:52Z",
+        "lang": "en",
+        "source": {
+          "id": "f331a5ed3965fb59761dfcecfc7e7a34",
+          "name": "Northgate",
+          "url": "https://www.northgate-world.example"
+        }
+      },
+      {
+        "id": "dc322c5bb3f892d9e794e5fa843c4767",
+        "title": "Regional bloc releases humanitarian aid for crisis-hit areas",
+        "description": "The bloc directs most of the new funding to drought-hit and conflict-affected regions to pay for food, shelter and medical care.",
+        "content": "The Coastal Alliance has released a new package of humanitarian aid for regions hit by drought, flooding and conflict.\nMost of the money will go to the southern provinces of Tessaly, where two failed harvests have left millions short of food.\nThe rest will fund shelters and medical care for people displaced by fighting along the Orrin river.\nThe alliance's aid commissioner, Lucia Brandvold, said needs had grown faster than funding for three years in a row.\n\"We are asking donors to match this contribution before the rainy season begins,\" she said.\nAid agencies welcomed the package but warned that access to some areas remained difficult.\nThe alliance has now committed about 180 million crowns in humanitarian aid since the start of the year.",
+        "url": "https://www.crescent-world.example/news/2026/9/27/regional-bloc-releases-humanitarian-aid",
+        "image": "https://images.crescent-world.example/uploads/2026/09/aid.jpg",
+        "publishedAt": "2026-09-27T01:41:15Z",
+        "lang": "en",
+        "source": {
+          "id": "7530d90c9af769eda4cb548f32ed381d",
+          "name": "crescent-world.example",
+          "url": "https://www.crescent-world.example"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "story": {
+    "id": "story-live-hormuz-proposal",
+    "slug": "live-hormuz-proposal",
+    "title": "마렌란드, 오스테의 케셀 해협 계획 거부 뒤 북부연합 공식 답변 기다리기로",
+    "topics": ["국제 정치·외교·안보"],
+    "isDemo": false,
+    "lifecycle": "활성"
+  },
+  "sources": [
+    {
+      "id": "gnews:da05009467a13bbcc84557ea09d86db3",
+      "name": "Northgate",
+      "rightsTier": "본문 처리 + 발췌 표시",
+      "region": "불명",
+      "ownership": "불명",
+      "language": "영어",
+      "isFictional": false,
+      "externalId": "da05009467a13bbcc84557ea09d86db3"
+    },
+    {
+      "id": "gnews:f331a5ed3965fb59761dfcecfc7e7a34",
+      "name": "Northgate",
+      "rightsTier": "본문 처리 + 발췌 표시",
+      "region": "불명",
+      "ownership": "불명",
+      "language": "영어",
+      "isFictional": false,
+      "externalId": "f331a5ed3965fb59761dfcecfc7e7a34"
+    }
+  ],
+  "articles": [
+    {
+      "id": "article-hormuz-1",
+      "sourceId": "gnews:da05009467a13bbcc84557ea09d86db3",
+      "storyId": "story-live-hormuz-proposal",
+      "articleVersionId": "av-hormuz-1",
+      "url": "https://www.northgate.example/news/articles/k7r2m4x9qa",
+      "title": "Marrenland says it will wait for official NU response after Oste rejects Strait of Kessel proposal",
+      "publishedAt": "2026-09-27T02:16:52.000Z",
+      "topics": ["국제 정치·외교·안보"],
+      "file": "articles/bbc-co-uk.txt"
+    },
+    {
+      "id": "article-hormuz-2",
+      "sourceId": "gnews:f331a5ed3965fb59761dfcecfc7e7a34",
+      "storyId": "story-live-hormuz-proposal",
+      "articleVersionId": "av-hormuz-2",
+      "url": "https://www.northgate-world.example/news/articles/k7r2m4x9qa",
+      "title": "Marrenland says it will wait for official NU response after Oste rejects Strait of Kessel proposal",
+      "publishedAt": "2026-09-27T02:16:52.000Z",
+      "topics": ["국제 정치·외교·안보"],
+      "file": "articles/bbc-com.txt"
+    }
+  ]
+}

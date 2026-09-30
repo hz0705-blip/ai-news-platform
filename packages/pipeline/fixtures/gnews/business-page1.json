@@ -1,0 +1,65 @@
+{
+  "request": {
+    "path": "/api/v4/top-headlines",
+    "params": {
+      "category": "business",
+      "lang": "en",
+      "max": "25",
+      "sortby": "publishedAt",
+      "from": "2026-09-26T15:07:39Z",
+      "to": "2026-09-27T04:07:39Z",
+      "page": "1"
+    }
+  },
+  "status": 200,
+  "body": {
+    "totalArticles": 159,
+    "articles": [
+      {
+        "id": "2424035bede5b705d76df739ed7c39c4",
+        "title": "Riverton's Kestrel Bridge to close for three weeks for repairs",
+        "description": "Riverton's Kestrel Bridge will shut for three weeks over the summer holidays so crews can resurface both approaches and reseal the deck.",
+        "content": "Riverton's Kestrel Bridge will close to all traffic for three weeks during the summer holidays while crews carry out overdue repairs.\nThe city council said the work would include resurfacing the southern approach, replacing expansion joints and resealing the steel deck.\nBuses will be diverted over the Millrace crossing, and extra ferry services will run between the two river banks.\nCouncil works director Imogen Tarrant said the timing had been chosen because traffic usually falls by about a third over the break.\n\"Doing this in stages would stretch the disruption over most of the year,\" she said.\nCyclists and pedestrians will keep access to the eastern footpath for most of the closure.\nLocal traders on Quayside Road have asked for parking fees to be waived while the bridge is shut.\nThe council said it would review the request but warned that a temporary toll on the Millrace crossing would only be used as a \"last resort\".",
+        "url": "https://www.southland-broadcasting.example/news/2026-09-27/riverton-kestrel-bridge-to-close-for-three-weeks/107200602",
+        "image": "https://images.southland-broadcasting.example/kestrel-bridge-862x485.jpg",
+        "publishedAt": "2026-09-27T02:35:57Z",
+        "lang": "en",
+        "source": {
+          "id": "5cda8b5d5087e0271b0c94a70da9fe74",
+          "name": "Southland Broadcasting",
+          "url": "https://www.southland-broadcasting.example"
+        }
+      },
+      {
+        "id": "6ee46daf003853d3916d0a19368ef5a3",
+        "title": "Prediction: What a $5,000 Stake in Corvane Semiconductor Could Be Worth by 2030",
+        "description": "Can the chip designer keep growing at this pace, or is the rally running out of steam?",
+        "content": "Corvane Semiconductor has been one of the strongest performers among mid-sized chip designers this year.\nThe company sells processors for data centers, gaming consoles and industrial robots.\nIts data center unit now brings in more than half of total revenue, up from about a third two years ago.\nManagement expects that share to keep rising as cloud providers build out new computing clusters.\nKey numbers\nRevenue last quarter grew 31% from a year earlier.\nGross margin widened by two percentage points.\nThe company ended the quarter with more cash than debt.\nWhat could go wrong\nCorvane competes with much larger rivals that can spend more on research.\nA slowdown in cloud spending would hit its fastest-growing business first.\nThe stock also trades at a premium to the sector, which leaves little room for disappointment.\nShould you buy now?\nIf revenue keeps compounding at even half its recent pace, a $5,000 stake could be worth considerably more by 2030.\nLong-term investors who can live with volatility may want to start with a small position and add over time.",
+        "url": "https://www.patient-investor.example/investing/2026/09/26/prediction-5000-stake-in-corvane-2030/",
+        "image": "https://images.patient-investor.example/editorial/corvane.png",
+        "publishedAt": "2026-09-27T02:13:15Z",
+        "lang": "en",
+        "source": {
+          "id": "06bcd1e4bbd243dd27c15b9fa41816d9",
+          "name": "The Patient Investor",
+          "url": "https://www.patient-investor.example"
+        }
+      },
+      {
+        "id": "1fac4ab9a6a4877c314bc422f444c4e9",
+        "title": "Halden Electronics eyes record quarterly profit as memory margins widen",
+        "description": "Halden Electronics is expected to report its highest quarterly operating profit ever, with memory chip margins seen above 70 percent.",
+        "content": "Halden Electronics is on track to post a record operating profit for the third quarter, according to analyst estimates compiled on Sunday.\nBrokerages expect the company's memory division to account for most of the gain as contract prices for server memory keep climbing.\nMargins on dynamic memory are estimated at more than 70 percent, the widest in the company's history.\nDemand from data center operators has outpaced new production capacity for three straight quarters.\nHalden has said it will add two production lines at its Varn Valley campus next year.\nIts smartphone and display units are expected to report flat results.\n\"Memory supply will stay tight into next year, and that keeps pushing prices higher,\" said Theo Brandt, an analyst at Northfield Securities.\nThe company will publish preliminary results in early October.",
+        "url": "https://www.aldmark-herald.example/article/10885170",
+        "image": "https://images.aldmark-herald.example/2026/09/27/halden-memory.jpg",
+        "publishedAt": "2026-09-27T02:04:58Z",
+        "lang": "en",
+        "source": {
+          "id": "2965122358303baf07026e77db3146af",
+          "name": "aldmark-herald.example",
+          "url": "https://www.aldmark-herald.example"
+        }
+      }
+    ]
+  }
+}

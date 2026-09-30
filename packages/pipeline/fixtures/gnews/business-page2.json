@@ -1,0 +1,65 @@
+{
+  "request": {
+    "path": "/api/v4/top-headlines",
+    "params": {
+      "category": "business",
+      "lang": "en",
+      "max": "25",
+      "sortby": "publishedAt",
+      "from": "2026-09-26T15:07:39Z",
+      "to": "2026-09-27T04:07:39Z",
+      "page": "2"
+    }
+  },
+  "status": 200,
+  "body": {
+    "totalArticles": 159,
+    "articles": [
+      {
+        "id": "7ceba740af6ca06763ec89654a72b955",
+        "title": "New car sales in Esterhavn rose 12.4% last year",
+        "description": "Esterhavn sold 412,000 new vehicles last year, up 12.4% year on year, with imports making up most of the growth.",
+        "content": "New vehicle sales in Esterhavn rose 12.4% last year to about 412,000 units, the national dealers' association said.\nPassenger cars accounted for roughly two thirds of the total, while light commercial vehicles made up most of the rest.\nImported models supplied nearly 60% of the light vehicle market, up from about half a year earlier.\nCompact crossovers were the best-selling segment for the second year running.\nSales of fully electric cars more than doubled, though they still made up less than 5% of the market.\nThe association said lower lending rates and a wider choice of budget models helped lift demand.\nLocal assembly plants produced fewer cars than the year before as two factories retooled for new models.\nThe government has promised new incentives for local manufacturing under its long-term vehicle plan.",
+        "url": "https://www.continental-wire.example/en/auto/new-car-sales-in-esterhavn-rose-12-4",
+        "image": "https://images.continental-wire.example/uploads/esterhavn-car-sales.webp",
+        "publishedAt": "2026-09-26T23:50:49Z",
+        "lang": "en",
+        "source": {
+          "id": "54b33233e9f0f396fe0c9e0f95f2a6f6",
+          "name": "Continental Wire",
+          "url": "https://www.continental-wire.example"
+        }
+      },
+      {
+        "id": "c88ccf6e23128f65077d8fc97b3da09a",
+        "title": "Marovia orders coal plants to run at full output",
+        "description": "Marovia orders coal plants to run at full output",
+        "content": "Marovia's energy ministry has told all coal-fired power stations to run at full output for the next two months.\nThe order follows a heat wave that pushed electricity demand to a record on several days this month.\nHydropower output has fallen because of low rainfall in the northern catchments.\nOfficials said plants that had planned maintenance would have to postpone it unless they faced safety risks.\nGrid operator figures show evening peak demand exceeding supply by a small margin on at least four days.\nThe ministry invoked an emergency provision that allows it to direct generators to operate power stations in line with its instructions.",
+        "url": "https://www.daily-courier.example/story/2631582/marovia-orders-coal-plants-to-run-at-full-output",
+        "image": "https://images.daily-courier.example/media/coal-640x480.webp",
+        "publishedAt": "2026-09-26T23:48:45Z",
+        "lang": "en",
+        "source": {
+          "id": "dcb907b246e9416f896f3c66fedfc7cd",
+          "name": "The Daily Courier",
+          "url": "https://www.daily-courier.example"
+        }
+      },
+      {
+        "id": "0a907930c95146056bf3e2e12da3740e",
+        "title": "Harborline Bank drops points transfers to Skyward Rewards",
+        "description": "Harborline Bank credit cards no longer let members move points to Skyward Rewards, leaving two airline programmes as the main options.",
+        "content": "Harborline Bank has quietly removed Skyward Rewards from the list of airline programmes its cardholders can transfer points to.\nThe change took effect this week, according to an updated rewards catalogue on the bank's website.\nMembers can still convert points to Coastline Miles and Aurora Club, the two programmes most readers use.\nWhat this means\nSkyward was never the best-value option on Harborline cards, because the conversion rate was poorer than for the other partners.\nStill, it was useful for travellers who wanted to top up an existing Skyward balance for a specific award seat.\nAnyone holding points they intended to move to Skyward should look at the remaining partners or at other card issuers.\nSeveral other banks still offer transfers to Skyward, though usually at a lower ratio.",
+        "url": "https://www.mile-ledger.example/2026/09/27/harborline-drops-skyward-transfers/",
+        "image": "https://images.mile-ledger.example/uploads/2026/09/skyward.jpg",
+        "publishedAt": "2026-09-26T23:32:14Z",
+        "lang": "en",
+        "source": {
+          "id": "d4e68c1de0ceeedd39299b3f37559aaf",
+          "name": "The Mile Ledger",
+          "url": "https://www.mile-ledger.example"
+        }
+      }
+    ]
+  }
+}

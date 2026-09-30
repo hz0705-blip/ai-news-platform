@@ -1,0 +1,65 @@
+{
+  "request": {
+    "path": "/api/v4/top-headlines",
+    "params": {
+      "category": "world",
+      "lang": "en",
+      "max": "25",
+      "sortby": "publishedAt",
+      "from": "2026-09-26T15:07:39Z",
+      "to": "2026-09-27T04:07:39Z",
+      "page": "2"
+    }
+  },
+  "status": 200,
+  "body": {
+    "totalArticles": 162,
+    "articles": [
+      {
+        "id": "a5c5c9c30d89f2e0aa1dd73a1b074079",
+        "title": "Woman loses life savings in residency permit scam",
+        "description": "PORT ALDER: What began as a small consultancy fee for an elderly woman seeking a residency permit ended with her losing her life savings to scammers.",
+        "content": "PORT ALDER: An elderly woman lost almost all her savings after answering an online advertisement that promised help with a residency permit.\nPolice said the woman first paid a small consultancy fee to a man who claimed to work for an immigration agency.\nOver the next four months she was asked to make further payments for \"processing\", \"security checks\" and \"bank guarantees\".\nShe made more than 30 transfers to accounts in several names before a relative noticed and contacted the police.\nDistrict police chief Ruth Ellingham said the case was one of several similar reports this year.\n\"Genuine agencies never ask for repeated payments into personal accounts,\" she said.\nPolice urged anyone who believes they have been targeted to call the national fraud hotline.",
+        "url": "https://www.evening-star.example/news/nation/2026/09/27/woman-loses-savings-in-residency-permit-scam",
+        "image": "https://images.evening-star.example/uploads/2026/09/27/4131491.jpeg",
+        "publishedAt": "2026-09-26T23:13:59Z",
+        "lang": "en",
+        "source": {
+          "id": "9e101ab52b61103bab415ad7fb0e5659",
+          "name": "The Evening Star",
+          "url": "https://www.evening-star.example"
+        }
+      },
+      {
+        "id": "e22fc0abb9efc31a175a72e78cf35c65",
+        "title": "Government to replace planned monuments at historic sites",
+        "description": "ESTRAN: The government has proposed replacing planned statues at three historic sites with public gardens and a small museum.",
+        "content": "ESTRAN: The culture ministry has proposed replacing planned statues at three historic sites with public gardens and a small museum, officials said on Saturday.\nThe statues had been commissioned by the previous government, but work on them had stalled since the change of government two years ago.\nEnd of Article",
+        "url": "https://national.meridian-times.example/world/region/government-to-replace-planned-monuments/articleshow/134512935.cms",
+        "image": "https://images.meridian-times.example/thumb/134512960.jpg",
+        "publishedAt": "2026-09-26T23:12:00Z",
+        "lang": "en",
+        "source": {
+          "id": "9c931d3332c3a87c89b804230892aa64",
+          "name": "The Meridian Times",
+          "url": "https://national.meridian-times.example"
+        }
+      },
+      {
+        "id": "8476029d00e48343245bbde72958a3f0",
+        "title": "The Southern Chronicle",
+        "description": "No Cookies | The Southern Chronicle",
+        "content": "Cookies are turned off\nThis site needs cookies to show you articles.\nTo keep reading, turn cookies on in your browser settings and reload the page.\nOn a computer\nOpen your browser settings\nFind the privacy section\nAllow cookies for this site\nReload the page\nOn a phone\nOpen the Settings app\nChoose your browser\nTurn off the option that blocks cookies\nReturn to your browser and reload the page",
+        "url": "https://www.southern-chronicle.example/nocookies?a=A.sample",
+        "image": "https://www.southern-chronicle.example/images/fallback.svg",
+        "publishedAt": "2026-09-26T23:06:59Z",
+        "lang": "en",
+        "source": {
+          "id": "30b44acf8108f4e5e172e6a0ef2da1cf",
+          "name": "The Southern Chronicle",
+          "url": "https://www.southern-chronicle.example"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,169 @@
+{
+  "id": "live-hormuz-proposal:rev-1",
+  "storyId": "story-live-hormuz-proposal",
+  "revisionNumber": 1,
+  "title": "케셀 해협 재개 계획 거부와 마렌란드의 대응",
+  "publishedAt": "2026-09-27T08:00:00.000Z",
+  "contradictionStatus": "단일 출처",
+  "promptVersions": {
+    "evidenceExtract": "evidence-extract@1",
+    "claimGenerate": "claim-generate@1",
+    "gate": "gate@1",
+    "contradictionLabel": "contradiction-label@1"
+  },
+  "modelId": "gpt-5-mini-2025-08-07",
+  "claims": [
+    {
+      "id": "live-hormuz-proposal:c-1",
+      "text": "마렌란드는 할바르드 오스테 대통령이 케셀 해협 재개 계획을 거부한 뒤 북부연합 협상단의 공식 답변을 기다리겠다고 밝혔다.",
+      "claimType": "보도된 사실",
+      "modality": "단정",
+      "order": 0,
+      "contradictionStatus": "복수 출처 일치",
+      "evidence": [
+        {
+          "id": "live-hormuz-proposal:rev-1/live-hormuz-proposal:c-1:q-8bb1a3-1",
+          "claimId": "live-hormuz-proposal:c-1",
+          "articleId": "article-hormuz-1",
+          "articleVersionId": "av-hormuz-1",
+          "sourceId": "gnews:da05009467a13bbcc84557ea09d86db3",
+          "span": {
+            "start": 0,
+            "end": 196
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Marrenland has said it will wait for a formal reply from Northern Union negotiators after President Halvard Oste turned down a plan to reopen the Strait of Kessel to cargo traffic within ten days.",
+          "spanHash": "7beb98008b6f9beaae11b06e734d452130cf08f85d20ab385afe06969ef687c0",
+          "excerpt": "Marrenland has said it will wait for a formal reply from Northern Union negotiators after President Halvard Oste turned down a plan to reopen the Strait of Kessel to cargo traffic within ten days.",
+          "excerptSpan": {
+            "start": 0,
+            "end": 196
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 196
+          },
+          "sourceUrl": "https://www.northgate.example/news/articles/k7r2m4x9qa",
+          "verifiedAt": "2026-09-27T08:00:00.000Z"
+        },
+        {
+          "id": "live-hormuz-proposal:rev-1/live-hormuz-proposal:c-1:q-22ea02-1",
+          "claimId": "live-hormuz-proposal:c-1",
+          "articleId": "article-hormuz-2",
+          "articleVersionId": "av-hormuz-2",
+          "sourceId": "gnews:f331a5ed3965fb59761dfcecfc7e7a34",
+          "span": {
+            "start": 0,
+            "end": 196
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Marrenland has said it will wait for a formal reply from Northern Union negotiators after President Halvard Oste turned down a plan to reopen the Strait of Kessel to cargo traffic within ten days.",
+          "spanHash": "7beb98008b6f9beaae11b06e734d452130cf08f85d20ab385afe06969ef687c0",
+          "excerpt": "Marrenland has said it will wait for a formal reply from Northern Union negotiators after President Halvard Oste turned down a plan to reopen the Strait of Kessel to cargo traffic within ten days.",
+          "excerptSpan": {
+            "start": 0,
+            "end": 196
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 196
+          },
+          "sourceUrl": "https://www.northgate-world.example/news/articles/k7r2m4x9qa",
+          "verifiedAt": "2026-09-27T08:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "live-hormuz-proposal:c-4",
+      "text": "린드크바르가 릴레이에 오스테에 대해 \"희망적인 발언을 많이 했지만 그만큼 모순된 발언도 많았다\"고 비판했다.",
+      "claimType": "귀속 입장",
+      "modality": "단정",
+      "order": 1,
+      "contradictionStatus": "단일 출처",
+      "evidence": [
+        {
+          "id": "live-hormuz-proposal:rev-1/live-hormuz-proposal:c-4:q-22ea02-8",
+          "claimId": "live-hormuz-proposal:c-4",
+          "articleId": "article-hormuz-2",
+          "articleVersionId": "av-hormuz-2",
+          "sourceId": "gnews:f331a5ed3965fb59761dfcecfc7e7a34",
+          "span": {
+            "start": 1221,
+            "end": 1362
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "Lindqvar wrote on Relay that Oste \"has offered many hopeful remarks, and just as many contradictory ones, which sadly we have grown used to\".",
+          "spanHash": "57948ef7a66942fce56999a5f09bba18f862f74bb44b8f828319be735ba086e6",
+          "excerpt": "Lindqvar wrote on Relay that Oste \"has offered many hopeful remarks, and just as many contradictory ones, which sadly we have grown used to\".",
+          "excerptSpan": {
+            "start": 1221,
+            "end": 1362
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 141
+          },
+          "sourceUrl": "https://www.northgate-world.example/news/articles/k7r2m4x9qa",
+          "verifiedAt": "2026-09-27T08:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "live-hormuz-proposal:c-5",
+      "text": "보도에 따르면 이 좁은 해로는 3월 교전 발발 이후 대부분 막혀 있었다.",
+      "claimType": "보도된 사실",
+      "modality": "단정",
+      "order": 2,
+      "contradictionStatus": "단일 출처",
+      "evidence": [
+        {
+          "id": "live-hormuz-proposal:rev-1/live-hormuz-proposal:c-5:q-22ea02-6",
+          "claimId": "live-hormuz-proposal:c-5",
+          "articleId": "article-hormuz-2",
+          "articleVersionId": "av-hormuz-2",
+          "sourceId": "gnews:f331a5ed3965fb59761dfcecfc7e7a34",
+          "span": {
+            "start": 887,
+            "end": 1046
+          },
+          "offsetUnit": "code-point",
+          "normalizationVersion": 1,
+          "spanText": "The narrow channel, which normally carries roughly a quarter of the region's grain and fuel shipments, has been largely shut since fighting broke out in March.",
+          "spanHash": "5a4939dc2eefc68cec0a21a1de2568f4d3e06aab93d80ba1e27620ef57a3a225",
+          "excerpt": "The narrow channel, which normally carries roughly a quarter of the region's grain and fuel shipments, has been largely shut since fighting broke out in March.",
+          "excerptSpan": {
+            "start": 887,
+            "end": 1046
+          },
+          "highlightInExcerpt": {
+            "start": 0,
+            "end": 159
+          },
+          "sourceUrl": "https://www.northgate-world.example/news/articles/k7r2m4x9qa",
+          "verifiedAt": "2026-09-27T08:00:00.000Z"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "sourceId": "gnews:da05009467a13bbcc84557ea09d86db3",
+      "articleId": "article-hormuz-1",
+      "articleTitle": "Marrenland says it will wait for official NU response after Oste rejects Strait of Kessel proposal",
+      "articleUrl": "https://www.northgate.example/news/articles/k7r2m4x9qa",
+      "publishedAt": "2026-09-27T02:16:52.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    },
+    {
+      "sourceId": "gnews:f331a5ed3965fb59761dfcecfc7e7a34",
+      "articleId": "article-hormuz-2",
+      "articleTitle": "Marrenland says it will wait for official NU response after Oste rejects Strait of Kessel proposal",
+      "articleUrl": "https://www.northgate-world.example/news/articles/k7r2m4x9qa",
+      "publishedAt": "2026-09-27T02:16:52.000Z",
+      "rightsTier": "본문 처리 + 발췌 표시"
+    }
+  ]
+}
