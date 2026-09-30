@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { type ReactElement, Suspense } from "react";
+import { LegalLinks } from "../../components/legal-links.tsx";
 import { Alert, AlertTitle } from "../../components/ui/alert.tsx";
 import { Button } from "../../components/ui/button.tsx";
 import { deletionEnv } from "../../lib/account/admin.ts";
@@ -93,6 +94,7 @@ export default function AccountPage({ searchParams }: PageProps<"/account">): Re
       <Suspense fallback={<div aria-hidden="true" className="min-h-40" />}>
         <AccountBody searchParams={searchParams} />
       </Suspense>
+      <LegalLinks />
     </main>
   );
 }

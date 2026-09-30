@@ -13,3 +13,12 @@ export function supabaseEnv(): SupabaseEnv | null {
 
 /** 인증 콜백·로그아웃·로그인 시작·세션 응답의 캐시 헤더(스펙 "계정"). */
 export const PRIVATE_NO_STORE = "private, no-store";
+
+/**
+ * `@supabase/ssr` 세션 쿠키 이름. 라이브러리 기본 저장 키 `sb-<프로젝트 ref>-auth-token`이며 큰 값은 `.0`·`.1`로 나뉘고,
+ * Google 로그인(PKCE) 중에는 같은 접두의 `-code-verifier` 쿠키가 붙는다. 처리방침 쿠키 표가 이 이름을 보인다.
+ */
+export const supabaseAuthCookieName = (projectRef: string): string => `sb-${projectRef}-auth-token`;
+
+/** Supabase Auth Google 제공자의 요청 scope. 앱은 더하지 않고 Supabase 기본값을 쓴다(운영 확인 `docs/agents/project.md`). */
+export const GOOGLE_SCOPE = "email profile";
