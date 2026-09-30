@@ -78,6 +78,7 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 - 테스트는 각 패키지에 병치, E2E는 웹 앱 아래. 구현 서브에이전트가 테스트를 함께 쓴다.
 - 양은 최소: 도메인·파이프라인은 규칙마다 단위 테스트 하나, 화면은 페이지당 E2E 스모크 하나(주장 → 근거 → 원문 링크 같은 핵심 경로 + axe 1회). 상태·뷰포트·테마 조합마다 E2E를 늘리지 않는다. 픽스처는 데모 사건에 필요한 최소만.
 - `@newstrail/db/testing`은 테스트 전용 서브패스. Biome `noRestrictedImports`가 비테스트 파일의 import를 막는다.
+- CI `e2e` 잡은 브라우저별 매트릭스 3개(`e2e (chromium)`·`e2e (firefox)`·`e2e (webkit)`, `fail-fast: false`)이고 잡마다 15분 한도다. 각 잡은 그 브라우저만 설치해 `test:e2e --project <브라우저>`로 돌고, 산출물은 `web-e2e-<브라우저>`.
 
 ## UI 스킬 (ui-skills.com)
 
