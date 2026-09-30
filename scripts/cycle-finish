@@ -26,7 +26,10 @@ for _ in $(seq 1 24); do
   gh pr checks "$pr" >/dev/null 2>&1 && break
   sleep 5
 done
-if ! gh pr checks "$pr" --watch --fail-fast; then
+# 기다리기만 --watch에 맡긴다. gh는 취소된 체크에도 0을 돌려주므로 판정은 bucket으로 한다(pass·skipping 밖은 실패).
+gh pr checks "$pr" --watch --fail-fast || true
+bad="$(gh pr checks "$pr" --json name,bucket --jq '[.[] | select(.bucket != "pass" and .bucket != "skipping")] | length')" || bad=err
+if [ "$bad" != "0" ]; then
   echo "FAIL: CI 실패"; gh pr checks "$pr" || true; exit 1
 fi
 [ "$wait_only" -eq 1 ] && { echo "PASS (CI만 확인, 머지 안 함)"; exit 0; }
