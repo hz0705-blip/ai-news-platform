@@ -242,6 +242,10 @@ maybe("원문 재수집 저장(#86, 실 DB)", () => {
         "a-meridian",
       ]);
       expect(batch[0]?.previousVersionBodies).toBeUndefined();
+      // 지운 기사에만 근거가 있던 주장(픽스처 주장 전부)은 다음 개정판으로 옮겨 싣는다.
+      expect(batch[0]?.carriedClaims?.map((c) => c.id)).toEqual(
+        [...fixture.revision.claims].sort((a, b) => a.order - b.order).map((c) => c.id),
+      );
     } finally {
       await cleanup();
     }

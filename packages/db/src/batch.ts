@@ -238,6 +238,8 @@ export interface BatchStory {
   }[];
   /** 마지막 개정판에 없는 열린 상충 에피소드의 주장(#90, `openEpisodeClaims`). */
   readonly openEpisodeClaims?: readonly Claim[];
+  /** 본문을 지운 기사에만 근거가 있는 마지막 개정판 주장(#144, `carriedClaims`). 새 개정판에 그대로 실린다. */
+  readonly carriedClaims?: readonly Claim[];
 }
 
 /** 사건의 최신 확인 시각(`story_revisions.checked_at` 최댓값). 개정판이 없으면 null. */
@@ -361,6 +363,7 @@ export async function loadBatchStories(
       ...(context.openEpisodeClaims === undefined
         ? {}
         : { openEpisodeClaims: context.openEpisodeClaims }),
+      ...(context.carriedClaims === undefined ? {} : { carriedClaims: context.carriedClaims }),
     });
   }
   return { stories: result, sources: sourceRows.map(toDomainSource) };

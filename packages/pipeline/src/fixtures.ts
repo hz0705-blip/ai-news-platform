@@ -390,6 +390,7 @@ export function demoStepBatchInput(
           ? { previousVersionBodies: context.previousVersionBodies }
           : {}),
         ...(context.openEpisodeClaims ? { openEpisodeClaims: context.openEpisodeClaims } : {}),
+        ...(context.carriedClaims ? { carriedClaims: context.carriedClaims } : {}),
       },
     ],
   };

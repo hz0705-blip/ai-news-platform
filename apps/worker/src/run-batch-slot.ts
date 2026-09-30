@@ -256,6 +256,7 @@ export async function runBatchSlot(
             linkOnlySources,
             previousVersionBodies,
             openEpisodeClaims,
+            carriedClaims,
           }) => ({
             story,
             ...(latestRevision === undefined ? {} : { latestRevision }),
@@ -263,6 +264,7 @@ export async function runBatchSlot(
             ...(linkOnlySources === undefined ? {} : { linkOnlySources }),
             ...(previousVersionBodies === undefined ? {} : { previousVersionBodies }),
             ...(openEpisodeClaims === undefined ? {} : { openEpisodeClaims }),
+            ...(carriedClaims === undefined ? {} : { carriedClaims }),
           }),
         ),
         deadline: new Date(startedAt.getTime() + BATCH_MODEL_DEADLINE_MS),

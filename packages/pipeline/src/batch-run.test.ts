@@ -287,6 +287,59 @@ describe("배치 실행", () => {
     },
   } as const;
 
+  it("본문이 지워진 기사에만 근거가 있던 주장은 다음 개정판에 그대로 남고 삭제 변화로 나오지 않는다(#144)", async () => {
+    const { latest: base } = await episodeAbsentFromLatest();
+    const template = base.claims[0] as Claim;
+    const goneId = "demo-1-agreement:c-gone";
+    // 본문을 지운 기사 a-gone(이번 입력에 없음)에만 근거가 있는 주장.
+    const gone: Claim = {
+      ...template,
+      id: goneId,
+      text: "지운 본문의 기사만 뒷받침하는 주장.",
+      order: base.claims.length,
+      evidence: template.evidence.slice(0, 1).map((e) => ({
+        ...e,
+        id: `${base.id}/${goneId}:q-gone-1`,
+        claimId: goneId,
+        articleId: "a-gone",
+        articleVersionId: "av-gone",
+      })),
+    };
+    const latest = { ...base, claims: [...base.claims, gone] };
+    const run = (carriedClaims?: readonly Claim[]) =>
+      runBatch(
+        {
+          ...input(),
+          existingStories: [
+            {
+              story: fixture.story,
+              latestRevision: latest,
+              ...(carriedClaims ? { carriedClaims } : {}),
+            },
+          ],
+        },
+        deps(),
+      );
+
+    const result = await run([gone]);
+    const carried = result.revisions[0]?.claims.find((c) => c.id === goneId);
+    const { id: _id, order: _order, evidence: _evidence, ...rest } = gone;
+    expect(carried).toMatchObject(rest);
+    expect(carried?.evidence.map(({ id, verifiedAt: _v, ...e }) => ({ id, ...e }))).toEqual(
+      gone.evidence.map(({ verifiedAt: _v, ...e }) => ({
+        ...e,
+        id: `demo-1-agreement:rev-3/${goneId}:q-gone-1`,
+      })),
+    );
+    const deleted = (changes: typeof result.changes) =>
+      changes
+        .flatMap((c) => c.changes)
+        .filter((c) => c.kind === "주장 추가·삭제·수정" && c.claimChange === "삭제");
+    expect(deleted(result.changes)).toEqual([]);
+    // 대조: 옮겨 싣지 않으면 삭제 변화가 된다.
+    expect(deleted((await run()).changes).map((c) => c.claimId)).toEqual([goneId]);
+  });
+
   it("개정판 N의 열린 상충 에피소드는 N+1에서 분쟁 주장이 빠져도 사건 상태를 보도 상충으로 유지한다(#90)", async () => {
     const { latest, disputed } = await episodeAbsentFromLatest();
     const run = (openEpisodeClaims: readonly Claim[]) =>

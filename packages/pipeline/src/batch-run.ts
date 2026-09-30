@@ -1,4 +1,5 @@
 import {
+  type Claim,
   canProcessBody,
   createArticleVersion,
   type Revision,
@@ -487,6 +488,12 @@ async function processStory(
     });
   }
 
+  // 옮겨 싣는 주장(#144): 본문을 지운 기사에만 근거가 있던 주장은 새 근거 없이 그대로 싣는다(삭제 변화가 아니다).
+  const kept = new Set(claims.map((c) => c.id));
+  for (const claim of state.carriedClaims ?? []) {
+    if (!kept.has(claim.id)) claims.push(carriedClaim(claim, latest?.id));
+  }
+
   // 5. 개정판 생성. 출처 구획 = 본문 있는 기사 + 붙은 링크만 기사(#77).
   const sources: RevisionSource[] = [
     ...versions.map(({ article, source }) => ({
@@ -517,4 +524,37 @@ async function processStory(
     };
   }
   return { kind: "revision", revision: finalized.revision, changes: finalized.changes };
+}
+
+/**
+ * 이전 개정판 주장을 개정판 생성 입력으로 되돌린다(#144). 인용 식별자는 이전 근거 식별자
+ * `<개정판 id>/<주장 id>:<quoteId>`에서 되찾아 새 근거 식별자도 같은 모양이 된다.
+ */
+function carriedClaim(
+  claim: Claim,
+  previousRevisionId: string | undefined,
+): revisionStage.RevisionInput["claims"][number] {
+  const prefix = `${previousRevisionId}/${claim.id}:`;
+  return {
+    id: claim.id,
+    claimKey: claim.id,
+    text: claim.text,
+    claimType: claim.claimType,
+    modality: claim.modality,
+    contradictionStatus: claim.contradictionStatus,
+    evidence: claim.evidence.map((e, index) => ({
+      quoteId: e.id.startsWith(prefix) ? e.id.slice(prefix.length) : `carried-${index}`,
+      articleId: e.articleId,
+      articleVersionId: e.articleVersionId,
+      sourceId: e.sourceId,
+      sourceUrl: e.sourceUrl,
+      span: e.span,
+      normalizationVersion: e.normalizationVersion,
+      spanText: e.spanText,
+      excerpt: e.excerpt,
+      excerptSpan: e.excerptSpan,
+      highlightInExcerpt: e.highlightInExcerpt,
+      ...(e.differsIn === undefined ? {} : { differsIn: e.differsIn }),
+    })),
+  };
 }

@@ -207,6 +207,7 @@ export const StoryStateSchema: z.ZodType<StoryState> = z.object({
     .array(z.object({ articleVersionId: z.string(), body: z.string() }))
     .exactOptional(),
   openEpisodeClaims: z.array(ClaimSchema).exactOptional(),
+  carriedClaims: z.array(ClaimSchema).exactOptional(),
 });
 
 export const BatchInputSchema: z.ZodType<BatchInput> = z.object({

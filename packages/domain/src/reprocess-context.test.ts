@@ -182,4 +182,21 @@ describe("deriveReprocessContext (#86·#90·#94)", () => {
     ]);
     expect(context.previousVersionBodies).toBeUndefined();
   });
+
+  it("본문이 지워진 기사에만 근거가 있던 주장은 옮겨 싣는 주장이다", () => {
+    const only = claim("s:c-1", "단일 출처", [["a-1", "v1"]]);
+    const mixed = claim("s:c-2", "복수 출처 일치", [
+      ["a-1", "v1"],
+      ["a-2", "v2"],
+    ]);
+    const live = claim("s:c-3", "단일 출처", [["a-2", "v2"]]);
+    const latest = revision(1, [only, mixed, live]);
+    const context = deriveReprocessContext({
+      latestRevision: latest,
+      latestCheckedAt: t(2),
+      claimHistory: [latest.claims],
+      articleVersions: [{ ...version("a-1", "v1", t(0)), body: null }, version("a-2", "v2", t(0))],
+    });
+    expect(context.carriedClaims).toEqual([only]);
+  });
 });

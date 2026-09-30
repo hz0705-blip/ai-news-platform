@@ -42,6 +42,11 @@ export interface ReprocessContext {
     readonly body: string;
   }[];
   readonly openEpisodeClaims?: readonly Claim[];
+  /**
+   * 옮겨 싣는 주장(#144): 최신 개정판 주장 중 근거가 모두 본문을 지운 기사에 있는 것. 새 근거를 뽑을 수 없으므로
+   * 식별자·문장·유형·양상·상태·근거를 그대로 다음 개정판에 싣는다(최신 개정판 순서).
+   */
+  readonly carriedClaims?: readonly Claim[];
 }
 
 /**
@@ -53,6 +58,7 @@ export interface ReprocessContext {
  * - 열린 에피소드(#90): 최신 개정판 밖의 열린 상충 에피소드 주장(`openEpisodeClaims`).
  * - 이전 본문(#86): 최신 개정판과 열린 에피소드 주장의 근거가 가리키는 기사 버전 중 입력 버전이 아닌 것의 본문
  *   (기사 버전 식별자 순). 원자료에 없거나 본문을 지운 버전은 빠진다(좌표 정렬 실패).
+ * - 옮겨 싣는 주장(#144): 마지막 버전의 본문을 지운 기사에만 근거가 있는 최신 개정판 주장.
  */
 export function deriveReprocessContext(input: ReprocessContextInput): ReprocessContext {
   const latest = input.latestRevision;
@@ -64,8 +70,12 @@ export function deriveReprocessContext(input: ReprocessContextInput): ReprocessC
     }
   }
   const currentVersions = new Map<string, ReprocessArticleVersion>();
+  const bodyDeleted = new Set<string>();
   for (const [articleId, version] of current) {
-    if (version.body === null) continue;
+    if (version.body === null) {
+      bodyDeleted.add(articleId);
+      continue;
+    }
     const firstReprocess =
       version.correctionCandidate &&
       (input.latestCheckedAt === undefined || version.capturedAt > input.latestCheckedAt);
@@ -96,10 +106,15 @@ export function deriveReprocessContext(input: ReprocessContextInput): ReprocessC
     return body === undefined || body === null ? [] : [{ articleVersionId, body }];
   });
 
+  const carriedClaims = [...(latest?.claims ?? [])]
+    .sort((a, b) => a.order - b.order)
+    .filter((c) => c.evidence.length > 0 && c.evidence.every((e) => bodyDeleted.has(e.articleId)));
+
   return {
     ...(latest === undefined ? {} : { latestRevision: latest }),
     currentVersions,
     ...(previousVersionBodies.length === 0 ? {} : { previousVersionBodies }),
     ...(episodes.length === 0 ? {} : { openEpisodeClaims: episodes }),
+    ...(carriedClaims.length === 0 ? {} : { carriedClaims }),
   };
 }
