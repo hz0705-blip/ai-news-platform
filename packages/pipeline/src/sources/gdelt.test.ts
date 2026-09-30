@@ -24,7 +24,7 @@ import {
 } from "./gdelt-recorded.ts";
 
 const TITLE =
-  "Iran says it will wait for official US response after Trump rejects Strait of Hormuz proposal";
+  "Marrenland says it will wait for official NU response after Oste rejects Strait of Kessel proposal";
 const firstPublishedAt = new Date("2026-09-27T02:16:52.000Z");
 const batchStartedAt = new Date("2026-09-27T08:00:00.000Z");
 const story: GdeltStoryQuery = { storyId: "s-hormuz", title: TITLE, firstPublishedAt };
@@ -34,8 +34,8 @@ const allRows = [...recordedRows.values()].flat();
 
 describe("GDELT 매칭 용어", () => {
   it("gdeltTermsOf picks 2-4 normalized proper nouns", () => {
-    // `US`처럼 세 글자 미만 한 단어는 뺀다(대소문자를 무시하면 대명사 `us`와 같다).
-    expect(gdeltTermsOf(TITLE)).toEqual(["iran", "trump", "strait of hormuz"]);
+    // `NU`처럼 세 글자 미만 한 단어는 뺀다(대소문자를 무시하면 흔한 짧은 낱말과 겹친다).
+    expect(gdeltTermsOf(TITLE)).toEqual(["marrenland", "oste", "strait of kessel"]);
     expect(gdeltTermsOf("Lee meets Xi, Putin, Modi and Macron in Beijing")).toEqual([
       "lee",
       "putin",
@@ -52,41 +52,41 @@ describe("GDELT 매칭 용어", () => {
   it("title match requires every proper noun, case and punctuation normalized", () => {
     const terms = gdeltTermsOf(TITLE) ?? [];
     const matches = (title: string) => titleMatchesTerms(normalizeForMatch(title), terms);
-    expect(matches("Trump Rejects Iran's Proposal To Open Strait Of Hormuz")).toBe(true);
-    expect(matches("US–Iran war: TRUMP rejects Strait-of-Hormuz deal")).toBe(true);
+    expect(matches("Oste Rejects Marrenland's Proposal To Open Strait Of Kessel")).toBe(true);
+    expect(matches("NU–Marrenland standoff: OSTE rejects Strait-of-Kessel deal")).toBe(true);
     // 하나라도 빠지면(여기서는 "Strait of") 후보가 아니다.
-    expect(matches("Trump rejects Iran proposal to open Hormuz")).toBe(false);
-    // 단어 경계: `Iranian`은 `Iran`이 아니다.
-    expect(matches("Iranian Trump Strait of Hormuz")).toBe(false);
-    // 기록된 실제 행 중 매칭되지 않는 행은 무관한 제목이다.
+    expect(matches("Oste rejects Marrenland proposal to open Kessel")).toBe(false);
+    // 단어 경계: `Marrenlander`는 `Marrenland`가 아니다.
+    expect(matches("Marrenlander Oste Strait of Kessel")).toBe(false);
+    // 기록된 행 중 매칭되지 않는 행은 무관한 제목이다.
     const titles = allRows.map((l) => parseGkgRow(l)?.title ?? "");
     expect(titles.filter((t) => !matches(t))).toEqual([
-      "Kuwait Food Authority inspects 17 establishments in Mubarak Al-Kabeer",
-      "Tories to deport all foreign criminals guilty of 'non-minor crimes'",
+      "Food Authority inspects 17 establishments in Harrow District",
+      "Council to review all parking permits issued under 'temporary rules'",
     ]);
   });
 });
 
 describe("GKG 행·파일 목록", () => {
   it("gkg row parsing reads url, domain, observed time and title and drops rows without a title", () => {
-    const line = allRows.find((l) => l.includes("gulfnews.com/world/mena/us-iran-war"));
+    const line = allRows.find((l) => l.includes("gulf-courier.example/world/region/nu-marrenland"));
     if (line === undefined) throw new Error("기록된 행 없음");
     expect(parseGkgRow(line)).toEqual({
       recordId: "20260927061500-308",
       observedAt: new Date("2026-09-27T06:15:00.000Z"),
-      domain: "gulfnews.com",
-      url: "https://gulfnews.com/world/mena/us-iran-war-tehran-awaits-response-as-trump-rejects-hormuz-plan-saudi-arabia-condemns-iran-and-houthis-1.500689272",
+      domain: "gulf-courier.example",
+      url: "https://gulf-courier.example/world/region/nu-marrenland-tensions-varos-awaits-response-as-oste-rejects-kessel-plan-1.500689272",
       // HTML 엔터티(`&#x2013;`)를 푼다.
       title:
-        "US–Iran War Tensions Rise as Trump Rejects Strait of Hormuz Deal; Tehran Awaits Response, Saudi Arabia Condemns Iran and Houthis",
+        "NU–Marrenland Tensions Rise as Oste Rejects Strait of Kessel Deal; Varos Awaits Response, Talvia Urges Restraint",
     });
     // 폭 없는 공백(`&#x200B;`)과 `&#xA0;`도 정리한다.
     const zeroWidth = allRows.map((l) => parseGkgRow(l)?.title ?? "");
     expect(zeroWidth).toContain(
-      "'They Have No Money Coming In': Donald Trump Rejects Iran's Offer to Reopen Strait of Hormuz - Pragativadi I Latest Odisha News in English I Breaking News",
+      "'They Have No Cargo Moving Out': Halvard Oste Rejects Marrenland's Offer to Reopen Strait of Kessel - Pragati Daily I Latest Regional News in English I Breaking News",
     );
     expect(zeroWidth).toContain(
-      "Trump Rejects Iran's Plan to Reopen Strait of Hormuz in Seven Days – THISDAYLIVE",
+      "Oste Rejects Marrenland's Plan to Reopen Strait of Kessel in Ten Days – THISDAYWIRE",
     );
     // 제목 태그가 없거나 비었으면 버린다.
     expect(parseGkgRow(line.replace(/<PAGE_TITLE>.*<\/PAGE_TITLE>/, ""))).toBeUndefined();
@@ -94,7 +94,9 @@ describe("GKG 행·파일 목록", () => {
       parseGkgRow(line.replace(/<PAGE_TITLE>.*<\/PAGE_TITLE>/, "<PAGE_TITLE></PAGE_TITLE>")),
     ).toBeUndefined();
     // 웹 문서(수집 식별자 1)가 아니면 버린다.
-    expect(parseGkgRow(line.replace("\t1\tgulfnews.com", "\t2\tgulfnews.com"))).toBeUndefined();
+    expect(
+      parseGkgRow(line.replace("\t1\tgulf-courier.example", "\t2\tgulf-courier.example")),
+    ).toBeUndefined();
   });
 
   it("file window from the file list keeps gkg files inside the window, newest first", () => {
@@ -136,8 +138,8 @@ describe("GDELT 수집(기록된 GKG 조각)", () => {
     // 출처 표에 없는 도메인은 `gdelt:<domain>` 출처(링크만, 이름 = 도메인, 영어).
     expect(result.sources).toContainEqual(
       expect.objectContaining({
-        id: "gdelt:gulfnews.com",
-        name: "gulfnews.com",
+        id: "gdelt:gulf-courier.example",
+        name: "gulf-courier.example",
         rightsTier: "링크만",
         language: "en",
       }),
@@ -153,7 +155,7 @@ describe("GDELT 수집(기록된 GKG 조각)", () => {
       ownership: "private",
       language: "en",
       isFictional: false,
-      domains: ["gulfnews.com"],
+      domains: ["gulf-courier.example"],
       isExcluded: true,
     };
     const result = await collectGdelt(
@@ -161,7 +163,9 @@ describe("GDELT 수집(기록된 GKG 조각)", () => {
       { fetch: createRecordedGdeltFetch() },
     );
     expect(result.dropped).toEqual({ excluded: 2, invalid: 0 });
-    expect(result.linksByStory[0]?.links.some((l) => l.url.includes("gulfnews.com"))).toBe(false);
+    expect(result.linksByStory[0]?.links.some((l) => l.url.includes("gulf-courier.example"))).toBe(
+      false,
+    );
   });
 
   it("checksum mismatch skips the file and is reported", async () => {

@@ -19,6 +19,7 @@ ai-news-platform. 두 에이전트가 공유하는 **사실**(환경·계정·�
 
 - 산출물(이슈 제목, PR, 테스트 이름, 코드 식별자)의 도메인 개념은 `CONTEXT.md` 용어를 쓴다. 필요한 개념이 용어집에 없으면 Claude는 `CONTEXT.md`에 추가해 쓰고(`CLAUDE.md` "Ruling"), Codex는 만들어 쓰지 말고 티켓 코멘트로 묻는다.
 - 산출물이 ADR과 충돌하면 조용히 덮어쓰지 않고 "ADR-000N과 충돌한다. 이유는 …"으로 드러낸다.
+- 공개 저장소에는 실제 기사 문장을 커밋하지 않는다. 실제 응답을 기록하는 픽스처 스크립트(`packages/pipeline/scripts/record-gnews.ts`·`record-gnews-recheck.ts`·`record-gdelt.ts`)는 본문·제목·설명·URL·매체를 그대로 저장하므로, 그 결과는 직접 쓴 가상 텍스트로 바꾼 뒤에만 커밋한다(`packages/pipeline/fixtures/LICENSE.md`).
 - 기사 본문은 30일 뒤 삭제한다(`article_versions.body_expires_at`, 기사 발행 시각 기준·불명이면 수집 시각). 삭제 대상은 본문(`body`)이며, 근거(`evidence`)가 기사 버전을 FK로 참조하므로 행과 근거 구간·해시·URL·메타데이터는 남는다.
 - `public` 스키마의 새 테이블은 같은 마이그레이션에서 RLS를 켠다(Drizzle 스키마 `.enableRLS()`, 정책 없음). `anon`·`authenticated`는 `public`의 테이블·시퀀스·함수에 권한이 없다 — 0013이 회수하고 `postgres`의 기본 권한도 회수했다(Supabase에만 있는 역할이라 없으면 건너뛴다). `packages/db/src/public-rls.test.ts`가 `public`의 모든 테이블을 질의해 RLS 꺼진 테이블을 잡는다. `supabase_admin` 소유 pgvector 함수의 anon 실행 권한과 그 역할의 기본 권한은 `postgres`가 바꿀 수 없어 남는다.
 

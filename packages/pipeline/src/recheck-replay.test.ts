@@ -17,9 +17,10 @@ import {
 import { idempotencyKey as claimGenerateKey } from "./stages/claim-generate.ts";
 
 /**
- * 원문 재수집 리플레이(#86): 실제 GNews 정확 제목 조회 응답(`fixtures/gnews-recheck/korea-pow-transfer.json`,
+ * 원문 재수집 리플레이(#86): 기록된 GNews 정확 제목 조회 응답(`fixtures/gnews-recheck/korea-pow-transfer.json`,
  * 2026-09-29 기록)과 그 기사로 실제 모델을 돌려 기록한 사건(`fixtures/live-korea-pow-transfer`)을 쓴다.
- * 기록된 응답의 본문은 저장된 버전과 같으므로(실측: 해시 동일), 새 버전은 응답 본문에 문단을 넣어 만든다.
+ * 두 픽스처의 기사 본문·제목·URL은 직접 쓴 가상 텍스트로 바꿨다(#143).
+ * 기록된 응답의 본문은 저장된 버전과 같으므로(해시 동일), 새 버전은 응답 본문에 문단을 넣어 만든다.
  * 새 버전의 근거 추출·주장 생성 응답은 같은 인용문을 가리키는 기록(이전 버전의 실제 응답)을 새 멱등키로 돌려준다.
  */
 const live = loadDemoStoryFixture("live-korea-pow-transfer");
@@ -118,7 +119,7 @@ describe("원문 재수집 리플레이(#86)", () => {
 
   it("새 버전 → 사건 재처리 → 원문 변경 변화", async () => {
     const inserted =
-      "The Blue House said on Tuesday that consultations with Kyiv would continue through diplomatic channels.";
+      "The presidential office said on Tuesday that consultations with Kaltenia would continue through diplomatic channels.";
     const judged = await recheck(
       withContent((content) => content.replace("\n", `\n${inserted}\n`)),
     );

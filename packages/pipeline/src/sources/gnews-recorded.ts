@@ -3,8 +3,9 @@ import { fileURLToPath } from "node:url";
 import { type GnewsTopicKey, topicKeyOf } from "./gnews.ts";
 
 /**
- * 기록된 GNews 응답 파일 하나(`fixtures/gnews/<topicKey>-page<N>.json`). 실제 응답에서 만들며
- * `request`에 API 키는 없다(`scripts/record-gnews.ts`가 지운다). `body.articles`는 토픽당 몇 건만 남기고
+ * 기록된 GNews 응답 파일 하나(`fixtures/gnews/<topicKey>-page<N>.json`). 실제 응답에서 만든 뒤 기사의
+ * 제목·설명·본문·URL·매체를 직접 쓴 가상 텍스트로 바꿨다(#143). `request`에 API 키는 없다
+ * (`scripts/record-gnews.ts`가 지운다). `body.articles`는 토픽당 몇 건만 남기고
  * `totalArticles`는 실제 값 그대로라 페이지 상한 판단이 실제와 같다.
  */
 export interface RecordedGnewsResponse {

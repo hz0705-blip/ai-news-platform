@@ -355,11 +355,11 @@ maybe("GDELT 단계(기록된 GKG 조각)", () => {
                 return model.complete(request);
               },
             },
-            // 링크 제목만 임베딩한다: 기록된 행 중 묶음 기사("… and other Mideast news")는 직교 축(배정 실패 → 버림),
+            // 링크 제목만 임베딩한다: 기록된 행 중 묶음 기사("… and other regional news")는 직교 축(배정 실패 → 버림),
             // 나머지는 사건 축.
             embeddingClient: {
               embed: async (texts: readonly string[]) => ({
-                vectors: texts.map((t) => (/other Mideast news/.test(t) ? axis(1) : axis(0))),
+                vectors: texts.map((t) => (/other regional news/.test(t) ? axis(1) : axis(0))),
                 usage: { tokens: texts.length, spend: 0 },
               }),
             },

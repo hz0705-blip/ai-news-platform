@@ -2,7 +2,7 @@
   "request": {
     "path": "/api/v4/search",
     "params": {
-      "q": "\"Iran says it will wait for official US response after Trump rejects Strait of Hormuz proposal\"",
+      "q": "\"Marrenland says it will wait for official NU response after Oste rejects Strait of Kessel proposal\"",
       "in": "title",
       "lang": "en",
       "max": "10",

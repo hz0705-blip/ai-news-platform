@@ -170,16 +170,19 @@ describe("GNews 응답 매핑", () => {
       domains: [id],
       isExcluded,
     });
-    // korea 1페이지: lokmattimes.com, economictimes.indiatimes.com, scmp.com 각 1건.
-    const registry = [registered("lokmattimes.com", true), registered("indiatimes.com", false)];
+    // korea 1페이지: lakeview-times.example, business.meridian-times.example, harbor-post.example 각 1건.
+    const registry = [
+      registered("lakeview-times.example", true),
+      registered("meridian-times.example", false),
+    ];
     const mapped = toCollected(recorded("korea", 1), "한국 관련 해외 보도", registry);
     expect(mapped.excluded).toBe(1);
     expect(mapped.articles.map((a) => a.sourceId)).toEqual([
-      "indiatimes.com",
+      "meridian-times.example",
       expect.stringMatching(/^gnews:/),
     ]);
-    // 등록 출처는 표의 행 그대로다(서브도메인 `economictimes.indiatimes.com`이 `indiatimes.com`에 맞는다).
-    expect(mapped.sources.find((s) => s.id === "indiatimes.com")).toEqual(registry[1]);
+    // 등록 출처는 표의 행 그대로다(서브도메인 `business.meridian-times.example`이 `meridian-times.example`에 맞는다).
+    expect(mapped.sources.find((s) => s.id === "meridian-times.example")).toEqual(registry[1]);
 
     const result = await collectGnews(
       { slotAt, previousTo, registry },
@@ -239,8 +242,8 @@ describe("GNews 응답 매핑", () => {
 describe("원문 재수집 정확 제목 조회(#86)", () => {
   const found = loadRecordedRecheck("korea-pow-transfer");
   const target = {
-    title: "South Korea outraged by Zelensky revealing North Korean POW transfer",
-    url: "https://www.washingtonexaminer.com/news/world/4745534/south-korea-outraged-zelensky-revealing-north-korea-pow-transfer/",
+    title: "Aldmark outraged by Mensk revealing Veskar POW transfer",
+    url: "https://www.capital-ledger.example/news/world/4745534/aldmark-outraged-mensk-revealing-veskar-pow-transfer/",
     publishedAt: new Date("2026-09-28T19:41:58.000Z"),
   };
   const deps = (recorded = found) => ({
@@ -259,7 +262,7 @@ describe("원문 재수집 정확 제목 조회(#86)", () => {
       from: "2026-09-27T19:41:58Z",
       to: "2026-09-29T19:41:58Z",
     });
-    // 기록된 실제 요청과 같은 모양이다(키는 기록에 없다).
+    // 기록된 요청과 같은 모양이다(키는 기록에 없다).
     expect(found.request.params).toEqual(
       Object.fromEntries(buildTitleSearchRequest(target).searchParams),
     );
@@ -281,12 +284,12 @@ describe("원문 재수집 정확 제목 조회(#86)", () => {
     // 제목이 같아도 URL이 다르면 채택하지 않는다.
     const other = await searchByExactTitle({ ...target, url: "https://example.com/other" }, deps());
     expect(other.result).toEqual({ kind: "unconfirmed" });
-    // 실제로 결과가 0건이었던 조회(BBC, 2026-09-29 기록)도 미확인이다.
+    // 결과가 0건인 기록된 조회도 미확인이다.
     const empty = await searchByExactTitle(
       {
         title:
-          "Iran says it will wait for official US response after Trump rejects Strait of Hormuz proposal",
-        url: "https://www.bbc.com/news/articles/cmvgyyw2jeego",
+          "Marrenland says it will wait for official NU response after Oste rejects Strait of Kessel proposal",
+        url: "https://www.northgate-world.example/news/articles/k7r2m4x9qa",
         publishedAt: new Date("2026-09-27T02:16:52.000Z"),
       },
       deps(loadRecordedRecheck("hormuz-bbc-com")),

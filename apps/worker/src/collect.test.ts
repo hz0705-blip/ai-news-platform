@@ -25,10 +25,10 @@ maybe("collectFromGnews", () => {
   it("collect drops articles from excluded sources and reports count", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {
-      // 기록된 응답 21건 중 lokmattimes.com 1건(korea 1페이지). scmp.com 1건은 등록 출처에 맞춘다.
+      // 기록된 응답 21건 중 lakeview-times.example 1건(korea 1페이지). harbor-post.example 1건은 등록 출처에 맞춘다.
       await syncSourceRegistry(db, [
-        registered("lokmattimes.com", true),
-        registered("scmp.com", false),
+        registered("lakeview-times.example", true),
+        registered("harbor-post.example", false),
       ]);
       const result = await collectFromGnews(
         {
@@ -42,8 +42,8 @@ maybe("collectFromGnews", () => {
 
       const rows = await db.select().from(articles);
       expect(rows).toHaveLength(20);
-      expect(rows.some((r) => r.url.includes("lokmattimes.com"))).toBe(false);
-      expect(rows.filter((r) => r.source_id === "scmp.com")).toHaveLength(1);
+      expect(rows.some((r) => r.url.includes("lakeview-times.example"))).toBe(false);
+      expect(rows.filter((r) => r.source_id === "harbor-post.example")).toHaveLength(1);
     } finally {
       await cleanup();
     }

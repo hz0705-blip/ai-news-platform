@@ -40,7 +40,7 @@ const SLOT_RECHECK = "2026-09-28T05:00+09:00";
 const RECHECK_AT = new Date(LIVE_REFERENCE_TIME.getTime() + 12 * 60 * 60 * 1000);
 
 const INSERTED =
-  "The Blue House said on Tuesday that consultations with Kyiv would continue through diplomatic channels.";
+  "The presidential office said on Tuesday that consultations with Kaltenia would continue through diplomatic channels.";
 const editedBody = (() => {
   const body = recorded.body as { articles: { content: string }[] };
   return (body.articles[0]?.content ?? "").replace("\n", `\n${INSERTED}\n`);
