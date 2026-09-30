@@ -66,7 +66,7 @@ flowchart TB
     GA --> SE["Search embeddings"]
   end
 
-  OAI["OpenAI<br/>gpt-5-mini, gpt-5-nano<br/>text-embedding-3-small"]
+  OAI["OpenAI<br/>gpt-5-mini<br/>text-embedding-3-small"]
   DB[("Supabase Postgres 17 + pgvector<br/>Seoul")]
   WEB["Next.js web on Vercel, icn1<br/>today, story, follows, search"]
   AUTH["Supabase Auth<br/>Kakao, Google"]
@@ -96,7 +96,7 @@ flowchart TB
 - **GNews**(유료, 본문 처리 + 발췌 표시 등급): 화면에는 근거 구간(1~2문장)과 출처명·원문 링크만 나오고 기사 본문 전체는 어떤 화면에도 나오지 않는다. **GNews는 기사 저작권을 부인하므로 발행사별 저작권 위험이 남는다.** 해지하면 GNews 출처를 모두 링크만 등급으로 내리고 본문과 근거 구간 원문을 지운다.
 - **GDELT**(GKG 2.1): 링크만 등급. 같은 사건을 다룬 다른 출처를 제목·출처·URL·관측 시각으로 붙이고, 근거나 보도 원점으로 쓰지 않는다.
 - **권리 등급**은 출처 단위이며 운영자가 낮추면 즉시 화면에 반영된다.
-- **보존**: 기사 본문은 발행 30일 뒤 삭제하고 근거 구간·해시·URL·메타데이터만 남긴다.
+- **보존**: 정책은 기사 본문을 발행 30일 뒤 삭제하고 근거 구간·해시·URL·메타데이터만 남기는 것이다. 삭제 작업은 [#144](https://github.com/hz0705-blip/ai-news-platform/issues/144)에서 구현 중이다.
 - **데모 사건**은 가상 기사·가상 출처이며 별도 섹션에만 둔다.
 
 근거: [스펙 "데이터 소스와 권리"](docs/spec/v1.md#데이터-소스와-권리), [ADR 목록](docs/adr/)(권리 등급과 발췌만 표시).

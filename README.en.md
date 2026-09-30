@@ -68,7 +68,7 @@ flowchart TB
     GA --> SE["Search embeddings"]
   end
 
-  OAI["OpenAI<br/>gpt-5-mini, gpt-5-nano<br/>text-embedding-3-small"]
+  OAI["OpenAI<br/>gpt-5-mini<br/>text-embedding-3-small"]
   DB[("Supabase Postgres 17 + pgvector<br/>Seoul")]
   WEB["Next.js web on Vercel, icn1<br/>today, story, follows, search"]
   AUTH["Supabase Auth<br/>Kakao, Google"]
@@ -98,7 +98,7 @@ Batch stages and order: [spec, "파이프라인"](docs/spec/v1.md#파이프라�
 - **GNews** (paid, body-processing + excerpt tier): screens show only the evidence span (one or two sentences), source name and original link; no screen ever shows a full article body. **GNews disclaims copyright in the articles it serves, so per-publisher copyright risk remains.** If the subscription ends, every GNews source is lowered to link-only and article bodies and evidence-span text are deleted.
 - **GDELT** (GKG 2.1): link-only tier. Other outlets covering the same story are attached by title, source, URL and observation time; they are never used as evidence or as a reporting origin.
 - **Rights tiers** are per source; when the operator lowers one, the screens change immediately.
-- **Retention**: article bodies are deleted 30 days after publication; only evidence spans, hashes, URLs and metadata remain.
+- **Retention**: the policy is to delete article bodies 30 days after publication, keeping only evidence spans, hashes, URLs and metadata. The deletion job is being implemented in [#144](https://github.com/hz0705-blip/ai-news-platform/issues/144).
 - **Demo stories** use fictional articles and fictional sources and live in a separate section.
 
 Basis: [spec, "데이터 소스와 권리"](docs/spec/v1.md#데이터-소스와-권리), [ADR index](docs/adr/) (rights tiers and excerpt-only display).
