@@ -4,8 +4,9 @@
 # 빈 DB 마이그레이션을 적용한 뒤 pgvector 게이트(임시 테이블·HNSW 인덱스 생성)를 스모크로 돈다.
 # "이전 릴리스 픽스처 DB"에 마이그레이션을 적용하는 검사는 픽스처 DB가 생기는 M2a로 미룬다(스펙 배포 흐름의 양쪽 적용 중 빈 DB만 여기서 돈다).
 # 잡 셋이 병렬로 돈다: checks(고정 설치·lint·typecheck·test·web build), migration-smoke(pgvector/pgvector:0.8.x-pg17 digest 고정,
-# 자격은 ci/ci-<run_id>로 워크플로 안에서 생성, db:migrate → db:gate), e2e(playwright install --with-deps → 로컬 Supabase Auth(CLI) → web build → test:e2e,
-# 실패해도 아티팩트 web-e2e(playwright-report·test-results, 보관 7일)를 올림, 타임아웃 15분).
+# 자격은 ci/ci-<run_id>로 워크플로 안에서 생성, db:migrate → db:gate), e2e(브라우저별 매트릭스 chromium·firefox·webkit 3잡, 각자 그 브라우저만
+# playwright install --with-deps → 로컬 Supabase Auth(CLI) → web build → test:e2e --project <브라우저>,
+# 실패해도 아티팩트 web-e2e-<브라우저>(playwright-report·test-results, 보관 7일)를 올림, 잡마다 타임아웃 15분).
 # 시크릿·환경을 읽지 않으므로 포크 PR에서도 돈다. main push(스쿼시 머지 뒤)에도 같은 잡이 돈다. 캐시는 actions/setup-node의 cache: pnpm.
 # 서비스 이미지 태그는 env를 보간할 수 없어 -pg<N>을 하드코딩한다. PG_MAJOR와 같음은 ci-workflow.test.ts가 단언한다.
 name: ci
@@ -57,6 +58,11 @@ jobs:
   e2e:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    # 브라우저별로 잡을 나눠 15분 한도에 여유를 둔다(#176). 한 브라우저의 실패가 다른 브라우저 잡을 취소하지 않는다.
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit]
     services:
       postgres:
         image: pgvector/pgvector:0.8.6-pg17@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f
@@ -91,7 +97,7 @@ jobs:
       - name: 고정 설치
         run: pnpm install --frozen-lockfile
       - name: 브라우저 설치
-        run: pnpm --filter @newstrail/web exec playwright install --with-deps chromium firefox webkit
+        run: pnpm --filter @newstrail/web exec playwright install --with-deps ${{ matrix.project }}
       - name: 빈 DB 마이그레이션 적용(drizzle)
         run: pnpm db:migrate
       # checks 잡에서는 DATABASE_TEST_URL이 없어 실 DB 테스트가 skip된다. 여기서 반드시 돈다.
@@ -115,12 +121,12 @@ jobs:
       - name: 웹 프로덕션 빌드
         run: pnpm --filter @newstrail/web build
       - name: Playwright·axe
-        run: pnpm --filter @newstrail/web test:e2e
+        run: pnpm --filter @newstrail/web test:e2e --project ${{ matrix.project }}
       - name: 접근성 결과·스크린샷·실패 trace
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: web-e2e
+          name: web-e2e-${{ matrix.project }}
           path: |
             apps/web/playwright-report/
             apps/web/test-results/
