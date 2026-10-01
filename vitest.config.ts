@@ -19,6 +19,7 @@ export default defineConfig({
       { test: { name: "domain", root: "./packages/domain", environment: "node" } },
       { test: { name: "db", root: "./packages/db", environment: "node", testTimeout: 60_000 } },
       { test: { name: "pipeline", root: "./packages/pipeline", environment: "node" } },
+      { test: { name: "scripts", root: "./scripts", environment: "node" } },
     ],
   },
 });
