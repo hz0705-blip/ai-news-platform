@@ -6,7 +6,7 @@ import { ToggleGroup } from "@base-ui/react/toggle-group";
 import type { TodayData } from "@newstrail/db";
 import { TOPICS } from "@newstrail/domain/topic";
 import { Search } from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   LATEST_STORIES,
   MORE,
@@ -24,15 +24,7 @@ import { TodayOverview } from "./today-overview.tsx";
 
 const PAGE_SIZE = 8;
 
-export function TodayScreen({
-  live,
-  now: fixedNow,
-  operationalNotice,
-}: {
-  live: TodayData;
-  now?: Date;
-  operationalNotice?: ReactNode;
-}) {
+export function TodayScreen({ live, now: fixedNow }: { live: TodayData; now?: Date }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [clock, setClock] = useState<Date | null>(null);
@@ -56,7 +48,7 @@ export function TodayScreen({
   }
   return (
     <main className="today-page" id="main-content" tabIndex={-1}>
-      <TodayHeader lastUpdated={live.lastUpdated} operationalNotice={operationalNotice} />
+      <TodayHeader lastUpdated={live.lastUpdated} />
       <div className="today-toolbar">
         <div className="today-topic-controls">
           <button

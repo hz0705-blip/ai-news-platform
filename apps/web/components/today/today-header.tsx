@@ -1,17 +1,10 @@
 /** @jsxImportSource react */
 import { Clock3 } from "lucide-react";
-import type { ReactNode } from "react";
 import { LAST_UPDATED, NEVER_PUBLISHED, NEXT_UPDATE } from "../../app/copy.ts";
 import { formatAbsolute } from "../../lib/format-time.ts";
 
 // 로딩 중에도 같은 머리글을 사용해 제목·탐색 위치를 유지한다.
-export function TodayHeader({
-  lastUpdated,
-  operationalNotice,
-}: {
-  lastUpdated?: Date | null;
-  operationalNotice?: ReactNode;
-}) {
+export function TodayHeader({ lastUpdated }: { lastUpdated?: Date | null }) {
   const updated = lastUpdated ? formatAbsolute(lastUpdated) : null;
   return (
     <header className="today-header">
@@ -37,7 +30,6 @@ export function TodayHeader({
           <p className="today-schedule">{NEXT_UPDATE}</p>
         </div>
       </div>
-      {operationalNotice}
     </header>
   );
 }

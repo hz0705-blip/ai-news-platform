@@ -1,15 +1,6 @@
-import type {
-  Article,
-  Claim,
-  DueBatchRun,
-  Revision,
-  RevisionSource,
-  Source,
-  Story,
-} from "@newstrail/domain";
+import type { Article, Claim, Revision, RevisionSource, Source, Story } from "@newstrail/domain";
 import { deriveReprocessContext } from "@newstrail/domain";
-import { slotAtOf } from "@newstrail/domain/batch-slot";
-import { and, desc, eq, gt, gte, inArray, lt, lte, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, inArray, lt, ne, sql } from "drizzle-orm";
 import { toDomainSource, toDomainStory } from "./mappers.ts";
 import { loadClaimHistory, loadRevision } from "./queries/revision.ts";
 import type { RuntimeDb } from "./runtime.ts";
@@ -160,31 +151,6 @@ export async function loadLastCompletedSlot(
     .select({ slotKey: batchRuns.slot_key, slotAt: batchRuns.slot_at })
     .from(batchRuns)
     .where(eq(batchRuns.status, "completed"))
-    .orderBy(desc(batchRuns.slot_at))
-    .limit(1);
-  return row;
-}
-
-/**
- * 오늘 화면 배치 상태의 입력(#56): 기한 슬롯 이전(포함) 슬롯 시각이 가장 늦은 원장 행. 상한 도달·미룬 수는
- * 완료 행의 리포트(`spend.budgetReached`, `deferred`)에서 읽는다. 원장이 비었으면 `undefined`.
- */
-export async function loadDueBatchRun(
-  db: RuntimeDb["db"],
-  input: { readonly dueSlotKey: string },
-): Promise<DueBatchRun | undefined> {
-  const dueSlotAt = slotAtOf(input.dueSlotKey);
-  if (dueSlotAt === undefined) throw new Error(`슬롯 키가 아니다: ${input.dueSlotKey}`);
-  const [row] = await db
-    .select({
-      slotKey: batchRuns.slot_key,
-      status: batchRuns.status,
-      leaseExpiresAt: batchRuns.lease_expires_at,
-      budgetReached: sql<boolean>`coalesce((${batchRuns.report} -> 'spend' ->> 'budgetReached')::boolean, false)`,
-      deferred: sql<number>`coalesce((${batchRuns.report} ->> 'deferred')::int, 0)`,
-    })
-    .from(batchRuns)
-    .where(lte(batchRuns.slot_at, dueSlotAt))
     .orderBy(desc(batchRuns.slot_at))
     .limit(1);
   return row;
