@@ -6,7 +6,7 @@ import {
   multiRevisionFirstFixture,
   multiRevisionFixture,
 } from "../../e2e/story-data.ts";
-import { buildStoryView } from "../../lib/story-view.ts";
+import { asOlderRevision, buildStoryView } from "../../lib/story-view.ts";
 import { ChangeSection } from "./change-section.tsx";
 
 afterEach(cleanup);
@@ -101,7 +101,8 @@ describe("ChangeSection", () => {
       "2026-09-17T00:30:00.000Z",
     );
     expect(within(second).getByRole("link").getAttribute("aria-current")).toBe("page");
-    expect(within(second).getByText("현재 개정판")).toBeTruthy();
+    expect(within(second).getByText("최신")).toBeTruthy();
+    expect(within(second).getByText("보는 중")).toBeTruthy();
     expect(within(second).getByText("사건 갱신")).toBeTruthy();
     for (const label of ["주장 변화 3건", "상충 상태 변화 2건", "원문 변경 1건", "출처 추가 2건"]) {
       expect(within(second).getByText(label)).toBeTruthy();
@@ -122,6 +123,66 @@ describe("ChangeSection", () => {
         .getByRole("link", { name: "개정판 1" })
         .getAttribute("href"),
     ).toBe(within(first).getByRole("link").getAttribute("href"));
+  });
+
+  it("최신 개정판을 보면 그 항목에 최신·보는 중이 함께 붙는다", () => {
+    render(<ChangeSection view={buildStoryView(multiRevisionFixture)} />);
+    const strip = screen.getByRole("figure", { name: /개정판 이력/ });
+    const [first, second] = [...(strip.querySelector("ol")?.children ?? [])] as HTMLElement[];
+    expect(within(first as HTMLElement).queryByText("최신")).toBeNull();
+    expect(within(first as HTMLElement).queryByText("보는 중")).toBeNull();
+    expect(within(second as HTMLElement).getByText("최신")).toBeTruthy();
+    expect(within(second as HTMLElement).getByText("보는 중")).toBeTruthy();
+    expect(second?.dataset.current).toBe("true");
+    const row = within(strip.querySelector("table") as HTMLElement).getAllByRole("row")[2];
+    expect(within(row as HTMLElement).getByText("최신")).toBeTruthy();
+    expect(within(row as HTMLElement).getByText("보는 중")).toBeTruthy();
+  });
+
+  it("옛 개정판을 보면 최신과 보는 중이 다른 항목에 붙고 aria-current는 보는 중에만 있다", () => {
+    // 띠에 뒤 개정판이 실린 경우: 최신 판정은 띠의 개정판 번호 최대값이다.
+    render(
+      <ChangeSection
+        view={buildStoryView({
+          ...multiRevisionFirstFixture,
+          revisions: multiRevisionFixture.revisions,
+        })}
+      />,
+    );
+    const strip = screen.getByRole("figure", { name: /개정판 이력/ });
+    const [first, second] = [...(strip.querySelector("ol")?.children ?? [])] as HTMLElement[];
+    expect(within(first as HTMLElement).getByText("보는 중")).toBeTruthy();
+    expect(within(first as HTMLElement).queryByText("최신")).toBeNull();
+    expect(
+      within(first as HTMLElement)
+        .getByRole("link")
+        .getAttribute("aria-current"),
+    ).toBe("page");
+    expect(first?.dataset.current).toBe("true");
+    expect(within(second as HTMLElement).getByText("최신")).toBeTruthy();
+    expect(within(second as HTMLElement).queryByText("보는 중")).toBeNull();
+    expect(
+      within(second as HTMLElement)
+        .getByRole("link")
+        .getAttribute("aria-current"),
+    ).toBeNull();
+    expect(second?.dataset.current).toBe("false");
+    const [, row1, row2] = within(strip.querySelector("table") as HTMLElement).getAllByRole("row");
+    expect(within(row1 as HTMLElement).getByText("보는 중")).toBeTruthy();
+    expect(within(row1 as HTMLElement).queryByText("최신")).toBeNull();
+    expect(within(row2 as HTMLElement).getByText("최신")).toBeTruthy();
+    expect(
+      within(row2 as HTMLElement)
+        .getByRole("link")
+        .getAttribute("aria-current"),
+    ).toBeNull();
+  });
+
+  it("이전 개정판 화면의 띠는 보는 중만 표기한다", () => {
+    render(<ChangeSection view={asOlderRevision(buildStoryView(multiRevisionFirstFixture))} />);
+    const strip = screen.getByRole("figure", { name: /개정판 이력/ });
+    expect(within(strip).queryByText("최신")).toBeNull();
+    expect(within(strip).getAllByText("보는 중")).toHaveLength(2);
   });
 
   it("보도량 추이는 KST 구간 표와 관측 시각 대체 캡션을 figure 안에 둔다", () => {

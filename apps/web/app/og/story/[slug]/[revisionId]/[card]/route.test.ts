@@ -70,6 +70,8 @@ function view(overrides: { title?: string; summary?: string; isDemo?: boolean } 
   return {
     slug: "demo-1-agreement",
     revisionId: "rev:1",
+    storyHref: "/story/demo-1-agreement",
+    isLatestRevision: true,
     header: {
       title: overrides.title ?? "유럽연합, 새 기후 목표에 합의",
       topics: [],

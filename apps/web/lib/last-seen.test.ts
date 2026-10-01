@@ -11,7 +11,8 @@ function revision(n: number, counts: number[]): RevisionStripItemView {
     revisionNumber: n,
     href: `/story/s/revision/s%3Arev-${n}`,
     publishedAt: new Date(Date.UTC(2026, 8, 20, n)),
-    isCurrent: false,
+    isViewing: false,
+    isLatest: false,
     counts: KINDS.map((kind, i) => ({ kind, count: counts[i] ?? 0 })),
   };
 }

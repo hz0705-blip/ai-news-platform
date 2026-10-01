@@ -1,7 +1,7 @@
 import type { StoryPageData } from "@newstrail/db";
 import { expect, type Page, test } from "@playwright/test";
 import { build } from "esbuild";
-import { buildStoryView } from "../lib/story-view.ts";
+import { asOlderRevision, buildStoryView } from "../lib/story-view.ts";
 import { expectNoAxeViolations } from "./axe.ts";
 import { expectReflow } from "./reflow.ts";
 import { MULTI_REV_1, multiRevisionFirstFixture, multiRevisionFixture } from "./story-data.ts";
@@ -36,11 +36,13 @@ async function routeShell(page: Page, pattern: string) {
   );
 }
 
-async function mountView(page: Page, data: StoryPageData) {
+/** `older`면 라우트처럼 최신 포인터와 다른 고정 URL의 뷰로 띄운다. */
+async function mountView(page: Page, data: StoryPageData, older = false) {
+  const view = buildStoryView(data);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.addScriptTag({
-    content: `window.__STORY_VIEW__ = ${JSON.stringify(buildStoryView(data))};`,
+    content: `window.__STORY_VIEW__ = ${JSON.stringify(older ? asOlderRevision(view) : view)};`,
   });
   await page.addScriptTag({ content: await storyBundle() });
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -56,8 +58,11 @@ test("개정판 2개 이상 사건에서 변화 구획·띠·표 펼침·고정 
   const tab = browserName === "webkit" && process.platform === "darwin" ? "Alt+Tab" : "Tab";
   await routeShell(page, "**/__story_fixture");
   await routeShell(page, "**/story/multi-revision-changes/revision/**");
+  await routeShell(page, "**/story/multi-revision-changes");
   await page.goto("/__story_fixture");
   await mountView(page, multiRevisionFixture);
+  const olderNotice = page.getByText("이전 개정판을 보고 있습니다.");
+  await expect(olderNotice).toHaveCount(0);
 
   const changes = page.getByRole("region", { name: "변화" });
   // 주장 변화: 이전·현재 병기, 단어 차이
@@ -67,7 +72,7 @@ test("개정판 2개 이상 사건에서 변화 구획·띠·표 펼침·고정 
   await expect(changes.getByText("출처 추가 2건", { exact: true }).first()).toBeVisible();
   await expect(changes.getByText("원문 변경", { exact: true }).first()).toBeVisible();
 
-  // 개정판 띠: 발행 순서, 현재 표시
+  // 개정판 띠: 발행 순서, 최신·보는 중 표시
   const strip = page.getByRole("figure", { name: /개정판 이력/ });
   const stripLinks = strip.locator("ol").getByRole("link");
   await expect(stripLinks).toHaveText(["개정판 1", "개정판 2"]);
@@ -108,7 +113,7 @@ test("개정판 2개 이상 사건에서 변화 구획·띠·표 펼침·고정 
   await page.waitForURL(
     `**/story/multi-revision-changes/revision/${encodeURIComponent(MULTI_REV_1)}`,
   );
-  await mountView(page, multiRevisionFirstFixture);
+  await mountView(page, multiRevisionFirstFixture, true);
   const firstChanges = page.getByRole("region", { name: "변화" });
   await expect(firstChanges.getByText("아직 변화가 없습니다")).toBeVisible();
   const firstStrip = page
@@ -117,4 +122,15 @@ test("개정판 2개 이상 사건에서 변화 구획·띠·표 펼침·고정 
     .getByRole("link");
   await expect(firstStrip).toHaveText(["개정판 1"]);
   await expect(firstStrip.first()).toHaveAttribute("aria-current", "page");
+
+  // 이전 개정판 안내: 헤더 앞, 사건 URL로 돌아간다
+  await expect(page.locator("main > :first-child")).toHaveText(
+    "이전 개정판을 보고 있습니다. 최신 개정판 보기",
+  );
+  const viewLatest = page.getByRole("link", { name: "최신 개정판 보기" });
+  await expect(viewLatest).toHaveAttribute("href", "/story/multi-revision-changes");
+  await viewLatest.click();
+  await page.waitForURL("**/story/multi-revision-changes");
+  await mountView(page, multiRevisionFixture);
+  await expect(olderNotice).toHaveCount(0);
 });

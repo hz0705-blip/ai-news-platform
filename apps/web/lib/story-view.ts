@@ -119,8 +119,10 @@ export interface RevisionStripItemView {
   /** 개정판 고정 URL. */
   readonly href: string;
   readonly publishedAt: Date;
-  /** 지금 화면이 보이는 개정판이면 참. */
-  readonly isCurrent: boolean;
+  /** 지금 화면이 보이는 개정판(보는 중)이면 참. */
+  readonly isViewing: boolean;
+  /** 최신 발행 개정판이면 참. */
+  readonly isLatest: boolean;
   /** 변화 종류별 개수(`CHANGE_KINDS` 순서, 0 포함). */
   readonly counts: readonly { readonly kind: ChangeKind; readonly count: number }[];
 }
@@ -145,6 +147,10 @@ export interface StoryView {
   readonly slug: string;
   /** 이 화면이 보이는 개정판. 방문 기록(마지막으로 본 개정판)이 이것을 넘긴다. */
   readonly revisionId: string;
+  /** 사건 URL(최신 개정판). */
+  readonly storyHref: string;
+  /** 이 화면의 개정판이 최신 발행 개정판이면 참. 거짓이면 화면이 이전 개정판 안내를 보인다. */
+  readonly isLatestRevision: boolean;
   readonly header: {
     readonly title: string;
     readonly topics: readonly Topic[];
@@ -170,6 +176,9 @@ export interface StoryView {
   /** 기사가 없으면 undefined. */
   readonly coverage: CoverageView | undefined;
 }
+
+/** 사건 URL. */
+export const storyHref = (slug: string): string => `/story/${encodeURIComponent(slug)}`;
 
 /** 개정판 고정 URL. 개정판 식별자의 `:`는 인코딩한다(라우트가 한 번 디코딩한다). */
 export const revisionHref = (slug: string, revisionId: string): string =>
@@ -320,9 +329,14 @@ export function buildStoryView(data: StoryPageData): StoryView {
         break;
     }
   }
+  // 최신은 띠에 실린 개정판 중 번호가 가장 큰 것이다. 띠는 이 개정판까지만 실으므로(`StoryPageData.revisions`)
+  // 이전 개정판 화면은 라우트가 최신 포인터와 비교해 `asOlderRevision`으로 바꾼다.
+  const latestNumber = Math.max(...data.revisions.map((r) => r.revisionNumber));
   return {
     slug: data.story.slug,
     revisionId: data.revision.id,
+    storyHref: storyHref(data.story.slug),
+    isLatestRevision: data.revision.revisionNumber >= latestNumber,
     header: {
       title: data.revision.title,
       topics: data.story.topics,
@@ -388,7 +402,8 @@ export function buildStoryView(data: StoryPageData): StoryView {
       revisionNumber: r.revisionNumber,
       href: revisionHref(data.story.slug, r.id),
       publishedAt: r.publishedAt,
-      isCurrent: r.id === data.revision.id,
+      isViewing: r.id === data.revision.id,
+      isLatest: r.revisionNumber === latestNumber,
       counts: CHANGE_KINDS.map((kind) => ({ kind, count: r.changeCounts[kind] })),
     })),
     coverage: buildCoverage(
@@ -400,3 +415,13 @@ export function buildStoryView(data: StoryPageData): StoryView {
     ),
   };
 }
+
+/**
+ * 최신이 아닌 개정판의 화면 모델. 개정판 화면 캐시는 불변이고 띠는 그 개정판까지만 실으므로, 최신 발행 개정판
+ * 포인터와 다른 고정 URL에서 라우트가 부른다. 띠에 최신 개정판이 없으니 `최신` 표기도 없앤다.
+ */
+export const asOlderRevision = (view: StoryView): StoryView => ({
+  ...view,
+  isLatestRevision: false,
+  revisions: view.revisions.map((r) => ({ ...r, isLatest: false })),
+});
