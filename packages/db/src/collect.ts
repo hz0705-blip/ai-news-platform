@@ -7,6 +7,7 @@ import {
   normalizeArticleUrl,
   normalizeTitle,
   type Source,
+  toImageUrl,
 } from "@newstrail/domain";
 import { and, desc, eq, inArray, or } from "drizzle-orm";
 import { toArticleVersionRow, toSourceRow } from "./mappers.ts";
@@ -55,6 +56,7 @@ export async function saveCollectedArticles(
         newArticles++;
         await tx.insert(articles).values(toNewArticleRow(item));
       } else {
+        // 기존 기사의 이미지 URL은 바꾸지 않는다 — 삭제 요청(`article:clear-image`)으로 지운 값이 되살아나지 않게.
         mergedArticles++;
         await tx
           .update(articles)
@@ -104,6 +106,7 @@ function toNewArticleRow(item: DedupedArticle): typeof articles.$inferInsert {
     description: item.description,
     published_at: item.publishedAt,
     topics: [...item.topics],
+    image_url: toImageUrl(item.imageUrl),
   };
 }
 

@@ -120,6 +120,13 @@
       "when": 1790735103250,
       "tag": "0016_article_body_retention",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790829222671,
+      "tag": "0017_article_image_url",
+      "breakpoints": true
     }
   ]
 }

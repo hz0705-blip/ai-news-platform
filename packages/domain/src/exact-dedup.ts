@@ -27,6 +27,8 @@ export interface DedupedArticle {
   readonly description: string;
   readonly publishedAt: Date;
   readonly topics: readonly Topic[];
+  /** 새 기사에만 저장하는 이미지 URL. 기존 기사의 이미지 URL은 재수집으로 바꾸지 않는다. */
+  readonly imageUrl?: string;
   /** 본문 해시가 마지막 버전과 다를 때만 생긴다(원문 변경 후보). 같은 배치에서 여러 번 바뀌면 순서대로. */
   readonly newVersions: readonly ArticleVersion[];
 }
@@ -116,6 +118,7 @@ export function dedupeExact(input: ExactDedupInput): readonly DedupedArticle[] {
       description: item.description,
       publishedAt: item.publishedAt,
       topics: known?.topics ?? [],
+      ...(item.imageUrl === undefined ? {} : { imageUrl: item.imageUrl }),
       newVersions: [],
     };
 

@@ -15,4 +15,6 @@ export interface CollectedArticle {
   readonly publishedAt: Date;
   readonly topics: readonly Topic[];
   readonly rawBody: string;
+  /** 출처 기사의 이미지 URL(`toImageUrl`로 검증한 값). 없으면 생략한다. */
+  readonly imageUrl?: string;
 }

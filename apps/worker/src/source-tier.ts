@@ -56,7 +56,19 @@ async function expireSourceStories(
       storyIds.filter((id) => !seen.has(id)),
     )),
   ];
-  const tags = storyCacheTags(stories);
+  return expireStoryCaches(stories, invalidate);
+}
+
+/**
+ * 사건들의 최신·모든 개정판 태그(와 사건이 있을 때만 `extraTags`)를 stale-while-revalidate 없이 즉시 만료한다.
+ * 무효화 경로가 없으면 요청하지 않고 `cacheInvalidated: false`를 돌려준다.
+ */
+export async function expireStoryCaches(
+  stories: readonly { readonly storyId: string; readonly revisionIds: readonly string[] }[],
+  invalidate: CacheInvalidator | undefined,
+  extraTags: readonly string[] = [],
+): Promise<Pick<TierExpiry, "expiredTags" | "expiredStories" | "cacheInvalidated">> {
+  const tags = stories.length === 0 ? [] : [...storyCacheTags(stories), ...extraTags];
   const expiredStories = stories.length;
   if (tags.length === 0) return { expiredTags: 0, expiredStories, cacheInvalidated: true };
   if (invalidate === undefined) {

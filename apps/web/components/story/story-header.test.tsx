@@ -20,6 +20,7 @@ describe("StoryHeader", () => {
             { status: "복수 출처 일치", count: 2, claimOrders: [1, 3] },
             { status: "보도 상충", count: 1, claimOrders: [2] },
           ],
+          image: null,
         }}
       />,
     );
@@ -42,6 +43,7 @@ describe("StoryHeader", () => {
       sourceCount: 1,
       updatedAt: new Date("2026-09-17T00:30:00.000Z"),
       statusCounts: [],
+      image: null,
     } as const;
     const { rerender } = render(<StoryHeader header={header} />);
     expect(screen.getByRole("time").parentElement?.textContent).toMatch(/^데모 기준 시각 /);

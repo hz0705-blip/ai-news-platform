@@ -15,6 +15,7 @@ const story = (n: number, extra: Partial<TodayStoryCard> = {}): TodayStoryCard =
   sourceCount: 2,
   updatedAt: new Date("2026-09-23T02:30:00Z"),
   isDemo: false,
+  image: null,
   ...extra,
 });
 const demo = story(99, {

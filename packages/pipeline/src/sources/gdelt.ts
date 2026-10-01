@@ -7,6 +7,7 @@ import {
   properNounsOf,
   type Source,
   sourceHostOf,
+  toImageUrl,
 } from "@newstrail/domain";
 
 /**
@@ -325,9 +326,12 @@ export interface GkgRow {
   readonly url: string;
   /** `V2.1Extras`(27열)의 `<PAGE_TITLE>`. */
   readonly title: string;
+  /** `V2.1SharingImage`(19열). http(s) URL이 아니거나 비었으면 null. */
+  readonly imageUrl: string | null;
 }
 
 const GKG_COLUMNS = 27;
+const GKG_SHARING_IMAGE = 19;
 const GKG_WEB_COLLECTION = "1";
 const PAGE_TITLE = /<PAGE_TITLE>([\s\S]*?)<\/PAGE_TITLE>/;
 
@@ -341,7 +345,8 @@ export function parseGkgRow(line: string): GkgRow | undefined {
   const titleRaw = PAGE_TITLE.exec(cols[GKG_COLUMNS - 1] ?? "")?.[1];
   const title = titleRaw === undefined ? "" : decodeGkgTitle(titleRaw);
   if (observedAt === undefined || url === "" || title === "") return undefined;
-  return { recordId, observedAt, domain: domain.toLowerCase(), url, title };
+  const imageUrl = toImageUrl(cols[GKG_SHARING_IMAGE - 1]);
+  return { recordId, observedAt, domain: domain.toLowerCase(), url, title, imageUrl };
 }
 
 // ── 링크 매핑 ───────────────────────────────────────────────────
@@ -357,6 +362,8 @@ export interface GdeltLink {
   readonly normalizedUrl: string;
   readonly title: string;
   readonly observedAt: Date;
+  /** 새 링크만 기사에만 저장하는 공유 이미지 URL(링크만). 기존 기사의 이미지 URL은 바꾸지 않는다. */
+  readonly imageUrl: string | null;
 }
 
 /**
@@ -390,7 +397,14 @@ export function mapGkgRow(
   return {
     kind: "link",
     source,
-    link: { sourceId, url: row.url, normalizedUrl, title: row.title, observedAt: row.observedAt },
+    link: {
+      sourceId,
+      url: row.url,
+      normalizedUrl,
+      title: row.title,
+      observedAt: row.observedAt,
+      imageUrl: row.imageUrl,
+    },
   };
 }
 

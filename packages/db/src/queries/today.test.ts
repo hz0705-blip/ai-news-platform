@@ -1,9 +1,11 @@
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
+import { followStory, loadFollowFeed } from "../follows.ts";
 import { toStoryRow } from "../mappers.ts";
 import { articles, stories } from "../schema/index.ts";
 import { createMigrationDb, readTestDbUrl } from "../test-db.ts";
 import { fixture, publishFixture, UNPUBLISHED_BODY_SENTENCE } from "../test-fixtures.ts";
+import { loadPublishedStory } from "./story.ts";
 import { loadPublishedToday } from "./today.ts";
 
 const url = readTestDbUrl();
@@ -72,6 +74,7 @@ maybe("loadPublishedToday", () => {
             sourceCount: 3,
             updatedAt,
             isDemo: true,
+            image: null,
           },
         ],
         lastUpdated: updatedAt,
@@ -87,6 +90,62 @@ maybe("loadPublishedToday", () => {
         stories: [],
         lastUpdated: null,
       });
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("대표 이미지는 발행 시각이 가장 이른 이미지 있는 기사의 것이다", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      await publishFixture(db, fixture);
+      const images = async () => {
+        await followStory(db, {
+          userId: "00000000-0000-4000-8000-00000000000a",
+          slug: fixture.story.slug,
+        });
+        return [
+          (await loadPublishedToday(db, { isDemo: true })).stories[0]?.image,
+          (await loadPublishedStory(db, { slug: fixture.story.slug }))?.image,
+          (await loadFollowFeed(db, { userId: "00000000-0000-4000-8000-00000000000a" }))[0]?.image,
+        ];
+      };
+      // 이미지 URL이 있는 기사가 없으면 null.
+      expect(await images()).toEqual([null, null, null]);
+
+      const at = (hours: number) =>
+        new Date(Date.parse("2026-09-17T00:30:00Z") + hours * 3_600_000);
+      const set = (id: string, values: Partial<typeof articles.$inferInsert>) =>
+        db.update(articles).set(values).where(eq(articles.id, id));
+      // 가장 이른 기사(harbor)는 이미지가 없어 건너뛰고, 그다음 meridian이 atlas보다 이르다.
+      await set("a-harbor", { published_at: at(-2) });
+      await set("a-meridian", {
+        published_at: at(0),
+        image_url: "https://img.meridian.invalid/m.jpg",
+      });
+      await set("a-atlas", { published_at: at(1), image_url: "https://img.atlas.invalid/a.jpg" });
+      // 개정판 출처 집합 밖의 기사(발행 뒤 배정)는 더 일러도 고르지 않는다.
+      await db.insert(articles).values({
+        id: "a-late",
+        source_id: "src-harbor",
+        story_id: fixture.story.id,
+        url: "https://harbor.invalid/late",
+        normalized_url: "https://harbor.invalid/late",
+        title: "발행 뒤 배정된 기사",
+        published_at: at(-5),
+        topics: ["국제 정치·외교·안보"],
+        image_url: "https://img.harbor.invalid/late.jpg",
+      });
+      const meridian = {
+        url: "https://img.meridian.invalid/m.jpg",
+        sourceName: "Meridian (가상 출처)",
+        articleUrl: "https://meridian.invalid/ports",
+      };
+      expect(await images()).toEqual([meridian, meridian, meridian]);
+
+      // 같은 발행 시각이면 기사 식별자 순(a-atlas < a-meridian).
+      await set("a-atlas", { published_at: at(0) });
+      expect((await images())[0]).toMatchObject({ url: "https://img.atlas.invalid/a.jpg" });
     } finally {
       await cleanup();
     }

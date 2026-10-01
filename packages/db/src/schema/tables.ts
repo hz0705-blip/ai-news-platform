@@ -106,6 +106,10 @@ export const articles = pgTable(
     // 발행 시각을 모르므로 `published_at`은 `observed_at`의 복사본(정렬 키)이며 임베딩도 두지 않는다.
     observed_at: timestamptz("observed_at"),
     is_link_only: boolean("is_link_only").notNull().default(false),
+    // 출처 기사의 이미지 URL(#180, ADR-0002). URL만 저장하고 화면은 발행사 주소를 핫링크한다 — 이미지를 받아
+    // 저장·변환하지 않는다. 새 기사를 만들 때만 쓰고(`toImageUrl` 검증), 재수집은 바꾸지 않으며,
+    // 삭제 요청은 `article:clear-image`가 null로 지운다.
+    image_url: text("image_url"),
   },
   (t) => [
     index("articles_story_id_idx").on(t.story_id),

@@ -12,6 +12,7 @@ import {
   gdeltTermsOf,
   gdeltWindow,
   gkgFilesInWindow,
+  mapGkgRow,
   normalizeForMatch,
   parseGkgRow,
   titleMatchesTerms,
@@ -79,6 +80,7 @@ describe("GKG 행·파일 목록", () => {
       // HTML 엔터티(`&#x2013;`)를 푼다.
       title:
         "NU–Marrenland Tensions Rise as Oste Rejects Strait of Kessel Deal; Varos Awaits Response, Talvia Urges Restraint",
+      imageUrl: null,
     });
     // 폭 없는 공백(`&#x200B;`)과 `&#xA0;`도 정리한다.
     const zeroWidth = allRows.map((l) => parseGkgRow(l)?.title ?? "");
@@ -97,6 +99,27 @@ describe("GKG 행·파일 목록", () => {
     expect(
       parseGkgRow(line.replace("\t1\tgulf-courier.example", "\t2\tgulf-courier.example")),
     ).toBeUndefined();
+  });
+
+  it("gdelt 행의 공유 이미지를 링크만 기사의 imageUrl로 읽는다", () => {
+    const line = allRows.find((l) => l.includes("gulf-courier.example/world/region/nu-marrenland"));
+    if (line === undefined) throw new Error("기록된 행 없음");
+    const withImage = (value: string) => {
+      const cols = line.split("\t");
+      cols[18] = value; // V2.1SharingImage(19열)
+      return cols.join("\t");
+    };
+    const row = parseGkgRow(withImage("https://images.gulf-courier.example/share/kessel.jpg"));
+    expect(row?.imageUrl).toBe("https://images.gulf-courier.example/share/kessel.jpg");
+    if (row === undefined) throw new Error("행을 읽지 못했다");
+    const mapped = mapGkgRow(row);
+    expect(mapped.kind === "link" ? mapped.link.imageUrl : undefined).toBe(
+      "https://images.gulf-courier.example/share/kessel.jpg",
+    );
+    // 빈 값·http(s)가 아닌 값은 null이고, 행은 그대로 읽는다.
+    expect(parseGkgRow(withImage(""))?.imageUrl).toBeNull();
+    expect(parseGkgRow(withImage("javascript:alert(1)"))?.imageUrl).toBeNull();
+    expect(parseGkgRow(withImage("images/kessel.jpg"))?.imageUrl).toBeNull();
   });
 
   it("file window from the file list keeps gkg files inside the window, newest first", () => {

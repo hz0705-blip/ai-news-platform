@@ -13,6 +13,7 @@ export const liveStories: TodayStoryCard[] = Array.from({ length: 18 }, (_, inde
   sourceCount: 3,
   updatedAt: new Date(FIXED_NOW.getTime() - (index + 1) * 60_000),
   isDemo: false,
+  image: null,
 }));
 function requireFirstStory(): TodayStoryCard {
   const story = liveStories[0];
