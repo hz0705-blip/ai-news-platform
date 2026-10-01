@@ -4,6 +4,8 @@
 # 사용: scripts/cycle-finish <PR번호> [--wait-only]
 #   --wait-only  CI만 기다리고 머지하지 않는다(민감 티켓: 사용자 승인 뒤 다시 실행).
 # 종료 코드: 0 완료, 1 CI 실패·머지 불가, 2 사용 오류.
+# 전제: CI 워크플로 잡 이름 `checks`가 체크 이름으로 등록된다(gh pr checks의 name). 잡 이름이 바뀌면 이 스크립트도 바꾼다.
+# 체크 등록 대기 간격·횟수: CYCLE_FINISH_POLL_SECONDS(기본 5)·CYCLE_FINISH_POLL_TRIES(기본 24).
 set -euo pipefail
 
 usage() { echo "사용: scripts/cycle-finish <PR번호> [--wait-only]" >&2; exit 2; }
@@ -21,11 +23,16 @@ done
 cd "$(git rev-parse --show-toplevel)"
 branch="$(gh pr view "$pr" --json headRefName --jq .headRefName)"
 echo "PR #$pr ($branch): CI 대기"
-# push 직후에는 체크가 아직 등록되지 않으므로 나타날 때까지 최대 2분 기다린다.
-for _ in $(seq 1 24); do
-  gh pr checks "$pr" >/dev/null 2>&1 && break
-  sleep 5
+# push 직후에는 체크가 아직 등록되지 않고 Vercel이 CI 잡보다 먼저 나타나므로 CI 잡 checks가 나타날 때까지 최대 2분 기다린다.
+registered=0
+for _ in $(seq 1 "${CYCLE_FINISH_POLL_TRIES:-24}"); do
+  names="$(gh pr checks "$pr" --json name --jq '.[].name' 2>/dev/null)" || names=""
+  if grep -qx checks <<<"$names"; then
+    registered=1; break
+  fi
+  sleep "${CYCLE_FINISH_POLL_SECONDS:-5}"
 done
+[ "$registered" -eq 1 ] || { echo "FAIL: CI 잡 checks가 등록되지 않음"; gh pr checks "$pr" || true; exit 1; }
 # 기다리기만 --watch에 맡긴다. gh는 취소된 체크에도 0을 돌려주므로 판정은 bucket으로 한다(pass·skipping 밖은 실패).
 gh pr checks "$pr" --watch --fail-fast || true
 bad="$(gh pr checks "$pr" --json name,bucket --jq '[.[] | select(.bucket != "pass" and .bucket != "skipping")] | length')" || bad=err
