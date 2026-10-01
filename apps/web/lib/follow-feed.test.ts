@@ -26,7 +26,7 @@ function story(
 }
 
 describe("arrangeFollowFeed — 팔로우 화면 순서", () => {
-  it("읽은 이후 변화 있음 먼저, 그다음 사건 갱신 시각 최신순이고 데모는 따로 모은다", () => {
+  it("읽은 이후 변화 있음 먼저, 그다음 사건 갱신 시각 최신순이고 데모는 제외한다", () => {
     const feed = [
       story("seen-new", 9, { latest: 2, lastSeen: 2 }),
       story("changed-old", 1, { latest: 3, lastSeen: 1 }),
@@ -35,9 +35,8 @@ describe("arrangeFollowFeed — 팔로우 화면 순서", () => {
       story("demo-changed", 2, { latest: 2, lastSeen: 1 }, true),
       story("demo-seen", 7, { latest: 2, lastSeen: 2 }, true),
     ];
-    const { live, demo } = arrangeFollowFeed(feed);
+    const { live } = arrangeFollowFeed(feed);
     expect(live.map((s) => s.id)).toEqual(["changed-new", "changed-old", "seen-new", "never-seen"]);
-    expect(demo.map((s) => s.id)).toEqual(["demo-changed", "demo-seen"]);
   });
 
   it("본 적 없는 사건은 변화 있음으로 세지 않는다", () => {

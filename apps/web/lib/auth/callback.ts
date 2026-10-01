@@ -100,7 +100,7 @@ async function finishSignIn(
   let statusKey: string | null = null;
   if (client === null) target = loginPageUrl(request, next, "unavailable");
   else {
-    const data = await signIn(client);
+    const data = await signIn(client).catch(() => null);
     if (data === null) {
       target =
         intent === null ? loginPageUrl(request, next, "failed") : accountUrl(request, "failed");
@@ -124,12 +124,15 @@ async function finishSignIn(
           target = new URL("/account/deleted", requestOrigin(request));
         }
       }
-    } else if (await deps.isRegistrationBlocked(data.user).catch(() => true)) {
-      await client.auth.signOut({ scope: "local" });
-      endSession = true;
-      target = loginPageUrl(request, next, "pending-deletion");
     } else {
-      target = new URL(next, requestOrigin(request));
+      const blocked = await deps.isRegistrationBlocked(data.user).catch(() => null);
+      if (blocked !== false) {
+        await client.auth.signOut({ scope: "local" });
+        endSession = true;
+        target = loginPageUrl(request, next, blocked === null ? "unavailable" : "pending-deletion");
+      } else {
+        target = new URL(next, requestOrigin(request));
+      }
     }
   }
 

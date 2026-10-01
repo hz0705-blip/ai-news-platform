@@ -7,11 +7,10 @@ export const hasChangesSinceSeen = (story: FollowFeedStory): boolean =>
 
 /**
  * 팔로우 화면 순서(스펙 사용자 스토리 26): 읽은 이후 변화 있음 먼저, 그다음 사건 갱신 시각 최신순, 같으면 사건 식별자.
- * 데모 사건은 라이브와 섞지 않고 따로 모은다(스펙 "화면 구성").
+ * 데모 사건은 공개 피드에서 제외한다(스펙 "화면 구성").
  */
 export function arrangeFollowFeed(stories: readonly FollowFeedStory[]): {
   live: FollowFeedStory[];
-  demo: FollowFeedStory[];
 } {
   const sorted = [...stories].sort(
     (a, b) =>
@@ -21,6 +20,5 @@ export function arrangeFollowFeed(stories: readonly FollowFeedStory[]): {
   );
   return {
     live: sorted.filter((story) => !story.isDemo),
-    demo: sorted.filter((story) => story.isDemo),
   };
 }

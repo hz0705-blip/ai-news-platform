@@ -4,7 +4,7 @@ import { expectNoAxeViolations } from "./axe.ts";
 // 이 파일은 인라인 아코디언 계약을 단언한다 — 모바일 폭으로 고정한다(데스크톱 패널은 Ruling 24-7).
 test.use({ viewport: { width: 390, height: 844 } });
 
-const STORY_URL = "/story/demo-1-agreement";
+const STORY_URL = "/story/fixture-1-agreement";
 // 픽스처 기사 본문에만 있고 어떤 근거 발췌(허용 발췌 창)에도 들어가지 않는 문장.
 // Task 4의 픽스처를 쓸 때 이 문장을 articles/meridian-wire.txt 끝에 두고 어느 근거도 그 문장을 발췌하지 않게 한다.
 const UNSEEN_SENTENCE =
@@ -15,14 +15,14 @@ const ABSOLUTE_TIME = /^\d{4}\. \d{1,2}\. \d{1,2}\. (오전|오후) \d{1,2}:\d{2
 test("핵심 루프: 주장 → 근거 펼침 → 원문 링크 → 변화 구획", async ({ page }) => {
   await page.goto(STORY_URL);
 
-  await expect(page.getByText("기능 설명을 위해 만든 데모 사건입니다.")).toBeVisible();
-  await expect(page.getByText("데모 사건", { exact: true })).toBeVisible();
+  await expect(page.getByText("기능 설명을 위해 만든 데모 사건입니다.")).toHaveCount(0);
+  await expect(page.getByText("데모 사건", { exact: true })).toHaveCount(0);
 
-  // 데모 기준 시각: 라벨 + 절대 시각 형식 + 기계 가독 datetime
+  // 사건 갱신: 라벨 + 절대 시각 형식 + 기계 가독 datetime
   const updated = page.getByRole("main").locator("header").getByRole("time");
   await expect(updated).toHaveAttribute("datetime", "2026-09-17T00:30:00.000Z");
   await expect(updated).toHaveText(ABSOLUTE_TIME);
-  await expect(page.getByRole("main").locator("header")).toContainText("데모 기준 시각");
+  await expect(page.getByRole("main").locator("header")).toContainText("사건 갱신");
 
   // 첫 진입: 모든 펼침 버튼이 접혀 있고 근거 영역이 하나도 없다
   const triggers = page.getByRole("button", { name: /근거 \d+개 보기/ });

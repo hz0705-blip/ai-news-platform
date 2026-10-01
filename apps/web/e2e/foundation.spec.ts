@@ -60,7 +60,7 @@ for (const colorScheme of ["light", "dark"] as const) {
       await page.goto("/");
       await expect(page.getByRole("group", { name: "토픽", exact: true })).toBeVisible();
       await expect(
-        page.getByRole("region", { name: "데모 사건", exact: true }).getByRole("link").first(),
+        page.getByRole("region", { name: "최신 사건", exact: true }).getByRole("link").first(),
       ).toBeVisible();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText("오늘의 지면");
       await page.evaluate(() => document.fonts.ready);

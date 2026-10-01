@@ -132,7 +132,6 @@ maybe("의미 검색(사건 제목·주장 임베딩)", () => {
       await seedStory(db, "mid", {
         title: vec(10),
         claims: [{ id: "mid-c1", embedding: vec(0, 1) }],
-        isDemo: true,
         lifecycle: "종료",
       });
       await seedStory(db, "far", {
@@ -140,12 +139,13 @@ maybe("의미 검색(사건 제목·주장 임베딩)", () => {
         claims: [{ id: "far-c1", embedding: vec(30) }],
       });
 
+      await seedStory(db, "demo-nearest", { title: vec(0), claims: [], isDemo: true });
       const hits = await searchStoriesByEmbedding(db, { embedding: vec(0), limit: 20 });
       expect(hits.map((h) => h.slug)).toEqual(["near", "mid", "far"]);
       expect(hits[0]?.score).toBeGreaterThan(hits[1]?.score ?? 1);
       expect(hits[0]?.title).toBe("near 제목 1");
-      // 종료·데모 사건도 결과에 든다(배지 표시용 플래그).
-      expect(hits[1]).toMatchObject({ isDemo: true, lifecycle: "종료" });
+      // 종료된 실제 사건은 계속 검색된다.
+      expect(hits[1]).toMatchObject({ isDemo: false, lifecycle: "종료" });
 
       const top = await searchStoriesByEmbedding(db, { embedding: vec(0), limit: 1 });
       expect(top.map((h) => h.slug)).toEqual(["near"]);

@@ -48,11 +48,12 @@ async function mountToday(page: Page, notice?: BatchNotice, image?: LeadImage) {
 }
 
 const latest = (page: Page) => page.getByRole("region", { name: "최신 사건" });
-const demos = (page: Page) => page.getByRole("region", { name: "데모 사건", exact: true });
+const multiSource = (page: Page) =>
+  page.getByRole("region", { name: "여러 출처로 읽는 사건", exact: true });
 const tiles = (page: Page) =>
   page.getByRole("group", { name: "토픽", exact: true }).getByRole("button");
 
-test("대표 이미지: 핫링크·크레딧·위계·데모 제외와 실패 시 슬롯 제거", async ({ page }) => {
+test("대표 이미지: 핫링크·크레딧·위계·다중 출처 구획과 실패 시 슬롯 제거", async ({ page }) => {
   const image = {
     url: "https://images.example.test/lead.svg",
     articleUrl: "https://example.test/article",
@@ -74,7 +75,7 @@ test("대표 이미지: 핫링크·크레딧·위계·데모 제외와 실패 �
   await expect(
     latest(page).getByRole("link", { name: "사진 · 검사용 출처" }).first(),
   ).toHaveAttribute("href", image.articleUrl);
-  await expect(demos(page).locator("figure")).toHaveCount(0);
+  await expect(multiSource(page).locator("figure")).toHaveCount(0);
   await images.evaluateAll((nodes) => {
     for (const node of nodes) node.dispatchEvent(new Event("error"));
   });
@@ -83,27 +84,20 @@ test("대표 이미지: 핫링크·크레딧·위계·데모 제외와 실패 �
   await expect(latest(page).getByRole("link", { name: firstStory.title })).toBeVisible();
 });
 
-test("실제 오늘: 미발행·0건 토픽 필터·데모 앵커 → 사건 → 근거", async ({ page }) => {
+test("발행 사건 홈 → 실제 사건 경로 → 근거, 데모 미노출", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
   });
   await page.goto("/");
-  await expect(page.getByText("마지막 갱신 — 아직 발행된 사건이 없습니다")).toBeVisible();
-  await expect(page.getByText("매일 오전 6시·오후 6시 갱신 예정").first()).toBeVisible();
   await expect(tiles(page)).toHaveCount(4);
-  for (const tile of await tiles(page).all()) await expect(tile).toHaveAccessibleName(/사건 0건$/);
-  await expect(latest(page).getByRole("link", { name: "데모 사건 보기" })).toHaveAttribute(
-    "href",
-    "#demo-stories",
-  );
-  await latest(page).getByRole("link", { name: "데모 사건 보기" }).click();
-  await expect(page).toHaveURL(/#demo-stories$/);
-  // demo:load는 데모 사건 ①~④를 모두 적재한다(#22, #88).
-  await expect(demos(page).getByRole("link")).toHaveCount(4);
-  await demos(page).locator('a[href="/story/demo-1-agreement"]').click();
-  await expect(page).toHaveURL(/\/story\/demo-1-agreement$/);
+  await expect(latest(page).getByRole("article")).toHaveCount(4);
+  await expect(page.getByRole("region", { name: "데모 사건", exact: true })).toHaveCount(0);
+  await expect(page.locator('a[href*="/story/demo-"]')).toHaveCount(0);
+  await expect(multiSource(page).getByRole("article")).toHaveCount(4);
+  await latest(page).locator('a[href="/story/fixture-1-agreement"]').click();
+  await expect(page).toHaveURL(/\/story\/fixture-1-agreement$/);
   await page
     .getByRole("button", { name: /근거 \d+개 보기/ })
     .first()
@@ -143,7 +137,7 @@ test("시간순 카드·다중 토픽·필터 해제·빈 토픽·8개 단위 �
   await expect(links).toHaveText(liveStories.map((story) => story.title));
   await expect(links.nth(16)).toBeFocused();
   await expect(page.getByRole("button", { name: "더 보기", exact: true })).toHaveCount(0);
-  const demoBefore = await demos(page).innerText();
+  const multiSourceBefore = await multiSource(page).innerText();
   await tiles(page).nth(1).click();
   await expect(tiles(page).nth(1)).toHaveAttribute("aria-pressed", "true");
   await expect(links).toHaveText(
@@ -154,8 +148,8 @@ test("시간순 카드·다중 토픽·필터 해제·빈 토픽·8개 단위 �
   await expect(links).toHaveCount(8);
   await tiles(page).nth(3).click();
   await expect(latest(page).getByText("아직 발행된 사건이 없습니다")).toBeVisible();
-  await expect(latest(page).getByRole("link", { name: "데모 사건 보기" })).toBeVisible();
-  expect(await demos(page).innerText()).toBe(demoBefore);
+  await expect(latest(page).getByRole("link", { name: "사건 검색" })).toBeVisible();
+  expect(await multiSource(page).innerText()).toBe(multiSourceBefore);
   await tiles(page).nth(3).click();
   await expect(links).toHaveCount(8);
 });
@@ -199,7 +193,7 @@ test.describe("터치", () => {
   });
 });
 
-test("summary 전문·줄임 없는 읽기·상대 시각 datetime·데모 절대 시각", async ({ page }) => {
+test("summary 전문·줄임 없는 읽기·상대 시각 datetime·여러 출처 사건", async ({ page }) => {
   await mountToday(page);
   const summary = latest(page).getByText(LONG_SUMMARY, { exact: true }).first();
   await expect(summary).toHaveText(LONG_SUMMARY);
@@ -218,12 +212,12 @@ test("summary 전문·줄임 없는 읽기·상대 시각 datetime·데모 절�
   await expect(
     page.locator('[aria-live]:not([aria-live="off"]), [role="status"], [role="alert"]'),
   ).toHaveCount(0);
-  await expect(demos(page).getByRole("link")).toHaveCount(2);
-  for (const time of await demos(page).getByRole("time").all()) {
-    await expect(time).toHaveAttribute("datetime", "2026-09-17T00:30:00.000Z");
-    await expect(time).toHaveText("2026. 9. 17. 오전 9:30 KST");
-  }
-  await expect(demos(page)).toContainText("데모 기준 시각");
+  await expect(multiSource(page).getByRole("link")).toHaveCount(4);
+  await expect(multiSource(page).getByRole("time").first()).toHaveAttribute(
+    "datetime",
+    firstStory.updatedAt.toISOString(),
+  );
+  await expect(multiSource(page)).not.toContainText("데모");
 });
 
 for (const width of [320, 640, 1440]) {

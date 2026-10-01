@@ -9,7 +9,7 @@ if (authEnv() === null && process.env.CI) {
 }
 test.skip(authEnv() === null, "로컬 Supabase가 꺼져 있다(pnpm exec supabase start)");
 
-const SLUG = "demo-3-correction";
+const SLUG = "fixture-3-correction";
 const STORY = `/story/${SLUG}`;
 
 test("M4 인수: 로그인 → 팔로우 → 계정 삭제 → 로그아웃 상태, 같은 쿠키로 개인 쓰기 거부, 팔로우 화면은 로그인 안내", async ({
@@ -26,7 +26,7 @@ test("M4 인수: 로그인 → 팔로우 → 계정 삭제 → 로그아웃 상�
   await expect(follow).toHaveAttribute("aria-pressed", "true");
 
   await page.goto("/follows");
-  await expect(page.getByRole("region", { name: "데모 사건" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "팔로우한 사건" })).toBeVisible();
   await page.getByRole("main").getByRole("link", { name: "계정", exact: true }).click();
   await expect(page).toHaveURL(/\/account$/);
   await expect(page.getByRole("heading", { name: "계정 삭제" })).toBeVisible();
@@ -48,7 +48,9 @@ test("M4 인수: 로그인 → 팔로우 → 계정 삭제 → 로그아웃 상�
   expect(await session.json()).toEqual({ userId: null });
   await page.goto("/follows");
   await expect(page.getByRole("link", { name: "로그인하기" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "데모 사건" })).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "팔로우한 사건" }).getByRole("article"),
+  ).toHaveCount(0);
 
   // 삭제 전에 복사한 쿠키(아직 만료 전 JWT)로도 개인 쓰기와 팔로우 화면이 거부된다.
   const replay = await openAs(null);

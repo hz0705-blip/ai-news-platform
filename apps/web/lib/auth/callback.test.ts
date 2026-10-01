@@ -121,6 +121,38 @@ function deps(
 const sessionCookie = (response: NextResponse) => response.cookies.get(SESSION_COOKIE)?.value ?? "";
 
 describe("인증 콜백 — 재가입 차단", () => {
+  it("삭제 대기 조회 장애는 계정 삭제로 오인하지 않고 재시도 안내로 돌아간다", async () => {
+    const auth = fakeAuth(kakaoUser());
+    const response = await handleOidcCallback(
+      callback({ [RETURN_COOKIE]: "/follows" }),
+      deps(auth, {
+        isRegistrationBlocked: vi.fn(async () => {
+          throw new Error("database unavailable");
+        }),
+      }),
+    );
+    const location = new URL(response.headers.get("location") ?? "");
+    expect(location.searchParams.get("error")).toBe("unavailable");
+    expect(location.searchParams.get("next")).toBe("/follows");
+    expect(auth.signOut).toHaveBeenCalledWith({ scope: "local" });
+    expect(sessionCookie(response)).toBe("");
+  });
+
+  it("인증 서버 예외가 나도 임시 쿠키를 지우고 로그인 실패 안내로 돌아간다", async () => {
+    const auth = fakeAuth(kakaoUser());
+    auth.signInWithIdToken.mockRejectedValueOnce(new Error("auth unavailable"));
+    const response = await handleOidcCallback(
+      callback({ [RETURN_COOKIE]: "/follows" }),
+      deps(auth),
+    );
+    const location = new URL(response.headers.get("location") ?? "");
+    expect(location.searchParams.get("error")).toBe("failed");
+    expect(location.searchParams.get("next")).toBe("/follows");
+    for (const name of ["kakao-oidc-state", "kakao-oidc-nonce", RETURN_COOKIE]) {
+      expect(response.cookies.get(name)?.value).toBe("");
+    }
+  });
+
   it("삭제 대기 행이 있는 제공자 ID의 콜백은 세션을 만들지 않고 로그인 화면의 안내로 보낸다", async () => {
     const auth = fakeAuth(kakaoUser());
     const isRegistrationBlocked = vi.fn(async () => true);

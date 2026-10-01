@@ -8,8 +8,6 @@ import { TOPICS } from "@newstrail/domain/topic";
 import { Search } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
-  DEMO_NOTICE,
-  DEMO_STORIES,
   LATEST_STORIES,
   MORE,
   NEXT_UPDATE,
@@ -17,7 +15,6 @@ import {
   SEARCH_LINK,
   storyCount,
   TOPICS_LABEL,
-  VIEW_DEMO,
 } from "../../app/copy.ts";
 import { Button } from "../ui/button.tsx";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "../ui/empty.tsx";
@@ -29,12 +26,10 @@ const PAGE_SIZE = 8;
 
 export function TodayScreen({
   live,
-  demo,
   now: fixedNow,
   operationalNotice,
 }: {
   live: TodayData;
-  demo: TodayData;
   now?: Date;
   operationalNotice?: ReactNode;
 }) {
@@ -49,7 +44,9 @@ export function TodayScreen({
     return () => clearInterval(timer);
   }, [fixedNow]);
   const now = fixedNow ?? clock;
-  const stories = live.stories.filter(
+  const published = live.stories.filter((story) => !story.isDemo);
+  const multiSource = published.filter((story) => story.sourceCount >= 2).slice(0, 4);
+  const stories = published.filter(
     (story) => selected.length === 0 || story.topics.some((topic) => selected.includes(topic)),
   );
   function selectTopics(topics: string[]) {
@@ -68,7 +65,7 @@ export function TodayScreen({
             aria-pressed={selected.length === 0}
             onClick={() => selectTopics([])}
           >
-            전체 사건 <span>{live.stories.length}건</span>
+            전체 사건 <span>{published.length}건</span>
           </button>
           <ToggleGroup
             aria-label={TOPICS_LABEL}
@@ -78,7 +75,7 @@ export function TodayScreen({
             className="today-topics"
           >
             {TOPICS.map((topic) => {
-              const count = live.stories.filter((story) => story.topics.includes(topic)).length;
+              const count = published.filter((story) => story.topics.includes(topic)).length;
               return (
                 <Toggle
                   key={topic}
@@ -133,7 +130,7 @@ export function TodayScreen({
                   <EmptyDescription>{NEXT_UPDATE}</EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>
-                  <a href="#demo-stories">{VIEW_DEMO}</a>
+                  <a href="/search">{SEARCH_LINK}</a>
                 </EmptyContent>
               </Empty>
             ) : (
@@ -182,23 +179,28 @@ export function TodayScreen({
             )}
           </section>
         </div>
-        <TodayOverview stories={live.stories} />
+        <TodayOverview stories={published} />
       </div>
-      <section aria-labelledby="demo-stories" className="today-demos">
-        <EditorialSectionHeading id="demo-stories" detail={DEMO_NOTICE}>
-          {DEMO_STORIES}
-        </EditorialSectionHeading>
-        <ul className="today-demo-grid">
-          {demo.stories.map((story, index) => (
-            <li key={story.id}>
-              <p className="today-demo-index" aria-hidden="true">
-                {String(index + 1).padStart(2, "0")}
-              </p>
-              <EditorialCard story={story} now={now} />
-            </li>
-          ))}
-        </ul>
-      </section>
+      {multiSource.length > 0 && (
+        <section aria-labelledby="multi-source-stories" className="today-multi-source">
+          <EditorialSectionHeading
+            id="multi-source-stories"
+            detail="출처 2곳 이상의 보도를 함께 읽어보세요."
+          >
+            여러 출처로 읽는 사건
+          </EditorialSectionHeading>
+          <ul className="today-multi-source-grid">
+            {multiSource.map((story, index) => (
+              <li key={story.id}>
+                <p className="today-multi-source-index" aria-hidden="true">
+                  {String(index + 1).padStart(2, "0")}
+                </p>
+                <EditorialCard story={story} now={now} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </main>
   );
 }

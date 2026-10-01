@@ -23,7 +23,7 @@ async function storyIdOf(db: Db, slug: string): Promise<string | undefined> {
   const rows = await db
     .select({ id: stories.id })
     .from(stories)
-    .where(eq(stories.slug, slug))
+    .where(and(eq(stories.slug, slug), eq(stories.is_demo, false)))
     .limit(1);
   return rows[0]?.id;
 }
@@ -113,7 +113,13 @@ export async function recordStoryVisit(
       .select({ storyId: storyRevisions.story_id })
       .from(storyRevisions)
       .innerJoin(stories, eq(stories.id, storyRevisions.story_id))
-      .where(and(eq(stories.slug, params.slug), eq(storyRevisions.id, params.revisionId)))
+      .where(
+        and(
+          eq(stories.slug, params.slug),
+          eq(stories.is_demo, false),
+          eq(storyRevisions.id, params.revisionId),
+        ),
+      )
       .limit(1);
     const storyId = targetRows[0]?.storyId;
     if (storyId === undefined) return undefined;
@@ -165,7 +171,7 @@ export interface FollowFeedStory extends TodayStoryCard {
 }
 
 /**
- * 팔로우 화면이 읽는 사건: 직접 팔로우한 사건(데모 포함)과 팔로우한 토픽의 라이브 사건(종료 사건 제외). 발행된 개정판이
+ * 팔로우 화면이 읽는 사건: 직접 팔로우한 라이브 사건과 팔로우한 토픽의 라이브 사건(종료 사건 제외). 발행된 개정판이
  * 있는 사건만. 정렬은 화면이 한다(읽은 이후 변화 있음 먼저). 카드 값은 오늘 화면 질의와 같은 규칙으로 읽는다.
  */
 export async function loadFollowFeed(
@@ -219,12 +225,14 @@ export async function loadFollowFeed(
     .from(stories)
     .innerJoin(latest, eq(latest.story_id, stories.id))
     .where(
-      or(
-        directlyFollowed,
-        and(
-          eq(stories.is_demo, false),
-          ne(stories.lifecycle, "종료"),
-          sql`${stories.topics} && array(${followedTopics})::text[]`,
+      and(
+        eq(stories.is_demo, false),
+        or(
+          directlyFollowed,
+          and(
+            ne(stories.lifecycle, "종료"),
+            sql`${stories.topics} && array(${followedTopics})::text[]`,
+          ),
         ),
       ),
     );

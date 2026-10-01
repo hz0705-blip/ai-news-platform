@@ -6,7 +6,7 @@ import { expectReflow } from "./reflow.ts";
 // 데스크톱 근거 패널(#24)의 인수 조건. 기본 1440×900.
 test.use({ viewport: { width: 1440, height: 900 } });
 
-const STORY_URL = "/story/demo-1-agreement";
+const STORY_URL = "/story/fixture-1-agreement";
 // story.spec.ts와 같은 문장 — 픽스처 기사 본문에만 있고 어떤 근거 발췌에도 들어가지 않는다.
 const UNSEEN_SENTENCE =
   "This closing paragraph exists only in the fixture body and never appears on screen.";

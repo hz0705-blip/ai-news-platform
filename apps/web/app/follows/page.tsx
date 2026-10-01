@@ -18,10 +18,9 @@ import { getRuntimeDb } from "../../lib/db.ts";
 import { submitStoryUnfollow, submitTopicFollow } from "../../lib/follow-actions.ts";
 import { arrangeFollowFeed, hasChangesSinceSeen } from "../../lib/follow-feed.ts";
 import { ACCOUNT_LINK } from "../account/copy.ts";
-import { DEMO_NOTICE, NEXT_UPDATE, TODAY_LABEL } from "../copy.ts";
+import { NEXT_UPDATE, TODAY_LABEL } from "../copy.ts";
 import {
   CHANGED_SINCE_SEEN,
-  DEMO_STORIES,
   FOLLOWED_STORIES,
   FOLLOWED_STORIES_ORDER,
   FOLLOWS_LOGIN,
@@ -101,7 +100,7 @@ async function FollowsBody(): Promise<ReactElement> {
     loadFollowFeed(db, { userId }),
     loadFollowedTopics(db, { userId }),
   ]);
-  const { live, demo } = arrangeFollowFeed(feed);
+  const { live } = arrangeFollowFeed(feed);
   const now = new Date();
   return (
     <>
@@ -127,13 +126,6 @@ async function FollowsBody(): Promise<ReactElement> {
           </>
         )}
       </section>
-      {demo.length > 0 ? (
-        <section aria-labelledby="followed-demo-stories" className="flex flex-col gap-4">
-          <h2 id="followed-demo-stories">{DEMO_STORIES}</h2>
-          <p className="text-meta text-muted-foreground">{DEMO_NOTICE}</p>
-          <StoryList stories={demo} now={now} />
-        </section>
-      ) : null}
       <section aria-labelledby="topic-follows" className="flex flex-col gap-4">
         <h2 id="topic-follows">{TOPIC_FOLLOWS}</h2>
         <p className="text-meta text-muted-foreground">{TOPIC_FOLLOWS_HINT}</p>

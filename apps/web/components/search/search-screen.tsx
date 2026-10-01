@@ -5,7 +5,7 @@ import { formatRelativeTime } from "@newstrail/domain/relative-time";
 import { CircleAlert, Gauge, Timer } from "lucide-react";
 import Link from "next/link";
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { DEMO_NOTICE, DEMO_TIME, STORY_UPDATED, VIEW_DEMO } from "../../app/copy.ts";
+import { STORY_UPDATED } from "../../app/copy.ts";
 import {
   GO_TODAY,
   INVALID_QUERY,
@@ -17,7 +17,6 @@ import {
   resultCount,
   retryAfterText,
   SEARCH_BUTTON,
-  SEARCH_DEMO_RESULTS,
   SEARCH_FAILED,
   SEARCH_FAILED_DETAIL,
   SEARCH_HINT,
@@ -31,7 +30,6 @@ import {
 } from "../../app/search/copy.ts";
 import { formatAbsolute } from "../../lib/format-time.ts";
 import { SEARCH_PATH, type SearchResponse, type SearchResultStory } from "../../lib/search/api.ts";
-import { DemoBadge } from "../demo-badge.tsx";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert.tsx";
 import { Button } from "../ui/button.tsx";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "../ui/empty.tsx";
@@ -77,19 +75,13 @@ function ResultCard({
 }) {
   const updatedAt = new Date(story.updatedAt);
   const absolute = formatAbsolute(updatedAt);
-  // 목록 카드는 상대 시각, 데모는 고정 기준 시각이라 절대 시각(오늘 카드와 같다).
-  const time =
-    !story.isDemo && now && now >= updatedAt ? formatRelativeTime(updatedAt, now) : absolute.text;
+  // 목록 카드는 사건 갱신의 상대 시각을 표시한다.
+  const time = now && now >= updatedAt ? formatRelativeTime(updatedAt, now) : absolute.text;
   return (
     <article
       className="editorial-card"
       data-prominence={index === 0 ? "lead" : index < 3 ? "secondary" : "list"}
     >
-      {story.isDemo && (
-        <p className="flex flex-wrap items-center gap-2 text-meta">
-          <DemoBadge />
-        </p>
-      )}
       <h3>
         <Link href={`/story/${story.slug}`}>{story.title}</Link>
       </h3>
@@ -105,8 +97,7 @@ function ResultCard({
       )}
       <div className="editorial-card-meta">
         <span>
-          {story.isDemo ? DEMO_TIME : STORY_UPDATED}{" "}
-          <time dateTime={absolute.dateTime}>{time}</time>
+          {STORY_UPDATED} <time dateTime={absolute.dateTime}>{time}</time>
         </span>
       </div>
     </article>
@@ -127,7 +118,7 @@ function ResultList({ stories, now }: { stories: readonly SearchResultStory[]; n
 
 /**
  * 검색 화면(#126). 질의는 `?q=`로 공유되고, 실행 경로 `POST /api/search`는 같은 출처 브라우저 요청만 받는다.
- * 데모 결과는 라이브 순위와 섞지 않고 별도 구획에 둔다(스펙 "화면과 경험").
+ * 공개 결과에는 실제 발행 사건만 표시한다.
  */
 export function SearchScreen({
   initialQuery,
@@ -179,7 +170,6 @@ export function SearchScreen({
   }
 
   const live = outcome.kind === "ok" ? outcome.stories.filter((story) => !story.isDemo) : [];
-  const demo = outcome.kind === "ok" ? outcome.stories.filter((story) => story.isDemo) : [];
 
   return (
     <main id="main-content" tabIndex={-1} className="editorial-page search-page">
@@ -222,9 +212,7 @@ export function SearchScreen({
           <div id="search-feedback" aria-live="polite" className="flex flex-col gap-3">
             {outcome.kind === "loading" && <p className="text-meta">{SEARCHING}</p>}
             {outcome.kind === "ok" && (
-              <p className="text-meta text-muted-foreground">
-                {resultCount(live.length, demo.length)}
-              </p>
+              <p className="text-meta text-muted-foreground">{resultCount(live.length)}</p>
             )}
             {outcome.kind === "rate-limited" && (
               <Alert data-search-state="rate-limited">
@@ -263,33 +251,22 @@ export function SearchScreen({
       </search>
       {outcome.kind === "idle" && <p className="text-muted-foreground">{SEARCH_PROMPT}</p>}
       {outcome.kind === "ok" && (
-        <>
-          <section aria-labelledby="search-results" className="flex flex-col gap-4">
-            <h2 id="search-results">{SEARCH_RESULTS}</h2>
-            {live.length === 0 ? (
-              <Empty>
-                <EmptyHeader>
-                  <EmptyTitle>{NO_RESULTS}</EmptyTitle>
-                  <EmptyDescription>{NO_RESULTS_HINT}</EmptyDescription>
-                </EmptyHeader>
-                <EmptyContent>
-                  <a href={demo.length > 0 ? "#search-demo-results" : "/#demo-stories"}>
-                    {VIEW_DEMO}
-                  </a>
-                </EmptyContent>
-              </Empty>
-            ) : (
-              <ResultList stories={live} now={now} />
-            )}
-          </section>
-          {demo.length > 0 && (
-            <section aria-labelledby="search-demo-results" className="flex flex-col gap-4">
-              <h2 id="search-demo-results">{SEARCH_DEMO_RESULTS}</h2>
-              <p className="text-meta text-muted-foreground">{DEMO_NOTICE}</p>
-              <ResultList stories={demo} now={now} />
-            </section>
+        <section aria-labelledby="search-results" className="flex flex-col gap-4">
+          <h2 id="search-results">{SEARCH_RESULTS}</h2>
+          {live.length === 0 ? (
+            <Empty>
+              <EmptyHeader>
+                <EmptyTitle>{NO_RESULTS}</EmptyTitle>
+                <EmptyDescription>{NO_RESULTS_HINT}</EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <a href="/">{GO_TODAY}</a>
+              </EmptyContent>
+            </Empty>
+          ) : (
+            <ResultList stories={live} now={now} />
           )}
-        </>
+        </section>
       )}
     </main>
   );

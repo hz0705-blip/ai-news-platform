@@ -83,6 +83,7 @@ jobs:
       DATABASE_MIGRATION_URL: postgresql://ci:ci-${{ github.run_id }}@localhost:5432/newsplatform_ci
       DATABASE_TEST_URL: postgresql://ci:ci-${{ github.run_id }}@localhost:5432/newsplatform_ci
       DATABASE_URL: postgresql://ci:ci-${{ github.run_id }}@localhost:5432/newsplatform_ci
+      DATABASE_E2E_URL: postgresql://ci:ci-${{ github.run_id }}@localhost:5432/newsplatform_ci
       # 소개의 정정·삭제 요청 메일(#127). 정적 페이지라 빌드 때 들어간다. 가짜 값이며 실제 주소를 쓰지 않는다.
       CONTACT_EMAIL: contact@example.com
     steps:
@@ -106,6 +107,8 @@ jobs:
       # 실 DB 테스트는 테이블을 비우므로 적재는 그 뒤에 한다.
       - name: 데모 사건 적재
         run: pnpm --filter @newstrail/worker demo:load
+      - name: 공개 경로 검사용 로컬 사건 적재
+        run: pnpm --filter @newstrail/web exec node e2e/seed.ts
       # E2E 인증(#104): 고정 버전 CLI(루트 devDependency)로 로컬 Supabase Auth를 띄운다(supabase/config.toml, 이메일·비밀번호만).
       # 앱 데이터는 위 서비스 컨테이너에 그대로 두고 CLI 스택은 Auth에만 쓴다. 키는 CLI 고정 로컬 값이며 시크릿이 아니다.
       # NEXT_PUBLIC_*는 빌드에 들어가므로 빌드 전에 잡 환경에 싣는다.

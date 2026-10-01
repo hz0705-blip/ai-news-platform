@@ -6,9 +6,8 @@ export const SEARCH_HINT = "발행된 사건의 제목과 주장에서 뜻이 �
 export const SEARCH_PROMPT = "찾고 싶은 사건을 한국어로 입력하세요.";
 export const SEARCHING = "검색 중…";
 export const SEARCH_RESULTS = "검색 결과";
-export const SEARCH_DEMO_RESULTS = "데모 사건 결과";
 export const NO_RESULTS = "검색 결과가 없습니다";
-export const NO_RESULTS_HINT = "다른 검색어로 찾거나 데모 사건을 둘러보세요.";
+export const NO_RESULTS_HINT = "다른 검색어로 찾거나 오늘의 사건을 둘러보세요.";
 export const NEAREST_CLAIMS = "가까운 주장";
 export const SEARCH_FAILED = "검색하지 못했습니다";
 export const SEARCH_FAILED_DETAIL = "잠시 뒤 같은 검색어로 다시 시도하세요.";
@@ -20,8 +19,7 @@ export const SEARCH_LIMIT_DETAIL =
 export const INVALID_QUERY = "검색어는 200자 이하로 입력하세요.";
 export const GO_TODAY = "오늘로 가기";
 
-export const resultCount = (live: number, demo: number) =>
-  demo === 0 ? `검색 결과 사건 ${live}건` : `검색 결과 사건 ${live}건, 데모 사건 ${demo}건`;
+export const resultCount = (count: number) => `검색 결과 사건 ${count}건`;
 
 /** `Retry-After`(초)를 사람이 읽는 문구로. 모르면 시간을 말하지 않는다. */
 export function retryAfterText(seconds: number | null): string {

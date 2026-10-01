@@ -25,13 +25,7 @@ const demo = story(99, {
   updatedAt: new Date("2026-09-17T00:30:00Z"),
 });
 const show = (stories: TodayStoryCard[] = []) =>
-  render(
-    <TodayScreen
-      live={{ stories, lastUpdated: stories[0]?.updatedAt ?? null }}
-      demo={{ stories: [demo], lastUpdated: demo.updatedAt }}
-      now={now}
-    />,
-  );
+  render(<TodayScreen live={{ stories, lastUpdated: stories[0]?.updatedAt ?? null }} now={now} />);
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
@@ -52,48 +46,34 @@ describe("오늘", () => {
     vi.setSystemTime(now);
     const props = {
       live: { stories: [story(1)], lastUpdated: story(1).updatedAt },
-      demo: { stories: [], lastUpdated: null },
     };
     const server = renderToString(<TodayScreen {...props} />);
     expect(server).toContain("2026. 9. 23. 오전 11:30 KST");
     expect(server).not.toContain("30분 전");
     const { container } = render(<TodayScreen {...props} />);
-    expect(screen.getByText("30분 전")).toBeDefined();
+    expect(screen.getAllByText("30분 전")[0]).toBeDefined();
     act(() => vi.advanceTimersByTime(60_000));
-    expect(screen.getByText("31분 전")).toBeDefined();
+    expect(screen.getAllByText("31분 전")[0]).toBeDefined();
     expect(container.querySelector("[aria-live]")).toBeNull();
   });
-  it("데모 배열 전체를 별도 구획에 유지한다", () => {
-    render(
-      <TodayScreen
-        live={{ stories: [], lastUpdated: null }}
-        demo={{ stories: [demo, story(100, { isDemo: true })], lastUpdated: demo.updatedAt }}
-        now={now}
-      />,
+  it("가상 사건을 제외하고 여러 출처의 최신 사건 최대 4개를 보인다", () => {
+    show([demo, ...Array.from({ length: 6 }, (_, n) => story(n)), story(8, { sourceCount: 1 })]);
+    expect(screen.queryByText("고정 데모")).toBeNull();
+    const multi = within(screen.getByRole("region", { name: "여러 출처로 읽는 사건" }));
+    expect(multi.getAllByRole("article")).toHaveLength(4);
+    expect(multi.getAllByRole("link").map((link) => link.textContent)).toEqual(
+      Array.from({ length: 4 }, (_, n) => `사건 제목 ${n}`),
     );
-    expect(
-      within(screen.getByRole("region", { name: "데모 사건" })).getAllByRole("article"),
-    ).toHaveLength(2);
   });
-  it("미발행 시각을 발명하지 않고 예정과 별도 데모를 보인다", () => {
+  it("미발행 시각이나 대체 기사를 발명하지 않고 검색 진입점을 보인다", () => {
     show();
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("오늘의 지면");
     expect(screen.getByText("마지막 갱신 — 아직 발행된 사건이 없습니다")).toBeDefined();
-    expect(screen.getAllByText("매일 오전 6시·오후 6시 갱신 예정")).toHaveLength(2);
+    expect(screen.queryByRole("region", { name: "여러 출처로 읽는 사건" })).toBeNull();
     expect(
-      within(screen.getByRole("group", { name: "토픽" })).getAllByRole("button", {
-        name: /사건 0건$/,
-      }),
-    ).toHaveLength(4);
-    expect(screen.getByRole("link", { name: "데모 사건 보기" }).getAttribute("href")).toBe(
-      "#demo-stories",
-    );
-    expect(
-      within(screen.getByRole("region", { name: "최신 사건" })).queryByText("고정 데모"),
-    ).toBeNull();
-    expect(
-      within(screen.getByRole("region", { name: "데모 사건" })).getByText("고정 데모"),
-    ).toBeDefined();
+      within(screen.getByRole("region", { name: "최신 사건" }))
+        .getByRole("link", { name: "사건 검색" })
+        .getAttribute("href"),
+    ).toBe("/search");
   });
   it("토픽 순서·수를 보이고 선택과 해제 및 0건 필터를 지원한다", () => {
     show([
@@ -135,7 +115,6 @@ describe("오늘", () => {
           ],
           lastUpdated: now,
         }}
-        demo={{ stories: [story(99, { isDemo: true, status: "보도 상충" })], lastUpdated: now }}
         now={now}
       />,
     );
@@ -192,11 +171,6 @@ describe("오늘", () => {
     expect(latest.getByRole("link", { name: "사건 제목 1" }).getAttribute("href")).toBe(
       "/story/story-1",
     );
-    const demos = within(screen.getByRole("region", { name: "데모 사건" }));
-    expect(demos.getByText("기능 설명을 위해 만든 데모 사건입니다.")).toBeDefined();
-    expect(demos.getByText("2026. 9. 17. 오전 9:30 KST").getAttribute("datetime")).toBe(
-      "2026-09-17T00:30:00.000Z",
-    );
-    expect(demos.getByText(/데모 기준 시각/)).toBeDefined();
+    expect(screen.queryByText("데모 기준 시각")).toBeNull();
   });
 });

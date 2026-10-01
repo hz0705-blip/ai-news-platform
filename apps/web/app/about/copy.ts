@@ -25,7 +25,7 @@ export const GDELT_CREDIT = "링크만 등급 출처 데이터 제공:";
 export const GDELT_LINK = "The GDELT Project";
 export const GDELT_URL = "https://www.gdeltproject.org/";
 export const DEMO_SOURCE =
-  "데모 사건은 실제 사건을 바탕으로 직접 쓴 가상 기사와 가상 출처이며, 픽스처와 그 정답은 CC-BY-4.0입니다.";
+  "제품에는 실제 기사에 근거해 발행한 사건만 표시합니다. 개발·검증용 가상 기사와 출처는 공개 사건에서 제외하며, 테스트 픽스처와 그 정답은 CC-BY-4.0입니다.";
 
 export const RETENTION_HEADING = "데이터 보존";
 export const RETENTION: readonly (readonly [string, string])[] = [

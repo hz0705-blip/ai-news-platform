@@ -8,7 +8,7 @@ if (authEnv() === null && process.env.CI) {
 }
 test.skip(authEnv() === null, "로컬 Supabase가 꺼져 있다(pnpm exec supabase start)");
 
-const STORY_URL = "/story/demo-1-agreement";
+const STORY_URL = "/story/fixture-1-agreement";
 const KAKAOTALK_UA =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 KAKAOTALK 10.8.5";
 

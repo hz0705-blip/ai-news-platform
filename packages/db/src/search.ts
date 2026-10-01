@@ -9,7 +9,7 @@ export interface StorySearchClaim {
   readonly score: number;
 }
 
-/** 검색 결과 사건 하나(#125). 종료·데모 사건도 든다 — 화면이 `lifecycle`·`isDemo`로 배지를 붙인다. */
+/** 검색 결과 사건 하나(#125). 종료 사건도 포함하되 데모 사건은 공개 검색에서 제외한다. */
 export interface StorySearchHit {
   readonly storyId: string;
   readonly slug: string;
@@ -75,6 +75,7 @@ export async function searchStoriesByEmbedding(
       from ranked r
       join stories s on s.id = r.story_id
       join latest l on l.story_id = r.story_id
+      where s.is_demo = false
       order by r.score desc, s.id
       limit ${input.limit}
     `);

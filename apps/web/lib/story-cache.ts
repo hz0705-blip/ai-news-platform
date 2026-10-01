@@ -18,7 +18,7 @@ export async function getLatestRevisionPointer(
 ): Promise<LatestRevisionPointer | undefined> {
   "use cache";
   const data = await loadPublishedStory(getRuntimeDb().db, { slug });
-  if (data === undefined) return undefined;
+  if (data === undefined || data.story.isDemo) return undefined;
   cacheTag(`story:${data.story.id}:latest`);
   return { storyId: data.story.id, revisionId: data.revision.id };
 }
@@ -37,6 +37,6 @@ export async function getStoryRevisionView(
   "use cache";
   cacheTag(`story:${storyId}:rev:${revisionId}:${language}:v${displayPolicyVersion}`);
   const data = await loadPublishedStory(getRuntimeDb().db, { slug, revisionId });
-  if (data === undefined || data.story.id !== storyId) return undefined;
+  if (data === undefined || data.story.isDemo || data.story.id !== storyId) return undefined;
   return buildStoryView(data);
 }

@@ -79,33 +79,30 @@ describe("검색 화면", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("데모·라이브가 섞인 응답을 두 목록으로 나눈다", async () => {
+  it("데모·라이브가 섞인 응답에서도 데모는 노출하지 않는다", async () => {
     fetchMock.mockResolvedValue(json({ state: "ok", stories: [live(1), demo, live(2)] }));
     render(<SearchScreen initialQuery="" now={now} />);
     submit("합의");
-    await screen.findByRole("region", { name: "데모 사건 결과" });
+    await screen.findByRole("region", { name: "검색 결과" });
     expect(
       within(liveRegion())
         .getAllByRole("heading", { level: 3 })
         .map((h) => h.textContent),
     ).toEqual(["라이브 사건 1", "라이브 사건 2"]);
     expect(within(liveRegion()).queryByText("데모 사건")).toBeNull();
-    const demos = screen.getByRole("region", { name: "데모 사건 결과" });
-    expect(within(demos).getByRole("link", { name: "데모 합의 사건" })).toBeDefined();
-    expect(within(demos).getByText("데모 사건")).toBeDefined();
-    // 데모는 고정 기준 시각이라 절대 시각.
-    expect(within(demos).getByText("2026. 9. 17. 오전 9:30 KST")).toBeDefined();
-    expect(screen.getByText("검색 결과 사건 2건, 데모 사건 1건")).toBeDefined();
+    expect(screen.queryByRole("region", { name: "데모 사건 결과" })).toBeNull();
+    expect(screen.queryByText("데모 합의 사건")).toBeNull();
+    expect(screen.getByText("검색 결과 사건 2건")).toBeDefined();
   });
 
-  it("결과 0건이면 데모 링크를 보인다", async () => {
+  it("결과 0건이면 오늘 링크를 보인다", async () => {
     fetchMock.mockResolvedValue(json({ state: "ok", stories: [] }));
     render(<SearchScreen initialQuery="" now={now} />);
     submit("없는 사건");
     expect(within(await findLive()).getByText("검색 결과가 없습니다")).toBeDefined();
     expect(
-      within(liveRegion()).getByRole("link", { name: "데모 사건 보기" }).getAttribute("href"),
-    ).toBe("/#demo-stories");
+      within(liveRegion()).getByRole("link", { name: "오늘로 가기" }).getAttribute("href"),
+    ).toBe("/");
   });
 
   it("429면 Retry-After를 사람이 읽는 문구로 보인다", async () => {

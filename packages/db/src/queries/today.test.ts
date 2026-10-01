@@ -98,14 +98,14 @@ maybe("loadPublishedToday", () => {
   it("대표 이미지는 발행 시각이 가장 이른 이미지 있는 기사의 것이다", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {
-      await publishFixture(db, fixture);
+      await publishFixture(db, { ...fixture, story: { ...fixture.story, isDemo: false } });
       const images = async () => {
         await followStory(db, {
           userId: "00000000-0000-4000-8000-00000000000a",
           slug: fixture.story.slug,
         });
         return [
-          (await loadPublishedToday(db, { isDemo: true })).stories[0]?.image,
+          (await loadPublishedToday(db, { isDemo: false })).stories[0]?.image,
           (await loadPublishedStory(db, { slug: fixture.story.slug }))?.image,
           (await loadFollowFeed(db, { userId: "00000000-0000-4000-8000-00000000000a" }))[0]?.image,
         ];

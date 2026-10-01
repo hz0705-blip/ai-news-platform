@@ -159,23 +159,20 @@ maybe("팔로우와 마지막으로 본 개정판", () => {
       await seedStory(db, "topic-demo", { isDemo: true, topics: ["기술·AI"] });
       await seedStory(db, "topic-closed", { lifecycle: "종료", topics: ["기술·AI"] });
       await seedStory(db, "other-topic", { topics: ["한국 관련 해외 보도"] });
-      await followStory(db, { userId: A, slug: "followed-demo" });
+      // 기존에 저장된 데모 팔로우도 공개 피드에 노출하지 않는다.
+      await db.insert(storyFollows).values({ user_id: A, story_id: "story-followed-demo" });
+      expect(await followStory(db, { userId: B, slug: "followed-demo" })).toBe(false);
       await followTopic(db, { userId: A, topic: "기술·AI" });
-      await recordStoryVisit(db, {
-        userId: A,
-        slug: "followed-demo",
-        revisionId: "followed-demo:rev-1",
-      });
+      expect(
+        await recordStoryVisit(db, {
+          userId: A,
+          slug: "followed-demo",
+          revisionId: "followed-demo:rev-1",
+        }),
+      ).toBeUndefined();
 
       const feed = await loadFollowFeed(db, { userId: A });
-      expect(feed.map((card) => card.slug).sort()).toEqual(["followed-demo", "topic-live"]);
-      expect(feed.find((card) => card.slug === "followed-demo")).toMatchObject({
-        title: "followed-demo 개정판 2",
-        isDemo: true,
-        followsStory: true,
-        latestRevisionNumber: 2,
-        lastSeenRevisionNumber: 1,
-      });
+      expect(feed.map((card) => card.slug).sort()).toEqual(["topic-live"]);
       expect(feed.find((card) => card.slug === "topic-live")).toMatchObject({
         isDemo: false,
         followsStory: false,

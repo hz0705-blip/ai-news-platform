@@ -2,14 +2,13 @@ import { expect, type Page, test } from "@playwright/test";
 import type { SearchResponse } from "../lib/search/api.ts";
 import { expectNoAxeViolations } from "./axe.ts";
 
-// 검색 화면(#126). 실행 경로는 실제 OpenAI를 부르지 않도록 스텁한다. 결과 사건은 demo:load가 적재한 데모 사건이라
-// 링크를 따라가면 실제 사건 페이지가 열린다. 라이브 결과 하나는 데모와 다른 구획에 놓이는지만 본다.
+// 검색 API만 스텁한다. 전용 로컬 fixture 경로를 열고 오래된 데모 응답도 화면에서 차단한다.
 const QUERY = "합의 이행";
 const RESPONSE: SearchResponse = {
   state: "ok",
   stories: [
     {
-      slug: "live-search-only",
+      slug: "fixture-1-agreement",
       title: "라이브 검색 결과",
       updatedAt: new Date(Date.now() - 2 * 3_600_000).toISOString(),
       isDemo: false,
@@ -47,12 +46,12 @@ test("오늘에서 검색으로 가 한국어 질의로 사건을 연다", async
   const demos = page.getByRole("region", { name: "데모 사건 결과" });
   await expect(live.getByRole("link")).toHaveText(["라이브 검색 결과"]);
   await expect(live.getByText("2시간 전")).toBeVisible();
-  await expect(demos.getByText("데모 사건", { exact: true })).toBeVisible();
-  await expect(demos.getByText("데모 주장 문장.")).toBeVisible();
+  await expect(demos).toHaveCount(0);
+  await expect(page.getByText("데모 주장 문장.")).toHaveCount(0);
   expect(queries).toEqual([QUERY]);
   expect(new URL(page.url()).searchParams.get("q")).toBe(QUERY);
-  await demos.getByRole("link", { name: "데모 합의 사건" }).click();
-  await expect(page).toHaveURL(/\/story\/demo-1-agreement$/);
+  await live.getByRole("link", { name: "라이브 검색 결과" }).click();
+  await expect(page).toHaveURL(/\/story\/fixture-1-agreement$/);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 });
 
@@ -63,7 +62,7 @@ test.describe("모바일 라이트", () => {
     // 공유 주소 `?q=`로 들어오면 바로 검색한다.
     await page.goto(`/search?q=${encodeURIComponent(QUERY)}`);
     await expect(page.getByRole("searchbox", { name: "검색어" })).toHaveValue(QUERY);
-    await expect(page.getByRole("region", { name: "데모 사건 결과" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "검색 결과", exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await expectNoAxeViolations(page, testInfo, "search");
   });

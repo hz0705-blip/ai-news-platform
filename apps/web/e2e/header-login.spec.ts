@@ -2,7 +2,7 @@ import { authEnv, expect, test } from "./auth.ts";
 import { expectNoAxeViolations } from "./axe.ts";
 
 // 모든 화면 우측 상단 계정 진입점(#155, 스펙 "계정"). 로그인 상태 경우만 로컬 Supabase가 필요하다.
-const STORY_URL = "/story/demo-1-agreement";
+const STORY_URL = "/story/fixture-1-agreement";
 const PAGES = ["/", STORY_URL, "/search", "/about"];
 
 for (const path of PAGES) {

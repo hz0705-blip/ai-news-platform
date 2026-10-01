@@ -44,8 +44,8 @@ export function TodayOverview({ stories }: { stories: readonly TodayStoryCard[] 
           하나의 사건을 여러 출처로 읽습니다. 어떤 보도가 같고, 어디에서 갈리는지 직접 확인하세요.
         </p>
         <p className="today-reading-route">사건 → 주장 → 근거 → 원문</p>
-        <a href="#demo-stories" className="today-rail-link">
-          데모 사건으로 살펴보기 <span aria-hidden="true">↗</span>
+        <a href="#latest-stories" className="today-rail-link">
+          최신 사건 살펴보기 <span aria-hidden="true">↗</span>
         </a>
         <Link href="/about" className="today-rail-link">
           Newstrail의 원칙 <span aria-hidden="true">↗</span>

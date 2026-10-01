@@ -4,7 +4,7 @@ import { expectNoAxeViolations } from "./axe.ts";
 import { DESKTOP_MIN, evidenceOf } from "./evidence.ts";
 import { expectReflow, measureReflow } from "./reflow.ts";
 
-const STORY_URL = "/story/demo-2-conflict";
+const STORY_URL = "/story/fixture-2-conflict";
 const VIEWPORTS = [
   { name: "모바일 320px", width: 320, height: 800 },
   { name: "데스크톱 1280px", width: 1280, height: 900 },

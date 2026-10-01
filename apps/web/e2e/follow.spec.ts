@@ -7,12 +7,12 @@ if (authEnv() === null && process.env.CI) {
 }
 test.skip(authEnv() === null, "로컬 Supabase가 꺼져 있다(pnpm exec supabase start)");
 
-// 데모 ③은 개정판이 둘이다(demo:load). 개정판 1 고정 URL에서 팔로우하면 마지막으로 본 개정판이 1이 된다.
-const SLUG = "demo-3-correction";
+// 전용 E2E 복제본 ③은 개정판이 둘이다(e2e/seed.ts). 개정판 1 고정 URL에서 팔로우하면 마지막으로 본 개정판이 1이 된다.
+const SLUG = "fixture-3-correction";
 const LATEST = `/story/${SLUG}`;
 const REVISION_1 = `${LATEST}/revision/${encodeURIComponent(`${SLUG}:rev-1`)}`;
 
-test("M4 인수: 익명으로 데모 사건 팔로우 → 로그인 → 팔로우됨 → 재방문 시 읽은 이후 변화와 내가 본 지점 → 팔로우 화면", async ({
+test("M4 인수: 익명으로 사건 팔로우 → 로그인 → 팔로우됨 → 재방문 시 읽은 이후 변화와 내가 본 지점 → 팔로우 화면", async ({
   page,
   makeUser,
   signIn,
@@ -33,16 +33,14 @@ test("M4 인수: 익명으로 데모 사건 팔로우 → 로그인 → 팔로�
   await expect(follow).toHaveAttribute("aria-pressed", "true");
   expect(new URL(page.url()).search).toBe("");
 
-  // 팔로우 화면: 개정판 1까지 읽었고 최신은 개정판 2라 변화 있음. 데모 사건은 라이브와 따로 모인다.
+  // 팔로우 화면: 개정판 1까지 읽었고 최신은 개정판 2라 변화 있음. 데모 사건은 노출하지 않는다.
   await page.goto("/follows");
   const card = page
-    .getByRole("region", { name: "데모 사건" })
+    .getByRole("region", { name: "팔로우한 사건" })
     .getByRole("listitem")
     .filter({ has: page.locator(`a[href="${LATEST}"]`) });
   await expect(card.getByText("읽은 이후 변화 있음")).toBeVisible();
-  await expect(page.getByRole("region", { name: "팔로우한 사건" })).toContainText(
-    "아직 팔로우한 사건이 없습니다",
-  );
+  await expect(page.getByRole("region", { name: "데모 사건", exact: true })).toHaveCount(0);
   await expectNoAxeViolations(page, testInfo, "follows");
 
   // 재방문(최신 개정판): 변화 구획의 읽은 이후 변화와 개정판 띠의 내가 본 지점.
@@ -79,7 +77,7 @@ test("팔로우 해제와 토픽 팔로우, 익명의 팔로우 화면은 로그
 
   const context = await openAs(await makeUser("toggle"));
   const signedIn = await context.newPage();
-  await signedIn.goto("/story/demo-1-agreement");
+  await signedIn.goto("/story/fixture-1-agreement");
   const follow = signedIn.getByRole("button", { name: "팔로우" });
   await expect(follow).toHaveAttribute("aria-pressed", "false");
   await follow.click();
@@ -90,7 +88,9 @@ test("팔로우 해제와 토픽 팔로우, 익명의 팔로우 화면은 로그
   const response = await signedIn.goto("/follows");
   expect(response?.headers()["cache-control"]).toMatch(/no-store/);
   await expect(signedIn.getByText("아직 팔로우한 사건이 없습니다")).toBeVisible();
-  await expect(signedIn.getByRole("region", { name: "데모 사건" })).toHaveCount(0);
+  await expect(
+    signedIn.getByRole("region", { name: "팔로우한 사건" }).getByRole("article"),
+  ).toHaveCount(0);
   const topic = signedIn.getByRole("button", { name: "기술·AI" });
   await expect(topic).toHaveAttribute("aria-pressed", "false");
   await topic.click();
