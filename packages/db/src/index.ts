@@ -82,7 +82,11 @@ export {
 } from "./publish.ts";
 export type { LeadImage } from "./queries/lead-image.ts";
 export { loadLatestRevision, loadRevisionChanges } from "./queries/revision.ts";
-export { loadPublishedStory, type StoryPageData } from "./queries/story.ts";
+export {
+  loadPublishedStory,
+  publishedStoryExists,
+  type StoryPageData,
+} from "./queries/story.ts";
 export { loadPublishedToday, type TodayData, type TodayStoryCard } from "./queries/today.ts";
 export {
   addGnewsRequests,

@@ -33,14 +33,18 @@ test("깨진 사건·개정판 URL은 서버 오류 대신 한국어 400 안내�
 });
 
 test("정상 인코딩의 없는 사건은 기존 찾기 안내를 유지한다", async ({ page, request }) => {
-  const response = await request.get("/story/missing-error-regression");
-  // Next는 스트리밍을 시작한 뒤 notFound()에 도달하면 HTTP 200과 noindex를 보낸다.
-  expect([200, 404]).toContain(response.status());
-  expect(response.headers()["set-cookie"]).toBeUndefined();
-  expect(await response.text()).toContain('content="noindex"');
-  await page.goto("/story/missing-error-regression");
-  await expect(page.getByRole("heading", { name: "페이지를 찾을 수 없습니다" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "오늘의 사건으로" })).toBeVisible();
+  for (const path of [
+    "/story/missing-error-regression",
+    "/story/fixture-1-agreement/revision/no-such-rev",
+  ]) {
+    const response = await request.get(path);
+    expect(response.status(), path).toBe(404);
+    expect(response.headers()["set-cookie"]).toBeUndefined();
+    expect(await response.text()).toContain('content="noindex"');
+    expect((await page.goto(path))?.status()).toBe(404);
+    await expect(page.getByRole("heading", { name: "페이지를 찾을 수 없습니다" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "오늘의 사건으로" })).toBeVisible();
+  }
 });
 
 test("깨진 공유 이미지 경로는 단일·이중 인코딩 모두 안전 PNG를 반환한다", async ({ request }) => {

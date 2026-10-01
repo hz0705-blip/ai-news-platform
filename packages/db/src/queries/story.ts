@@ -249,3 +249,27 @@ export async function loadPublishedStory(
     })),
   };
 }
+
+/**
+ * 사건 URL·개정판 고정 URL의 존재 확인. `apps/web/proxy.ts`가 응답이 흐르기 전에 404 상태를 정하려고 부른다.
+ * 페이지 조회(`loadPublishedStory` + 데모 제외)와 같은 조건 — slug의 사건이 데모가 아니고 개정판이 있다
+ * (`revisionId`를 주면 그 사건의 그 개정판). 행 하나만 읽는다.
+ */
+export async function publishedStoryExists(
+  db: RuntimeDb["db"],
+  params: { readonly slug: string; readonly revisionId?: string },
+): Promise<boolean> {
+  const rows = await db
+    .select({ id: storyRevisions.id })
+    .from(stories)
+    .innerJoin(storyRevisions, eq(storyRevisions.story_id, stories.id))
+    .where(
+      and(
+        eq(stories.slug, params.slug),
+        eq(stories.is_demo, false),
+        params.revisionId === undefined ? undefined : eq(storyRevisions.id, params.revisionId),
+      ),
+    )
+    .limit(1);
+  return rows.length > 0;
+}
