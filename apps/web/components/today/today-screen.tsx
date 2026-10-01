@@ -19,6 +19,7 @@ import {
 import { Button } from "../ui/button.tsx";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "../ui/empty.tsx";
 import { EditorialCard, EditorialSectionHeading } from "./editorial-card.tsx";
+import { FollowChangesNotice } from "./follow-changes-notice.tsx";
 import { TodayHeader } from "./today-header.tsx";
 import { TodayOverview } from "./today-overview.tsx";
 
@@ -48,7 +49,7 @@ export function TodayScreen({ live, now: fixedNow }: { live: TodayData; now?: Da
   }
   return (
     <main className="today-page" id="main-content" tabIndex={-1}>
-      <TodayHeader lastUpdated={live.lastUpdated} />
+      <TodayHeader lastUpdated={live.lastUpdated} notice={<FollowChangesNotice />} />
       <div className="today-toolbar">
         <div className="today-topic-controls">
           <button

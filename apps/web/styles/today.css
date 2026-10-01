@@ -37,6 +37,20 @@
   align-self: flex-start;
   margin-top: 0.25rem;
 }
+/* 로그인 독자의 팔로우 변화 안내 자리(#208). 하이드레이션 뒤 채워지므로 메타 한 줄(+아래 여백, border-box)을 미리 비워
+   머리가 밀리지 않게 하고, 위 여백은 .today-intro의 아래 패딩을 나눠 쓴다. */
+.today-notice {
+  min-height: calc(var(--font-size-meta) * 1.5 + 0.5rem);
+  margin-top: -0.5rem;
+  padding-bottom: 0.5rem;
+  font-size: var(--font-size-meta);
+  line-height: 1.5;
+}
+.today-follow-changes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+}
 .today-toolbar {
   display: flex;
   flex-wrap: wrap;
