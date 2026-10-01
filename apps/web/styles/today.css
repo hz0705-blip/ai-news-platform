@@ -290,40 +290,6 @@
   font-size: var(--font-size-meta);
   color: var(--muted-foreground);
 }
-.today-illustration {
-  position: relative;
-  overflow: hidden;
-  width: 100%;
-  aspect-ratio: 2.5;
-  border-radius: 4px;
-  background: #171521;
-}
-.today-illustration :where(img) {
-  object-fit: cover;
-  object-position: center 52%;
-}
-.today-image-label,
-.today-image-caption {
-  position: absolute;
-  max-width: calc(100% - 1rem);
-  border-radius: 3px;
-  background: #171521;
-  color: #f8f5fc;
-  font-size: var(--font-size-meta);
-  line-height: 1.5;
-  padding: 0.25rem 0.5rem;
-}
-.today-image-label {
-  top: 0.5rem;
-  left: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.today-image-caption {
-  bottom: 0.5rem;
-  right: 0.5rem;
-}
 .today-demos {
   --font-size-meta: 0.8125rem;
   --font-size-card-title: 1.0625rem;
@@ -534,9 +500,6 @@
   }
   .today-topic-controls {
     width: 100%;
-  }
-  .today-illustration {
-    aspect-ratio: 1.75;
   }
 }
 @media (prefers-reduced-motion: no-preference) {
