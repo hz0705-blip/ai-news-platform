@@ -128,7 +128,6 @@ export function SearchScreen({
   now?: Date;
 }) {
   const [query, setQuery] = useState(initialQuery);
-  const [submitted, setSubmitted] = useState(initialQuery.trim());
   const [outcome, setOutcome] = useState<Outcome>({ kind: "idle" });
   const [clock, setClock] = useState<Date | null>(null);
   const latest = useRef(0);
@@ -143,7 +142,6 @@ export function SearchScreen({
 
   async function search(raw: string) {
     const trimmed = raw.trim();
-    setSubmitted(trimmed);
     const request = ++latest.current;
     if (trimmed === "") {
       setOutcome({ kind: "idle" });
@@ -240,7 +238,8 @@ export function SearchScreen({
                 <AlertTitle>{SEARCH_FAILED}</AlertTitle>
                 <AlertDescription>{SEARCH_FAILED_DETAIL}</AlertDescription>
                 <div className="col-start-2 pt-2">
-                  <Button type="button" variant="outline" onClick={() => void search(submitted)}>
+                  {/* 제출과 같은 동작: 입력란의 현재 값으로 다시 검색한다. */}
+                  <Button type="submit" variant="outline">
                     {RETRY}
                   </Button>
                 </div>
