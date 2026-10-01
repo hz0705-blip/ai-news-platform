@@ -50,7 +50,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (pathname === "/story" || pathname.startsWith("/story/")) {
     if (await storyExists(request.nextUrl.pathname)) return NextResponse.next();
     // 어느 페이지에도 맞지 않는 내부 경로로 옮겨 루트 not-found 화면(noindex)을 404 상태로 그린다.
-    return NextResponse.rewrite(new URL("/_not-found", request.url), { status: 404 });
+    // `/_not-found` 자체는 Vercel에서 실제 프리렌더 라우트로 매칭돼 noindex가 빠진다.
+    return NextResponse.rewrite(new URL("/_not-found/story", request.url), { status: 404 });
   }
 
   const { client, respond } = routeAuthClient(request);

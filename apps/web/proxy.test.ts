@@ -84,7 +84,7 @@ describe("페이지 URL 검증과 개인 경로 세션 갱신", () => {
     const response = await proxy(new NextRequest(`https://web.test${path}`));
     expect(publishedStoryExists).toHaveBeenCalledWith("runtime-db", params);
     expect(response.status).toBe(404);
-    expect(response.headers.get("x-middleware-rewrite")).toBe("https://web.test/_not-found");
+    expect(response.headers.get("x-middleware-rewrite")).toBe("https://web.test/_not-found/story");
     expect(response.headers.get("set-cookie")).toBeNull();
     expect(routeAuthClient).not.toHaveBeenCalled();
   });
