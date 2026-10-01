@@ -29,7 +29,8 @@ test("타이포 유틸은 64rem 경계에서 모바일·데스크톱 크기로 �
     await page.setViewportSize({ width, height: 900 });
     const desktop = width >= 1024;
     await check(page.getByRole("button")).toHaveCSS("font-size", desktop ? "18px" : "17px");
-    await check(page.locator(".text-body")).toHaveCSS("font-size", desktop ? "18px" : "17px");
+    // Button도 이제 text-body를 유지하므로(cn 수정) 유틸 검사는 <p>로 좁힌다.
+    await check(page.locator("p.text-body")).toHaveCSS("font-size", desktop ? "18px" : "17px");
     await check(page.locator(".text-card-title")).toHaveCSS("font-size", desktop ? "21px" : "19px");
     await check(page.locator(".text-section")).toHaveCSS("font-size", desktop ? "24px" : "20px");
     await check(page.locator(".text-title")).toHaveCSS("font-size", desktop ? "32px" : "26px");
