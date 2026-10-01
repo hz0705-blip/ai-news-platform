@@ -19,10 +19,10 @@ The Korean README is the primary document; this is the second reading path with 
 
 ## Five-minute reviewer path
 
-1. On the live Today page, open the demo-story section. Demo stories are hand-written fictional articles from fictional sources based on real events, and carry a badge saying so.
-2. `/story/demo-2-conflict` (simultaneous conflicting reports) — expand a claim to see its evidence span and original link, and see conflicting claims side by side.
-3. `/story/demo-3-correction` (conflict resolved by an explicit correction) · `/story/demo-4-figures` (figure update) — see changes between revisions in the change section and the revision strip.
-4. Open a live story from Today to see a source list that combines GNews evidence with GDELT link-only sources. Try a Korean query in Search.
+1. On the live Today page, open a story from the "여러 출처로 읽는 사건" section (latest stories covered by two or more sources). The product shows only stories published from real articles.
+2. Expand a claim to see its evidence span and original link; on a story with a conflict badge, see conflicting claims side by side.
+3. On a story with two or more revisions, see changes between revisions in the change section and the revision strip. Each revision has a fixed URL.
+4. In the source list, see GNews evidence articles and GDELT link-only sources attached as distinct groups. Try a Korean query in Search.
 5. Back in the repository, read the [evaluation report](docs/eval/report.md), the [ADR index](docs/adr/), and the [operations record](#operations-record) below.
 
 Following and accounts can be tried with Kakao login. Google login works only for registered test users while the OAuth app is still in "testing" status ([operations environment](docs/agents/project.md#운영-환경)).
@@ -99,7 +99,7 @@ Batch stages and order: [spec, "파이프라인"](docs/spec/v1.md#파이프라�
 - **GDELT** (GKG 2.1): link-only tier. Other outlets covering the same story are attached by title, source, URL and observation time; they are never used as evidence or as a reporting origin.
 - **Rights tiers** are per source; when the operator lowers one, the screens change immediately.
 - **Retention**: the policy is to delete article bodies 30 days after publication, keeping only evidence spans, hashes, URLs and metadata.
-- **Demo stories** use fictional articles and fictional sources and live in a separate section.
+- **Demo stories** (fictional articles and sources) are kept only as regression fixtures and are never shown in the product.
 
 Basis: [spec, "데이터 소스와 권리"](docs/spec/v1.md#데이터-소스와-권리), [ADR index](docs/adr/) (rights tiers and excerpt-only display).
 
