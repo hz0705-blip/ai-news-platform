@@ -6,6 +6,7 @@ import {
   followTopic,
   loadFollowedTopics,
   loadFollowFeed,
+  readStoryVisit,
   recordStoryVisit,
   unfollowStory,
   unfollowTopic,
@@ -100,8 +101,15 @@ maybe("팔로우와 마지막으로 본 개정판", () => {
         recordStoryVisit(db, { userId: A, slug: "s1", revisionId });
       // 본 적 없으면 이전 값은 null이고 보이는 개정판이 기록된다.
       expect(await visit("s1:rev-1")).toEqual({ previousRevisionId: null, following: false });
+      // 비교 기준을 읽다가 응답을 잃어도 아직 읽은 지점은 움직이지 않는다.
+      const readLatest = () =>
+        readStoryVisit(db, { userId: A, slug: "s1", revisionId: "s1:rev-3" });
+      expect(await readLatest()).toEqual({ previousRevisionId: "s1:rev-1", following: false });
+      expect(await readLatest()).toEqual({ previousRevisionId: "s1:rev-1", following: false });
+      // 최신은 3이어도 브라우저에 표시된 2를 기록하면 2까지만 읽은 것이다.
+      expect(await visit("s1:rev-2")).toEqual({ previousRevisionId: "s1:rev-1", following: false });
       expect(await visit("s1:rev-3")).toEqual({
-        previousRevisionId: "s1:rev-1",
+        previousRevisionId: "s1:rev-2",
         following: false,
       });
       // 옛 개정판 고정 URL을 열어도 읽은 지점은 뒤로 가지 않는다.
@@ -139,6 +147,14 @@ maybe("팔로우와 마지막으로 본 개정판", () => {
       // B의 읽기에는 A의 행이 없다.
       expect(await loadFollowFeed(db, { userId: B })).toEqual([]);
       expect(await loadFollowedTopics(db, { userId: B })).toEqual([]);
+      expect(await readStoryVisit(db, { userId: B, slug: "s1", revisionId: "s1:rev-2" })).toEqual({
+        previousRevisionId: null,
+        following: false,
+      });
+      expect(await readStoryVisit(db, { userId: A, slug: "s1", revisionId: "s1:rev-2" })).toEqual({
+        previousRevisionId: "s1:rev-2",
+        following: true,
+      });
       expect(await recordStoryVisit(db, { userId: B, slug: "s1", revisionId: "s1:rev-1" })).toEqual(
         { previousRevisionId: null, following: false },
       );

@@ -2,7 +2,7 @@
 "use client";
 
 import { Check, Eye, Plus } from "lucide-react";
-import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import {
   CHANGE_KIND_NAMES,
   changeKindCount,
@@ -12,6 +12,12 @@ import {
   SEEN_POINT,
   SINCE_LAST_SEEN_HEADING,
   sinceLastSeenIntro,
+  TRACKING_FAILED,
+  TRACKING_LOADING,
+  TRACKING_RETRY,
+  VISIT_FAILED,
+  VISIT_PENDING,
+  VISIT_RETRY,
 } from "../../app/story/copy.ts";
 import { FOLLOW_INTENT_QUERY } from "../../lib/auth/return-path.ts";
 import { changesSinceLastSeen } from "../../lib/last-seen.ts";
@@ -36,23 +42,30 @@ import { CHANGE_KIND_ICONS, KindLabel } from "./change-kind.tsx";
  * 익명이면 서버에 아무것도 묻지 않고 공개 화면 그대로다(팔로우 버튼은 로그인 게이트).
  */
 type PersonalState =
+  | { readonly status: "loading" }
+  | { readonly status: "error" }
   | { readonly status: "anonymous" }
   | {
       readonly status: "signed-in";
       readonly following: boolean;
       readonly lastSeenRevisionId: string | null;
+      readonly recordStatus: "pending" | "saved" | "error";
     };
 
 type PersonalContext = {
   readonly slug: string;
   readonly state: PersonalState;
   readonly setState: (state: PersonalState) => void;
+  readonly retryVisit: () => void;
+  readonly revisions: readonly RevisionStripItemView[];
 };
 
 const Context = createContext<PersonalContext>({
   slug: "",
   state: { status: "anonymous" },
   setState: () => undefined,
+  retryVisit: () => undefined,
+  revisions: [],
 });
 
 /**
@@ -66,48 +79,141 @@ function hasSessionCookie(): boolean {
 export function StoryPersonalProvider({
   slug,
   revisionId,
+  revisions,
   children,
 }: {
   slug: string;
   revisionId: string;
+  revisions: readonly RevisionStripItemView[];
   children: ReactNode;
 }) {
-  const [state, setState] = useState<PersonalState>({ status: "anonymous" });
+  const [state, setState] = useState<PersonalState>({ status: "loading" });
+  const retryVisit = useRef<() => void>(() => undefined);
   useEffect(() => {
     let active = true;
+    let pending = false;
     // 로그인 뒤 돌아온 주소의 하려던 팔로우는 한 번만 쓰고 주소에서 지운다.
     const url = new URL(window.location.href);
-    const follow = url.search === `?${FOLLOW_INTENT_QUERY}`;
-    if (follow) window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-    if (!hasSessionCookie()) return;
-    const body: StoryVisitRequest = { slug, revisionId, follow };
-    postPersonal<StoryVisitResponse>(STORY_VISIT_PATH, body).then(
-      (result) => {
-        if (!active || !result.signedIn) return;
-        setState({
+    const currentVisit: {
+      request: Omit<StoryVisitRequest, "phase">;
+      baseline: Extract<StoryVisitResponse, { signedIn: true }> | null;
+    } = {
+      request: { slug, revisionId, follow: url.search === `?${FOLLOW_INTENT_QUERY}` },
+      baseline: null,
+    };
+    if (!hasSessionCookie()) {
+      setState({ status: "anonymous" });
+      return;
+    }
+    async function loadAndRecord() {
+      if (pending) return;
+      pending = true;
+      try {
+        // StrictMode가 즉시 취소한 effect는 로그인 후 동작을 URL에서 소비하지 않는다.
+        await Promise.resolve();
+        if (!active) return;
+        if (currentVisit.request.follow)
+          window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+        if (currentVisit.baseline === null) {
+          setState({ status: "loading" });
+          const result = await postPersonal<StoryVisitResponse>(STORY_VISIT_PATH, {
+            ...currentVisit.request,
+            phase: "read",
+          });
+          if (!active) return;
+          if (!result.signedIn) {
+            setState({ status: "anonymous" });
+            return;
+          }
+          currentVisit.baseline = result;
+        }
+        const baseline = {
           status: "signed-in",
-          following: result.following,
-          lastSeenRevisionId: result.lastSeenRevisionId,
+          following: currentVisit.baseline.following,
+          lastSeenRevisionId: currentVisit.baseline.lastSeenRevisionId,
+        } as const;
+        setState({ ...baseline, recordStatus: "pending" });
+        const recorded = await postPersonal<StoryVisitResponse>(STORY_VISIT_PATH, {
+          ...currentVisit.request,
+          phase: "record",
         });
-      },
-      () => undefined,
-    );
+        if (!active) return;
+        if (recorded.signedIn) currentVisit.request = { ...currentVisit.request, follow: false };
+        setState(
+          recorded.signedIn
+            ? { ...baseline, following: recorded.following, recordStatus: "saved" }
+            : { status: "anonymous" },
+        );
+      } catch {
+        if (!active) return;
+        setState(
+          currentVisit.baseline === null
+            ? { status: "error" }
+            : {
+                status: "signed-in",
+                following: currentVisit.baseline.following,
+                lastSeenRevisionId: currentVisit.baseline.lastSeenRevisionId,
+                recordStatus: "error",
+              },
+        );
+      } finally {
+        pending = false;
+      }
+    }
+    retryVisit.current = () => {
+      void loadAndRecord();
+    };
+    void loadAndRecord();
     return () => {
       active = false;
+      // 재시도는 위 방문 객체를 유지하고, 실제 재방문은 새 effect에서 기준과 intent를 다시 읽는다.
+      retryVisit.current = () => undefined;
     };
   }, [slug, revisionId]);
-  return <Context value={{ slug, state, setState }}>{children}</Context>;
+  return (
+    <Context
+      value={{
+        slug,
+        state,
+        setState,
+        revisions,
+        retryVisit: () => retryVisit.current(),
+      }}
+    >
+      {children}
+    </Context>
+  );
 }
 
 /** 사건 머리의 팔로우: 익명이면 로그인 게이트(돌아와 팔로우를 마친다), 로그인이면 켜고 끄는 토글 버튼(`aria-pressed`). */
 export function FollowControl() {
-  const { slug, state, setState } = useContext(Context);
+  const { slug, state, setState, retryVisit, revisions } = useContext(Context);
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
-  if (state.status !== "signed-in") return <LoginGate label={FOLLOW} intent="follow" />;
+  if (state.status === "anonymous") return <LoginGate label={FOLLOW} intent="follow" />;
+  if (state.status === "loading" || state.status === "error") {
+    return (
+      <>
+        <Button disabled variant="outline">
+          {FOLLOW}
+        </Button>
+        <span
+          role="status"
+          className={state.status === "loading" ? "sr-only" : "self-center text-meta"}
+        >
+          {state.status === "loading" ? TRACKING_LOADING : TRACKING_FAILED}
+        </span>
+        {state.status === "error" ? (
+          <Button variant="outline" onClick={retryVisit}>
+            {TRACKING_RETRY}
+          </Button>
+        ) : null}
+      </>
+    );
+  }
 
   async function toggle() {
-    if (pending || state.status !== "signed-in") return;
+    if (pending || state.status !== "signed-in" || state.recordStatus !== "saved") return;
     setPending(true);
     setFailed(false);
     try {
@@ -127,18 +233,58 @@ export function FollowControl() {
     <>
       <Button
         aria-pressed={state.following}
-        aria-disabled={pending ? "true" : undefined}
+        aria-disabled={pending || state.recordStatus !== "saved" ? "true" : undefined}
         variant={state.following ? "outline" : "default"}
         onClick={toggle}
       >
         {state.following ? <Check aria-hidden="true" /> : <Plus aria-hidden="true" />}
-        {FOLLOW}
+        {state.following ? "팔로우 중" : FOLLOW}
       </Button>
       <span role="status" className="self-center text-meta">
-        {failed ? FOLLOW_FAILED : null}
+        {failed
+          ? FOLLOW_FAILED
+          : state.recordStatus === "pending"
+            ? VISIT_PENDING
+            : state.recordStatus === "error"
+              ? VISIT_FAILED
+              : null}
       </span>
+      {state.recordStatus === "error" ? (
+        <Button variant="outline" onClick={retryVisit}>
+          {VISIT_RETRY}
+        </Button>
+      ) : null}
+      <a
+        href="#changes"
+        className="inline-flex min-h-11 items-center self-center text-meta underline"
+      >
+        {trackingSummary(revisions, state.lastSeenRevisionId)}
+      </a>
+      {state.following ? (
+        <a
+          href="/follows"
+          className="inline-flex min-h-11 items-center self-center text-meta underline"
+        >
+          팔로우 목록
+        </a>
+      ) : null}
     </>
   );
+}
+
+function trackingSummary(
+  revisions: readonly RevisionStripItemView[],
+  lastSeenRevisionId: string | null,
+): string {
+  const since = changesSinceLastSeen(revisions, lastSeenRevisionId);
+  if (since === undefined) {
+    return lastSeenRevisionId === null
+      ? `개정판 ${revisions.at(-1)?.revisionNumber ?? 1}부터 변화 추적`
+      : "이전 개정판의 변화 보기";
+  }
+  return since.revisionCount > 0
+    ? `새 개정판 ${since.revisionCount}개 · 읽은 이후 변화 보기`
+    : `새 변화 없음 · 개정판 ${since.lastSeenRevisionNumber}까지 읽음`;
 }
 
 /** 변화 구획 머리의 "읽은 이후 변화": 마지막으로 본 개정판 뒤 개정판들의 변화 종류별 합. 본 적 없는 사건은 보이지 않는다. */

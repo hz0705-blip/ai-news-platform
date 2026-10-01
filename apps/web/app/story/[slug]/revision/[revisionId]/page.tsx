@@ -24,8 +24,10 @@ async function loadRevisionView({ params }: Props): Promise<StoryView | undefine
     DISPLAY_POLICY_VERSION,
     slug,
   );
-  // 불변 캐시의 띠는 이 개정판까지만 실으므로 최신 여부는 최신 포인터로 정한다.
-  if (view === undefined || view.revisionId === pointer.revisionId) return view;
+  // 띠는 표시 개정판까지의 전체 이력이다. 발행 직후 포인터 캐시가 뒤처져도
+  // 이미 더 새 개정판을 보는 화면을 이전 개정판으로 되돌려 안내하지 않는다.
+  if (view === undefined || view.revisions.some((revision) => revision.id === pointer.revisionId))
+    return view;
   return asOlderRevision(view);
 }
 

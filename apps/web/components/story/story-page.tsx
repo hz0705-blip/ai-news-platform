@@ -26,7 +26,11 @@ export function StoryPage({ view }: { view: StoryView }) {
           {OLDER_REVISION_NOTICE} <a href={view.storyHref}>{VIEW_LATEST_REVISION}</a>
         </p>
       )}
-      <StoryPersonalProvider slug={view.slug} revisionId={view.revisionId}>
+      <StoryPersonalProvider
+        slug={view.slug}
+        revisionId={view.revisionId}
+        revisions={view.revisions}
+      >
         <StoryHeader
           header={view.header}
           summary={view.claims[0]?.text}

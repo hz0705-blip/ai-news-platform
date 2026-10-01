@@ -59,6 +59,7 @@ export {
   followTopic,
   loadFollowedTopics,
   loadFollowFeed,
+  readStoryVisit,
   recordStoryVisit,
   type StoryVisit,
   unfollowStory,

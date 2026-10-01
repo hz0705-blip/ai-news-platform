@@ -6,6 +6,8 @@ export const STORY_VISIT_PATH = "/api/me/story-visit";
 export const STORY_FOLLOW_PATH = "/api/me/story-follow";
 
 export type StoryVisitRequest = {
+  /** 먼저 비교 기준을 받은 뒤, 실제 표시된 개정판을 기록한다. */
+  readonly phase: "read" | "record";
   readonly slug: string;
   readonly revisionId: string;
   /** 로그인 뒤 돌아온 페이지가 하려던 팔로우(`?intent=follow`)를 마칠 때 참. */

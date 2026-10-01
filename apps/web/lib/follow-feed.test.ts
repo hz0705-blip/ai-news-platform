@@ -20,6 +20,7 @@ function story(
     isDemo,
     image: null,
     latestRevisionNumber: seen.latest,
+    latestRevisionId: `${id}:rev-${seen.latest}`,
     lastSeenRevisionNumber: seen.lastSeen,
     followsStory: true,
   };

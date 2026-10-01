@@ -67,6 +67,7 @@ function StoryList({ stories, now }: { stories: readonly FollowFeedStory[]; now:
         <li key={story.id}>
           <StoryCard
             story={story}
+            storyHref={`/story/${story.slug}/revision/${encodeURIComponent(story.latestRevisionId)}`}
             now={now}
             prominence={index === 0 ? "lead" : index < 3 ? "secondary" : "list"}
             extra={<FollowCardExtra story={story} />}
