@@ -1,5 +1,24 @@
+import { publishedStoryExists } from "@newstrail/db";
 import { type NextRequest, NextResponse } from "next/server";
 import { routeAuthClient } from "./lib/auth/route.ts";
+import { getRuntimeDb } from "./lib/db.ts";
+
+/**
+ * 사건 URL·개정판 고정 URL이 가리키는 공개 사건이 있는지 응답 전에 확인한다(소프트 404 제거).
+ * Cache Components는 동적 라우트의 정적 셸을 HTTP 200으로 먼저 흘리므로 페이지의 `notFound()`로는
+ * 404 상태를 낼 수 없고, proxy에서는 `"use cache"` 함수를 부를 수 없어 가벼운 질의 하나로 확인한다.
+ * 세그먼트는 페이지와 같게 다룬다 — slug는 받은 그대로, 개정판 id는 한 번 디코딩한다.
+ * 다른 모양의 `/story/*` 경로와 질의 실패는 페이지에 맡긴다(캐시된 페이지는 DB 장애에도 그대로 보인다).
+ */
+async function storyExists(rawPathname: string): Promise<boolean> {
+  const match = /^\/story\/([^/]+)(?:\/revision\/([^/]+))?\/?$/.exec(rawPathname);
+  if (match?.[1] === undefined) return true;
+  const rawRevisionId = match[2];
+  return publishedStoryExists(getRuntimeDb().db, {
+    slug: match[1],
+    ...(rawRevisionId === undefined ? {} : { revisionId: decodeURIComponent(rawRevisionId) }),
+  }).catch(() => true);
+}
 
 /**
  * 세션 갱신(스펙 "계정"): 인증·개인 경로(`/auth/*`, 팔로우 화면 `/follows`, 계정 화면 `/account/*`)에서만 토큰을 확인·갱신하고
@@ -28,7 +47,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       },
     );
   }
-  if (pathname === "/story" || pathname.startsWith("/story/")) return NextResponse.next();
+  if (pathname === "/story" || pathname.startsWith("/story/")) {
+    if (await storyExists(request.nextUrl.pathname)) return NextResponse.next();
+    // 어느 페이지에도 맞지 않는 내부 경로로 옮겨 루트 not-found 화면(noindex)을 404 상태로 그린다.
+    return NextResponse.rewrite(new URL("/_not-found", request.url), { status: 404 });
+  }
 
   const { client, respond } = routeAuthClient(request);
   if (client !== null) await client.auth.getClaims();

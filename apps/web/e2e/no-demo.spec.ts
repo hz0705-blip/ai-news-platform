@@ -12,7 +12,8 @@ test("데모 직접 URL과 고정 개정판은 기사를 노출하지 않는다"
       `/story/${slug}`,
       `/story/${slug}/revision/${encodeURIComponent(`${slug}:rev-1`)}`,
     ]) {
-      await page.goto(path);
+      const response = await page.goto(path);
+      expect(response?.status(), path).toBe(404);
       await expect(page.getByRole("heading", { name: "페이지를 찾을 수 없습니다" })).toBeVisible();
       await expect(page.getByRole("region", { name: "주장", exact: true })).toHaveCount(0);
       await expect(page.getByRole("button", { name: /근거 \d+개 보기/ })).toHaveCount(0);

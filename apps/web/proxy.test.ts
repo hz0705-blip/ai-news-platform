@@ -2,12 +2,15 @@ import { NextRequest, type NextResponse } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { proxy } from "./proxy.ts";
 
-const { routeAuthClient, getClaims } = vi.hoisted(() => ({
+const { routeAuthClient, getClaims, publishedStoryExists } = vi.hoisted(() => ({
   routeAuthClient: vi.fn(),
   getClaims: vi.fn(),
+  publishedStoryExists: vi.fn(),
 }));
 
 vi.mock("./lib/auth/route.ts", () => ({ routeAuthClient }));
+vi.mock("./lib/db.ts", () => ({ getRuntimeDb: () => ({ db: "runtime-db" }) }));
+vi.mock("@newstrail/db", () => ({ publishedStoryExists }));
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -15,6 +18,7 @@ beforeEach(() => {
     client: { auth: { getClaims } },
     respond: (response: NextResponse) => response,
   });
+  publishedStoryExists.mockResolvedValue(true);
 });
 
 describe("페이지 URL 검증과 개인 경로 세션 갱신", () => {
@@ -66,6 +70,22 @@ describe("페이지 URL 검증과 개인 경로 세션 갱신", () => {
     );
     expect(response.headers.get("set-cookie")).toBeNull();
     expect(response.headers.get("cache-control")).toBeNull();
+    expect(routeAuthClient).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["/story/missing", { slug: "missing" }],
+    [
+      "/story/published-story/revision/published-story%3Arev-9",
+      { slug: "published-story", revisionId: "published-story:rev-9" },
+    ],
+  ])("없는 사건·개정판 %s는 응답 전에 404 찾을 수 없음으로 바꾼다", async (path, params) => {
+    publishedStoryExists.mockResolvedValue(false);
+    const response = await proxy(new NextRequest(`https://web.test${path}`));
+    expect(publishedStoryExists).toHaveBeenCalledWith("runtime-db", params);
+    expect(response.status).toBe(404);
+    expect(response.headers.get("x-middleware-rewrite")).toBe("https://web.test/_not-found");
+    expect(response.headers.get("set-cookie")).toBeNull();
     expect(routeAuthClient).not.toHaveBeenCalled();
   });
 
