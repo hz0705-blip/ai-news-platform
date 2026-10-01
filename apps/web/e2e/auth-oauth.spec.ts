@@ -35,7 +35,7 @@ for (const provider of ["kakao", "google"] as const) {
       `/auth/callback/${provider}?error=access_denied&state=${authorize.searchParams.get("state")}`,
     );
     expect(cancelled?.status()).toBe(200);
-    await expect(page).toHaveURL(/\/auth\/login\?next=%2Fsearch&error=failed$/);
+    await expect(page).toHaveURL(/\/auth\/login\?next=%2Fsearch$/);
     await expect(page.getByText("로그인을 완료하지 못했습니다.", { exact: false })).toBeVisible();
     await expect(
       page.getByRole("link", { name: "로그인하지 않고 읽기로 돌아가기" }),
@@ -48,7 +48,7 @@ for (const provider of ["kakao", "google"] as const) {
     ).toBe(false);
 
     await page.goto(`/auth/callback/${provider}?code=not-a-code&state=forged`);
-    await expect(page).toHaveURL(/\/auth\/login\?next=%2F&error=failed$/);
+    await expect(page).toHaveURL(/\/auth\/login\?next=%2F$/);
     await expect(
       page.getByRole("link", { name: "로그인하지 않고 읽기로 돌아가기" }),
     ).toHaveAttribute("href", "/");

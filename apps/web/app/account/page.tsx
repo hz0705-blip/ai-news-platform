@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { type ReactElement, Suspense } from "react";
+import { ClearErrorParam } from "../../components/auth/clear-error-param.tsx";
 import { LegalLinks } from "../../components/legal-links.tsx";
 import { Alert, AlertTitle } from "../../components/ui/alert.tsx";
 import { Button } from "../../components/ui/button.tsx";
@@ -53,6 +54,7 @@ async function AccountBody({
   const available = deletionEnv() !== null;
   return (
     <>
+      <ClearErrorParam />
       <section aria-labelledby="account-session" className="flex flex-col items-start gap-4">
         <h2 id="account-session">로그인 관리</h2>
         <form action="/auth/logout" method="post">

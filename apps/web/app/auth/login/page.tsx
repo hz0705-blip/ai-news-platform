@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { type ReactElement, Suspense } from "react";
+import { ClearErrorParam } from "../../../components/auth/clear-error-param.tsx";
 import { LoginOptions } from "../../../components/auth/login-options.tsx";
 import { LegalLinks } from "../../../components/legal-links.tsx";
 import { Alert, AlertTitle } from "../../../components/ui/alert.tsx";
@@ -49,6 +50,7 @@ async function LoginBody({
   const unavailable = !configured || error === "unavailable";
   return (
     <>
+      <ClearErrorParam />
       {unavailable || error === "failed" || error === "pending-deletion" ? (
         <Alert>
           <AlertTitle>
