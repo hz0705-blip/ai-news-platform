@@ -26,6 +26,10 @@ export function LeadImage({
         width={900}
         height={600}
         loading={priority ? "eager" : "lazy"}
+        // 하이드레이션 전에 끝난 실패는 error 이벤트가 다시 오지 않으므로 붙는 순간 확인한다.
+        ref={(node) => {
+          if (node?.complete && node.naturalWidth === 0) setFailedUrl(image.url);
+        }}
         onError={() => setFailedUrl(image.url)}
       />
       <figcaption>

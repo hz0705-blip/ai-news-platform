@@ -1,6 +1,6 @@
 /** @jsxImportSource react */
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { LeadImage } from "./lead-image.tsx";
 
 const image = {
@@ -9,7 +9,10 @@ const image = {
   articleUrl: "https://example.test/story",
 };
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 describe("대표 이미지", () => {
   it("발행사 이미지 주소와 크레딧 원문 링크를 표시하고 리드만 즉시 로딩한다", () => {
@@ -34,6 +37,17 @@ describe("대표 이미지", () => {
     fireEvent.error(screen.getByRole("presentation"));
     expect(container.childElementCount).toBe(0);
     rerender(<LeadImage image={{ ...image, url: `${image.url}?v=2` }} isDemo={false} />);
+    expect(screen.getByRole("figure")).toBeDefined();
+  });
+
+  it("마운트 시 이미 실패한 이미지는 슬롯을 접는다", () => {
+    const proto = HTMLImageElement.prototype;
+    vi.spyOn(proto, "complete", "get").mockReturnValue(true);
+    const naturalWidth = vi.spyOn(proto, "naturalWidth", "get").mockReturnValue(0);
+    const { container, rerender } = render(<LeadImage image={image} isDemo={false} priority />);
+    expect(container.childElementCount).toBe(0);
+    naturalWidth.mockReturnValue(900);
+    rerender(<LeadImage image={{ ...image, url: `${image.url}?v=2` }} isDemo={false} priority />);
     expect(screen.getByRole("figure")).toBeDefined();
   });
 });
