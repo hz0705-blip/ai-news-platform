@@ -92,7 +92,16 @@ test("발행 사건 홈 → 실제 사건 경로 → 근거, 데모 미노출", 
   });
   await page.goto("/");
   await expect(tiles(page)).toHaveCount(4);
-  await expect(latest(page).getByRole("article")).toHaveCount(4);
+  // 다른 병렬 시나리오가 새 사건을 발행해도 기존 사건의 누락·중복은 허용하지 않는다.
+  await expect.poll(() => latest(page).getByRole("article").count()).toBeGreaterThanOrEqual(4);
+  for (const slug of [
+    "fixture-1-agreement",
+    "fixture-2-conflict",
+    "fixture-3-correction",
+    "fixture-4-figures",
+  ]) {
+    await expect(latest(page).locator(`a[href="/story/${slug}"]`)).toHaveCount(1);
+  }
   await expect(page.getByRole("region", { name: "데모 사건", exact: true })).toHaveCount(0);
   await expect(page.locator('a[href*="/story/demo-"]')).toHaveCount(0);
   await expect(multiSource(page).getByRole("article")).toHaveCount(4);
