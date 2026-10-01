@@ -10,6 +10,8 @@ export const ARTICLE_OBSERVED = "관측 시각";
 export const FOLLOW = "팔로우";
 export const FOLLOW_FAILED = "팔로우를 바꾸지 못했습니다. 다시 눌러 주세요.";
 export const SHARE = "공유";
+export const SHARE_COPIED = "링크를 복사했습니다";
+export const SHARE_COPY_FAILED = "링크를 복사할 수 없습니다. 주소창의 주소를 사용하세요";
 export const sourceCount = (count: number): string => `출처 ${count}곳`;
 
 export const SECTION_NAV_LABEL = "사건 구획 바로가기";
