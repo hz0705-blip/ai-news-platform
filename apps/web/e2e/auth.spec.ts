@@ -1,4 +1,5 @@
 import type { APIRequestContext, BrowserContext } from "@playwright/test";
+import { LOGIN_FAILED } from "../app/auth/copy.ts";
 import { authEnv, expect, test } from "./auth.ts";
 import { expectNoAxeViolations } from "./axe.ts";
 
@@ -185,4 +186,17 @@ test("콜백은 state가 맞지 않는 요청을 로그인 화면으로 돌리�
 
   await page.goto(forged);
   await expect(page.getByText("로그인을 완료하지 못했습니다.", { exact: false })).toBeVisible();
+});
+
+test("로그인 화면은 실패 알림을 그린 뒤 주소에서 error만 지우고, 새로고침하면 알림이 없다", async ({
+  page,
+}) => {
+  await page.goto(`/auth/login?next=${encodeURIComponent("/")}&error=failed`);
+  await expect(page.getByText(LOGIN_FAILED)).toBeVisible();
+  await expect(page).toHaveURL(/\/auth\/login\?next=%2F$/);
+
+  await page.reload();
+  await expect(page.getByRole("link", { name: "카카오로 계속하기" })).toBeVisible();
+  await expect(page.getByText(LOGIN_FAILED)).toHaveCount(0);
+  expect(new URL(page.url()).searchParams.get("next")).toBe("/");
 });
