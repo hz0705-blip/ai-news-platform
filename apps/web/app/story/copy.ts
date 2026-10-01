@@ -110,7 +110,10 @@ export const changeKindCount = (name: string, count: number): string => `${name}
 export const REVISION_STRIP_HEADING = "개정판 이력";
 export const REVISION_STRIP_CAPTION =
   "개정판을 발행 순서대로 보입니다. 각 개정판의 고정 주소로 이동합니다.";
-export const CURRENT_REVISION = "현재 개정판";
+export const LATEST_REVISION = "최신";
+export const VIEWING_REVISION = "보는 중";
+export const OLDER_REVISION_NOTICE = "이전 개정판을 보고 있습니다.";
+export const VIEW_LATEST_REVISION = "최신 개정판 보기";
 export const FIRST_REVISION = "첫 개정판";
 export const SHOW_TABLE = "표로 보기";
 export const REVISION_COLUMN = "개정판";

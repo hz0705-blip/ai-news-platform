@@ -2,8 +2,10 @@
 import {
   CHANGES_HEADING,
   CLAIMS_HEADING,
+  OLDER_REVISION_NOTICE,
   SECTION_NAV_LABEL,
   SOURCES_HEADING,
+  VIEW_LATEST_REVISION,
 } from "../../app/story/copy.ts";
 import type { StoryView } from "../../lib/story-view.ts";
 import { ChangeSection } from "./change-section.tsx";
@@ -19,6 +21,11 @@ import { StoryPersonalProvider } from "./story-personal.tsx";
 export function StoryPage({ view }: { view: StoryView }) {
   return (
     <main className="editorial-page story-page" id="main-content" tabIndex={-1}>
+      {view.isLatestRevision ? null : (
+        <p className="border-b border-border pb-3">
+          {OLDER_REVISION_NOTICE} <a href={view.storyHref}>{VIEW_LATEST_REVISION}</a>
+        </p>
+      )}
       <StoryPersonalProvider slug={view.slug} revisionId={view.revisionId}>
         <StoryHeader
           header={view.header}

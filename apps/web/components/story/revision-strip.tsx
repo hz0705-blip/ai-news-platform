@@ -1,15 +1,16 @@
 /** @jsxImportSource react */
 import {
   CHANGE_KIND_NAMES,
-  CURRENT_REVISION,
   changeKindCount,
   FIRST_REVISION,
+  LATEST_REVISION,
   REVISION_COLUMN,
   REVISION_STRIP_CAPTION,
   REVISION_STRIP_HEADING,
   revisionLabel,
   SHOW_TABLE,
   STORY_UPDATED,
+  VIEWING_REVISION,
 } from "../../app/story/copy.ts";
 import { formatAbsolute } from "../../lib/format-time.ts";
 import type { RevisionStripItemView } from "../../lib/story-view.ts";
@@ -18,7 +19,7 @@ import { SeenPointMarker } from "./story-personal.tsx";
 
 function RevisionLink({ item }: { item: RevisionStripItemView }) {
   return (
-    <a href={item.href} aria-current={item.isCurrent ? "page" : undefined}>
+    <a href={item.href} aria-current={item.isViewing ? "page" : undefined}>
       {revisionLabel(item.revisionNumber)}
     </a>
   );
@@ -30,7 +31,7 @@ function UpdatedTime({ at }: { at: Date }) {
 }
 
 /**
- * 개정판 띠: 차트가 아니라 개정판 링크의 순서 목록(발행 순서, 사건 갱신 절대 시각, 변화 종류별 개수, 현재 개정판 표시,
+ * 개정판 띠: 차트가 아니라 개정판 링크의 순서 목록(발행 순서, 사건 갱신 절대 시각, 변화 종류별 개수, 최신·보는 중 표시,
  * 로그인 사용자의 "내가 본 지점").
  * 같은 데이터의 표를 `<figure>` 안에서 펼칠 수 있고, 표도 같은 링크를 가진다(스펙 "시각화(1차)").
  */
@@ -47,10 +48,11 @@ export function RevisionStrip({ revisions }: { revisions: readonly RevisionStrip
         {revisions.map((item) => {
           const counts = item.counts.filter((c) => c.count > 0);
           return (
-            <li key={item.id} className="revision-row" data-current={item.isCurrent}>
+            <li key={item.id} className="revision-row" data-current={item.isViewing}>
               <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <RevisionLink item={item} />
-                {item.isCurrent ? <span className="font-semibold">{CURRENT_REVISION}</span> : null}
+                {item.isLatest ? <span className="font-semibold">{LATEST_REVISION}</span> : null}
+                {item.isViewing ? <span className="font-semibold">{VIEWING_REVISION}</span> : null}
                 <SeenPointMarker revisionId={item.id} />
               </p>
               <p className="text-meta text-muted-foreground">
@@ -99,7 +101,8 @@ export function RevisionStrip({ revisions }: { revisions: readonly RevisionStrip
               <tr key={item.id} className="border-b border-border">
                 <th scope="row" className="p-2 text-left font-normal">
                   <RevisionLink item={item} />
-                  {item.isCurrent ? <span className="block">{CURRENT_REVISION}</span> : null}
+                  {item.isLatest ? <span className="block">{LATEST_REVISION}</span> : null}
+                  {item.isViewing ? <span className="block">{VIEWING_REVISION}</span> : null}
                   <span className="block">
                     <SeenPointMarker revisionId={item.id} />
                   </span>

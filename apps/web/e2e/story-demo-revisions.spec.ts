@@ -32,9 +32,16 @@ async function openRevisionUrls(page: Page, slug: string) {
   await page.waitForURL(`**/story/${slug}/revision/${encodeURIComponent(`${slug}:rev-1`)}`);
   await expect(changesOf(page).getByText("아직 변화가 없습니다")).toBeVisible();
   await expect(stripLinksOf(page)).toHaveText(["개정판 1"]);
+  // 최신이 아닌 고정 URL은 이전 개정판 안내와 사건 URL 링크를 보인다
+  await expect(page.getByText("이전 개정판을 보고 있습니다.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "최신 개정판 보기" })).toHaveAttribute(
+    "href",
+    `/story/${slug}`,
+  );
   await page.goto(`/story/${slug}/revision/${encodeURIComponent(`${slug}:rev-2`)}`);
   await expect(stripLinksOf(page)).toHaveText(["개정판 1", "개정판 2"]);
   await expect(stripLinksOf(page).nth(1)).toHaveAttribute("aria-current", "page");
+  await expect(page.getByText("이전 개정판을 보고 있습니다.")).toHaveCount(0);
 }
 
 test("데모 ③: 명시 정정 — 주장 수정 이전·현재 병기, 상충 상태 변화, 원문 변경, 개정판 고정 URL", async ({

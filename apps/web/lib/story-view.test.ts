@@ -1,8 +1,13 @@
 import type { StoryPageData } from "@newstrail/db";
 import type { ContradictionStatus } from "@newstrail/domain";
 import { describe, expect, it } from "vitest";
-import { MULTI_REV_1, MULTI_REV_2, multiRevisionFixture } from "../e2e/story-data.ts";
-import { buildCoverage, buildStoryView, diffWords } from "./story-view.ts";
+import {
+  MULTI_REV_1,
+  MULTI_REV_2,
+  multiRevisionFirstFixture,
+  multiRevisionFixture,
+} from "../e2e/story-data.ts";
+import { asOlderRevision, buildCoverage, buildStoryView, diffWords } from "./story-view.ts";
 
 // 발췌 안에 보조 평면 문자(🇰🇷)를 넣어 UTF-16 변환을 시험한다.
 const excerpt = "Officials in 🇰🇷 Seoul agreed on the framework. The deal covers three ports.";
@@ -381,11 +386,16 @@ describe("변화·개정판 띠·보도량 뷰(#87)", () => {
     });
   });
 
-  it("개정판 띠는 발행 순서대로 고정 URL·현재 표시·종류별 개수를 낸다", () => {
+  it("개정판 띠는 발행 순서대로 고정 URL·최신·보는 중 표시·종류별 개수를 낸다", () => {
     const { revisions } = buildStoryView(multiRevisionFixture);
-    expect(revisions.map((r) => [r.revisionNumber, r.href, r.isCurrent])).toEqual([
-      [1, `/story/multi-revision-changes/revision/${encodeURIComponent(MULTI_REV_1)}`, false],
-      [2, `/story/multi-revision-changes/revision/${encodeURIComponent(MULTI_REV_2)}`, true],
+    expect(revisions.map((r) => [r.revisionNumber, r.href, r.isViewing, r.isLatest])).toEqual([
+      [
+        1,
+        `/story/multi-revision-changes/revision/${encodeURIComponent(MULTI_REV_1)}`,
+        false,
+        false,
+      ],
+      [2, `/story/multi-revision-changes/revision/${encodeURIComponent(MULTI_REV_2)}`, true, true],
     ]);
     expect(revisions[0]?.href).toContain("%3A");
     expect(revisions[1]?.counts).toEqual([
@@ -394,6 +404,27 @@ describe("변화·개정판 띠·보도량 뷰(#87)", () => {
       { kind: "원문 변경", count: 1 },
       { kind: "출처 추가", count: 2 },
     ]);
+  });
+
+  it("최신은 띠의 개정판 번호 최대값이고 사건 URL을 함께 싣는다", () => {
+    const latest = buildStoryView(multiRevisionFixture);
+    expect(latest.isLatestRevision).toBe(true);
+    expect(latest.storyHref).toBe("/story/multi-revision-changes");
+    const older = buildStoryView({
+      ...multiRevisionFirstFixture,
+      revisions: multiRevisionFixture.revisions,
+    });
+    expect(older.isLatestRevision).toBe(false);
+    expect(older.revisions.map((r) => [r.isViewing, r.isLatest])).toEqual([
+      [true, false],
+      [false, true],
+    ]);
+  });
+
+  it("asOlderRevision은 이전 개정판 표시로 바꾸고 띠의 최신 표기를 없앤다", () => {
+    const view = asOlderRevision(buildStoryView(multiRevisionFirstFixture));
+    expect(view.isLatestRevision).toBe(false);
+    expect(view.revisions.map((r) => [r.isViewing, r.isLatest])).toEqual([[true, false]]);
   });
 
   it("보도량 구간은 KST 경계로 자르고 빈 구간은 0", () => {
