@@ -36,19 +36,6 @@ afterEach(() => {
 });
 
 describe("오늘", () => {
-  it("개념 일러스트는 첫 기술·AI 사건에만 붙이고 실제 사진이 아님을 밝힌다", () => {
-    const { container, rerender } = show([story(1)]);
-    expect(container.querySelectorAll(".today-illustration")).toHaveLength(1);
-    expect(screen.getByText("AI 생성 일러스트 · 실제 사건 사진 아님")).toBeDefined();
-    rerender(
-      <TodayScreen
-        live={{ stories: [story(2, { topics: ["세계 경제·금융"] }), story(1)], lastUpdated: now }}
-        demo={{ stories: [demo], lastUpdated: demo.updatedAt }}
-        now={now}
-      />,
-    );
-    expect(container.querySelector(".today-illustration")).toBeNull();
-  });
   it("서버는 절대 시각을 렌더하고 클라이언트에서 상대 시각을 조용히 갱신한다", () => {
     vi.useFakeTimers();
     vi.setSystemTime(now);

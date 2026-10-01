@@ -78,11 +78,11 @@ The following product concepts remain stable. The current layout and component s
 
 ## 7. Image Usage
 
-- **Text first by default.** Every page must be a complete editorial page with no images at all. Image slots are never filled with empty boxes, stock images, or gradient fills.
-- **Permitted imagery**: self-generated concept illustrations (a per-asset rights record is mandatory; caption `AI 생성 일러스트 · 실제 사건 사진 아님`; empty alt when decorative), the service's own icon and favicon, data graphics such as the coverage-volume chart (`<figure>` + caption + table alternative), and neutral letter tiles for sources (first letter of the source name, identical style for every source).
-- **Forbidden**: external photographs, source logos, favicons, or og:image, stock imagery, and borrowing the name or logo of a real publisher (including for demo pseudo-sources). This is a rights principle (ADR-0002, spec "이미지") and is never crossed for design convenience. Exceptions require a per-asset rights record first (owner, license URL, verification date, attribution text, permitted scope, removal path).
-- **Treatment when an image exists** (Semafor reference): one large image on the lead, a caption and credit line beneath it, a fixed aspect ratio to prevent layout shift, lazy loading below the fold. Small thumbnails on secondary or list items only when they carry meaning.
-- Share (OG) cards and demo stories are text-only.
+- **Text first by default.** Every page must be a complete editorial page with no images at all. Image slots are never filled with empty boxes, stock images, placeholders, or gradient fills: when a story has no image, or its image fails to load, the slot collapses entirely.
+- **Permitted imagery**: the story's **lead image** — the image of one of its own source articles (ADR-0002, spec "이미지"; the term is `CONTEXT.md` "대표 이미지"), hotlinked from the publisher's URL and never re-hosted, cropped, filtered, or passed through an image optimizer; a credit line `사진 · <source name>` beside it that links to that article; the service's own icon and favicon; data graphics such as the coverage-volume chart (`<figure>` + caption + table alternative); and neutral letter tiles for sources (first letter of the source name, identical style for every source).
+- **Forbidden**: source logos, favicons, stock imagery, generated illustrations presented as news imagery, borrowing the name or logo of a real publisher (including for demo pseudo-sources), and article images shown without their credit and original link, re-hosted, or placed on the share card. The rights basis and its removal path are ADR-0002's; design convenience never widens them.
+- **Treatment** (Semafor reference): one large image on the lead with the credit line beneath it; small thumbnails on secondary items; the list tier stays text-only. Fixed 3:2 aspect ratio with `object-fit: cover` to prevent layout shift; the lead loads eagerly, everything else lazily. `alt` is empty — the headline carries the meaning.
+- Share (OG) cards, search result rows, and demo stories are text-only.
 
 ## 8. Event and Source Presentation
 
@@ -162,7 +162,7 @@ Newstrail-specific prohibitions:
 - political leaning or bias spectra, confidence or reliability percentages, factuality scores, Blindspot (ADR-0004)
 - A/B exclusive tabs, team colors, majority votes, or winners for conflicting reports
 - encoding status, change kind, or source by color alone
-- external photographs, source logos, favicons, or og:image, stock imagery, borrowed publisher names or logos
+- source logos, favicons, stock imagery, borrowed publisher names or logos; article images re-hosted, uncredited, or shown without their original link
 - hover-only controls, carousels, autoplay, countdowns
 - truncated claim sentences, fixed-height controls, horizontal scroll
 - lowering opacity, gradients, or inherited muted text on evidence highlights
@@ -180,7 +180,6 @@ Newstrail-specific prohibitions:
   2. The single-typeface rule "모노스페이스 폰트는 쓰지 않는다(Pretendard 하나)" conflicts with the display-typeface allowance in §5.
   3. The fixed Today composition sentences (first story as a large card · desktop two columns · right-hand aggregate section · first 8 and 8 per "more" · search box width · demo-card font sizes · centered 14px footer) conflict with the composition freedom in §4 and §6; in particular the right-hand aggregate section (conflict/correction counts, topic distribution) conflicts with the dashboard-statistics avoidance in §3 and §14.
   4. Fixing the "card" as the unit of story lists conflicts with the row default in §6.
-  5. The concept-illustration exception for the first technology/AI story on Today is compatible with §7 but its position, caption, and aspect ratio are re-specified under the lead-image treatment rule.
 - **Technical stack** (source of truth: `docs/agents/project.md` "스택"): Next.js App Router + React, Tailwind 4, shadcn (`base-nova`, Base UI), lucide, Recharts 3, Pretendard (bundled). Tokens are defined only in `apps/web/styles/tokens.css`; components never use raw color values. Where the composition rules of `docs/ui-skills/shadcn/SKILL.md` (card/tab/sidebar composition, mandatory `Separator`, etc.) conflict with this document, this document wins. Editorial pages are built from meaningful HTML (`article`, `section`, `hr`, `figure`, `time`).
 - **Rendering**: server rendering must be deterministic (fixed initial chart size, animation off by default). Fonts define a preload scope and fallback metrics and must not cause layout shift. The share card is a text-only `next/og` template.
 - **Tests** (source of truth: `project.md` "테스트"): one E2E smoke test per page (core path + one axe run). Tests are not multiplied per state, viewport, or theme. No tests assert token CSS or configuration files. A redesign PR changes existing E2E expectations (headline size, etc.) together with the spec revision.
