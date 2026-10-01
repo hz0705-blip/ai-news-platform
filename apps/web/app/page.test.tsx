@@ -12,6 +12,7 @@ const story = (n: number, extra: Partial<TodayStoryCard> = {}): TodayStoryCard =
   title: `사건 제목 ${n}`,
   topics: ["기술·AI"],
   summary: `가능성을 포함한 첫 주장 전문 ${n}`,
+  claims: [`가능성을 포함한 첫 주장 전문 ${n}`],
   status: "복수 출처 일치",
   sourceCount: 2,
   updatedAt: new Date("2026-09-23T02:30:00Z"),
@@ -160,6 +161,34 @@ describe("오늘", () => {
     expect(document.activeElement).toBe(latest.getByRole("link", { name: "사건 제목 16" }));
     fireEvent.click(screen.getByRole("button", { name: /^기술·AI/ }));
     expect(latest.getAllByRole("article")).toHaveLength(8);
+  });
+  it("첫 사건 요약은 앞 주장 최대 3개를 한 문단으로 보이고 다른 카드와 바뀐 첫 사건도 같은 규칙을 따른다", () => {
+    show([
+      story(1, {
+        topics: ["기술·AI"],
+        summary: "첫 주장 1.",
+        claims: ["첫 주장 1.", "둘째 주장 1.", "셋째 주장 1."],
+      }),
+      story(2, {
+        topics: ["세계 경제·금융"],
+        summary: "첫 주장 2.",
+        claims: ["첫 주장 2.", "둘째 주장 2."],
+      }),
+    ]);
+    const latest = within(screen.getByRole("region", { name: "최신 사건" }));
+    expect(latest.getByText("첫 주장 1. 둘째 주장 1. 셋째 주장 1.").tagName).toBe("P");
+    expect(latest.getByText("첫 주장 2.")).toBeDefined();
+    expect(latest.queryByText("둘째 주장 2.", { exact: false })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /^세계 경제·금융/ }));
+    expect(latest.getByText("첫 주장 2. 둘째 주장 2.")).toBeDefined();
+    cleanup();
+    // 앞 주장이 비면 첫 주장 한 문장(summary)으로 돌아간다.
+    show([story(3, { claims: [] })]);
+    expect(
+      within(screen.getByRole("region", { name: "최신 사건" })).getByText(
+        "가능성을 포함한 첫 주장 전문 3",
+      ),
+    ).toBeDefined();
   });
   it("주장 전문·상태·출처·상대 시각과 데모 고정 시각을 보존한다", () => {
     show([story(1)]);

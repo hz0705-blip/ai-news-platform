@@ -17,7 +17,7 @@ export function StoryCard({
   storyHref,
   prominence = "list",
 }: {
-  story: TodayStoryCard;
+  story: Omit<TodayStoryCard, "claims">;
   now: Date | null;
   prominence?: "lead" | "secondary" | "list";
   titleRef?: (node: HTMLAnchorElement | null) => void;

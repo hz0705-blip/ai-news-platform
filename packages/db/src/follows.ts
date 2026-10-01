@@ -191,8 +191,8 @@ export async function recordStoryVisit(
   });
 }
 
-/** 팔로우 화면의 카드 하나. 오늘 카드에 팔로우 화면이 쓰는 값을 더한다. */
-export interface FollowFeedStory extends TodayStoryCard {
+/** 팔로우 화면의 카드 하나. 오늘 카드에 팔로우 화면이 쓰는 값을 더한다(첫 사건용 앞 주장 묶음은 읽지 않는다). */
+export interface FollowFeedStory extends Omit<TodayStoryCard, "claims"> {
   /** 목록에서 확인한 최신 개정판의 고정 링크를 만든다. */
   readonly latestRevisionId: string;
   /** 최신 발행 개정판의 번호. */
