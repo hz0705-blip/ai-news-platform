@@ -75,6 +75,53 @@ maybe("saveCollectedArticles", () => {
     }
   });
 
+  it("새 기사의 이미지 URL을 저장하고 재수집은 이미지 URL을 바꾸지 않는다", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      await saveCollectedArticles(db, {
+        sources: [source],
+        articles: [
+          collected({ imageUrl: "https://images.example.com/first.jpg" }),
+          collected({
+            url: "https://example.com/world/story-2",
+            title: "Other",
+            imageUrl: "ftp://x",
+          }),
+        ],
+        capturedAt,
+      });
+      const imageOf = async () =>
+        (await db.select().from(articles))
+          .map((r) => [r.normalized_url, r.image_url])
+          .sort(([a], [b]) => String(a).localeCompare(String(b)));
+      expect(await imageOf()).toEqual([
+        ["https://example.com/world/story-1", "https://images.example.com/first.jpg"],
+        ["https://example.com/world/story-2", null],
+      ]);
+
+      // 재수집(다른 이미지·이미지 없음·새 본문)은 저장된 이미지 URL을 바꾸지 않는다. 지운 값(null)도 되살리지 않는다.
+      await db.update(articles).set({ image_url: null }).where(eq(articles.title, "Other"));
+      await saveCollectedArticles(db, {
+        sources: [source],
+        articles: [
+          collected({ imageUrl: "https://images.example.com/second.jpg", rawBody: "<p>New.</p>" }),
+          collected({
+            url: "https://example.com/world/story-2",
+            title: "Other",
+            imageUrl: "https://images.example.com/other.jpg",
+          }),
+        ],
+        capturedAt: new Date(capturedAt.getTime() + 1000),
+      });
+      expect(await imageOf()).toEqual([
+        ["https://example.com/world/story-1", "https://images.example.com/first.jpg"],
+        ["https://example.com/world/story-2", null],
+      ]);
+    } finally {
+      await cleanup();
+    }
+  });
+
   it("creates a new article version when a re-collected body differs", async () => {
     const { db, cleanup } = await createMigrationDb(url as string);
     try {

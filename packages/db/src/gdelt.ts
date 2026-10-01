@@ -1,4 +1,4 @@
-import type { Revision, Source } from "@newstrail/domain";
+import { type Revision, type Source, toImageUrl } from "@newstrail/domain";
 import { and, desc, eq, inArray, not, sql } from "drizzle-orm";
 import { storyNeedsReprocess } from "./batch.ts";
 import { toSourceRow } from "./mappers.ts";
@@ -95,6 +95,8 @@ export async function saveLinkOnlyArticle(
     readonly normalizedUrl: string;
     readonly title: string;
     readonly observedAt: Date;
+    /** GKG 공유 이미지 URL. 새로 만드는 행에만 들어간다. */
+    readonly imageUrl: string | null;
   },
 ): Promise<void> {
   await db.transaction(async (tx) => {
@@ -115,6 +117,7 @@ export async function saveLinkOnlyArticle(
         is_link_only: true,
         topics: [],
         embedding: null,
+        image_url: toImageUrl(input.imageUrl),
       })
       .onConflictDoNothing();
   });

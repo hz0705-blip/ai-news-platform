@@ -2,6 +2,7 @@ import type { ContradictionStatus, Topic } from "@newstrail/domain";
 import { desc, eq, sql } from "drizzle-orm";
 import type { RuntimeDb } from "../runtime.ts";
 import { articles, claimRevisions, stories, storyRevisions } from "../schema/index.ts";
+import { type LeadImage, leadImageSql } from "./lead-image.ts";
 
 export interface TodayStoryCard {
   readonly id: string;
@@ -13,6 +14,8 @@ export interface TodayStoryCard {
   readonly sourceCount: number;
   readonly updatedAt: Date;
   readonly isDemo: boolean;
+  /** 대표 이미지(최신 개정판의 출처 집합에서 고른다). 없으면 null. */
+  readonly image: LeadImage | null;
 }
 
 export interface TodayData {
@@ -53,6 +56,7 @@ export async function loadPublishedToday(
       )`,
       updatedAt: latest.published_at,
       isDemo: stories.is_demo,
+      image: leadImageSql(latest.source_article_ids),
     })
     .from(stories)
     .innerJoin(latest, eq(latest.story_id, stories.id))

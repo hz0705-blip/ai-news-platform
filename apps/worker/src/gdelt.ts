@@ -88,6 +88,7 @@ export async function runGdeltStage(
         normalizedUrl: link.normalizedUrl,
         title: link.title,
         observedAt: link.observedAt,
+        imageUrl: link.imageUrl,
       }),
     loadRevisionToExtend: (storyId) => loadRevisionToExtend(db, storyId),
     publishRevision: async (revision, changes) => {

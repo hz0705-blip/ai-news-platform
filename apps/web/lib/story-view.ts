@@ -1,4 +1,4 @@
-import type { StoryPageData } from "@newstrail/db";
+import type { LeadImage, StoryPageData } from "@newstrail/db";
 import {
   CHANGE_KINDS,
   type ChangeKind,
@@ -154,6 +154,8 @@ export interface StoryView {
     readonly updatedAt: Date;
     /** 개수가 0인 상태는 뺀다. 상태 순서는 `CONTRADICTION_STATUSES`. */
     readonly statusCounts: readonly StatusCountView[];
+    /** 대표 이미지(`{ url, sourceName, articleUrl }`). 없으면 null — 화면은 슬롯을 두지 않는다. */
+    readonly image: LeadImage | null;
   };
   readonly claims: readonly ClaimView[];
   readonly sources: readonly SourceView[];
@@ -329,6 +331,7 @@ export function buildStoryView(data: StoryPageData): StoryView {
       sourceCount: data.sources.length,
       updatedAt: data.revision.publishedAt,
       statusCounts,
+      image: data.image,
     },
     claims: [...data.claims]
       .sort((a, b) => a.order - b.order)

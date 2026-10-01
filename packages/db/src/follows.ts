@@ -1,5 +1,6 @@
 import type { Topic } from "@newstrail/domain";
 import { and, desc, eq, exists, ne, or, sql } from "drizzle-orm";
+import { leadImageSql } from "./queries/lead-image.ts";
 import type { TodayStoryCard } from "./queries/today.ts";
 import type { RuntimeDb } from "./runtime.ts";
 import {
@@ -205,6 +206,7 @@ export async function loadFollowFeed(
       )`,
       updatedAt: latest.published_at,
       isDemo: stories.is_demo,
+      image: leadImageSql(latest.source_article_ids),
       latestRevisionNumber: latest.revision_number,
       lastSeenRevisionNumber: sql<number | null>`(
         select ${storyRevisions.revision_number} from ${lastSeenRevisions}

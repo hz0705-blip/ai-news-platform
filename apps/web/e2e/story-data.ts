@@ -44,6 +44,7 @@ export const stateFixture: StoryPageData = {
     checkedAt: t("2026-09-17T00:30:00.000Z"),
     contradictionStatus: "보도 상충",
   },
+  image: null,
   coverageArticles: [
     { publishedAt: t("2026-09-16T22:00:00.000Z"), isLinkOnly: false, observedAt: null },
   ],
@@ -251,6 +252,7 @@ export const multiRevisionFixture: StoryPageData = {
     checkedAt: MULTI_REV_2_AT,
     contradictionStatus: "상충 해소",
   },
+  image: null,
   claims: [
     {
       id: "multi:c-1",
@@ -327,6 +329,7 @@ export const multiRevisionFirstFixture: StoryPageData = {
     checkedAt: MULTI_REV_1_AT,
     contradictionStatus: "보도 상충",
   },
+  image: null,
   claims: [
     {
       id: "multi:c-1",

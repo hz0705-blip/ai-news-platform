@@ -280,6 +280,7 @@ export function toArticleRow(article: Article, storyId: string): ArticleRow {
     embedding: null,
     observed_at: null,
     is_link_only: false,
+    image_url: null,
   };
 }
 

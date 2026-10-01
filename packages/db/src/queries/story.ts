@@ -10,6 +10,7 @@ import { and, asc, count, eq, inArray, lte } from "drizzle-orm";
 import { toDomainSource } from "../mappers.ts";
 import type { RuntimeDb } from "../runtime.ts";
 import { articles, revisionChanges, sources, stories, storyRevisions } from "../schema/index.ts";
+import { type LeadImage, leadImageSql } from "./lead-image.ts";
 import { loadRevision, loadRevisionChanges } from "./revision.ts";
 
 /**
@@ -34,6 +35,8 @@ export interface StoryPageData {
     readonly checkedAt: Date;
     readonly contradictionStatus: ContradictionStatus;
   };
+  /** 대표 이미지: 이 개정판의 출처 집합(`source_article_ids`)에서 고른다. 없으면 null. */
+  readonly image: LeadImage | null;
   readonly claims: readonly {
     readonly id: string;
     readonly order: number;
@@ -144,6 +147,10 @@ export async function loadPublishedStory(
   };
 
   const changes = await loadRevisionChanges(db, { revisionId: domain.id });
+  const [imageRow] = await db
+    .select({ image: leadImageSql(storyRevisions.source_article_ids) })
+    .from(storyRevisions)
+    .where(eq(storyRevisions.id, domain.id));
 
   const revisionListRows = await db
     .select({
@@ -196,6 +203,7 @@ export async function loadPublishedStory(
       checkedAt: loaded.checkedAt,
       contradictionStatus: domain.contradictionStatus,
     },
+    image: imageRow?.image ?? null,
     claims: domain.claims.map((claim) => ({
       id: claim.id,
       order: claim.order,

@@ -192,6 +192,42 @@ describe("GNews 응답 매핑", () => {
     expect(result.articles).toHaveLength(20);
   });
 
+  it("gnews 응답의 image를 http(s) URL일 때만 imageUrl로 매핑한다", () => {
+    const { articles } = toCollected(recorded("korea", 1), "한국 관련 해외 보도");
+    expect(articles.map((a) => a.imageUrl)).toEqual(
+      recorded("korea", 1).articles.map((a) => a.image ?? undefined),
+    );
+    expect(articles[0]?.imageUrl).toMatch(/^https:\/\/.+\.example\//);
+
+    const item = (id: string, image: string | null | undefined) => ({
+      id,
+      title: `Title ${id}`,
+      description: null,
+      content: "Body",
+      url: `https://paper.example/${id}`,
+      publishedAt: "2026-09-27T03:00:00Z",
+      source: { id: "src-1", name: "Paper", url: "https://paper.example" },
+      ...(image === undefined ? {} : { image }),
+    });
+    const response = GnewsResponseSchema.parse({
+      totalArticles: 5,
+      articles: [
+        item("ok", "http://images.paper.example/a.jpg"),
+        item("ftp", "ftp://images.paper.example/a.jpg"),
+        item("empty", ""),
+        item("null", null),
+        item("missing", undefined),
+      ],
+    });
+    expect(toCollected(response, "기술·AI").articles.map((a) => a.imageUrl)).toEqual([
+      "http://images.paper.example/a.jpg",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    ]);
+  });
+
   it("unregistered GNews source falls back to 미확인 metadata", () => {
     const response = GnewsResponseSchema.parse({
       totalArticles: 1,

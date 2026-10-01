@@ -15,6 +15,7 @@
     "search:backfill-embeddings": "node --env-file-if-exists=../../.env scripts/backfill-search-embeddings.ts",
     "sources:sync": "node --env-file-if-exists=../../.env scripts/sources-sync.ts",
     "source:set-tier": "node --env-file-if-exists=../../.env scripts/source-set-tier.ts",
+    "article:clear-image": "node --env-file-if-exists=../../.env scripts/article-clear-image.ts",
     "accounts:replay-deletions": "node --env-file-if-exists=../../.env scripts/replay-account-deletions.ts",
     "accounts:export-deletions": "node --env-file-if-exists=../../.env scripts/export-account-deletions.ts"
   },

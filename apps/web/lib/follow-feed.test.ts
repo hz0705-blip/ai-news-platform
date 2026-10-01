@@ -18,6 +18,7 @@ function story(
     sourceCount: 1,
     updatedAt: new Date(Date.UTC(2026, 8, 20, updatedHour)),
     isDemo,
+    image: null,
     latestRevisionNumber: seen.latest,
     lastSeenRevisionNumber: seen.lastSeen,
     followsStory: true,

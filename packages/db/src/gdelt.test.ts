@@ -38,6 +38,7 @@ const link = {
   normalizedUrl: "https://example.com/news/ports",
   title: "Ports pact signed",
   observedAt,
+  imageUrl: "https://images.example.com/ports.jpg",
 };
 
 maybe("GDELT 링크만 기사 저장", () => {
@@ -55,6 +56,7 @@ maybe("GDELT 링크만 기사 저장", () => {
         observed_at: observedAt,
         published_at: observedAt,
         embedding: null,
+        image_url: "https://images.example.com/ports.jpg",
       });
       expect(
         await db

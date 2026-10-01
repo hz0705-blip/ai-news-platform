@@ -78,6 +78,7 @@ function view(overrides: { title?: string; summary?: string; isDemo?: boolean } 
       sourceCount: 3,
       updatedAt: new Date("2026-09-17T00:30:00Z"),
       statusCounts: [],
+      image: null,
     },
     claims: [
       {

@@ -4,6 +4,7 @@ import {
   normalizeArticleUrl,
   type Source,
   type Topic,
+  toImageUrl,
 } from "@newstrail/domain";
 import { z } from "zod";
 
@@ -108,6 +109,8 @@ const GnewsArticleSchema = z.object({
   description: z.string().nullable(),
   content: z.string(),
   url: z.string().url(),
+  /** 기사 이미지 URL. 검증은 매퍼(`toImageUrl`)가 한다 — 형식이 틀려도 기사는 버리지 않는다. */
+  image: z.string().nullable().optional(),
   publishedAt: z.iso.datetime({ offset: true }),
   source: GnewsSourceSchema,
 });
@@ -168,9 +171,16 @@ export function toCollected(
       publishedAt: new Date(item.publishedAt),
       topics: [topic],
       rawBody: item.content,
+      ...imageField(item.image),
     });
   }
   return { sources: [...sources.values()], articles, excluded };
+}
+
+/** 응답 `image`가 http(s) URL이면 `imageUrl`로, 아니면 생략한다(ADR-0002: URL만 저장한다). */
+function imageField(raw: string | null | undefined): { imageUrl?: string } {
+  const imageUrl = toImageUrl(raw);
+  return imageUrl === null ? {} : { imageUrl };
 }
 
 // ── 수집 ────────────────────────────────────────────────────────
