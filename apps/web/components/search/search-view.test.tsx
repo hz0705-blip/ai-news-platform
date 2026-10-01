@@ -136,6 +136,21 @@ describe("검색 화면", () => {
     }
   });
 
+  it("실패 뒤 입력을 고치고 다시 시도하면 고친 질의로 검색한다", async () => {
+    fetchMock.mockResolvedValueOnce(json({ state: "unavailable" }, 503));
+    fetchMock.mockResolvedValueOnce(json({ state: "ok", stories: [live(1)] }));
+    render(<SearchScreen initialQuery="" now={now} />);
+    submit("태풍 상륙");
+    expect(await screen.findByText("검색하지 못했습니다")).toBeDefined();
+    fireEvent.change(input(), { target: { value: "태풍 피해" } });
+    fireEvent.click(screen.getByRole("button", { name: "다시 시도" }));
+    expect(await screen.findByRole("link", { name: "라이브 사건 1" })).toBeDefined();
+    expect(fetchMock.mock.calls.map(([, init]) => JSON.parse(String(init?.body)))).toEqual([
+      { query: "태풍 상륙" },
+      { query: "태풍 피해" },
+    ]);
+  });
+
   it("예산 소진이면 오늘 검색 한도 도달을 보인다", async () => {
     fetchMock.mockResolvedValue(json({ state: "search-limit" }, 429, { "retry-after": "3600" }));
     render(<SearchScreen initialQuery="" now={now} />);

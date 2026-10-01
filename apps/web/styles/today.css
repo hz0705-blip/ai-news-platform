@@ -94,7 +94,7 @@
 }
 .today-search-label {
   padding-left: 0.75rem;
-  font-size: var(--font-size-meta);
+  font-size: var(--font-size-body);
   color: var(--muted-foreground);
 }
 .today-search-input {
@@ -104,7 +104,7 @@
   min-height: 2.75rem;
   color: var(--foreground);
   background: transparent;
-  font-size: 1rem;
+  font-size: var(--font-size-body);
 }
 .today-search-input::placeholder {
   color: var(--muted-foreground);
@@ -128,6 +128,12 @@
 }
 .today-search-submit:hover {
   background: var(--muted);
+}
+/* 제출 버튼 링도 상자 링과 같은 모양(2px, 간격 0, 상자처럼 각진 모서리)으로 둔다. */
+.today-search-submit:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 0;
+  border-radius: 0;
 }
 .today-editorial {
   display: grid;

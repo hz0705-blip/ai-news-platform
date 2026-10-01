@@ -193,6 +193,26 @@ test.describe("터치", () => {
   });
 });
 
+test.describe("검색창", () => {
+  // 검색창은 48rem 이상에서만 보인다. 64rem 미만이라 본문 토큰은 17px이다.
+  test.use({ viewport: { width: 800, height: 900 } });
+  test("라벨·입력은 본문 크기, 제출 버튼 링은 상자 링과 같다", async ({ page, browserName }) => {
+    await mountToday(page);
+    const form = page.getByRole("form", { name: "사건 검색" });
+    await expect(form.locator("label")).toHaveCSS("font-size", "17px");
+    await expect(form.getByRole("searchbox")).toHaveCSS("font-size", "17px");
+    await form.getByRole("searchbox").focus();
+    // macOS WebKit은 버튼 순회에 Option-Tab을 사용한다(Apple Safari 키보드 안내).
+    await page.keyboard.press(
+      browserName === "webkit" && process.platform === "darwin" ? "Alt+Tab" : "Tab",
+    );
+    const submit = form.getByRole("button", { name: "사건 검색" });
+    await expect(submit).toBeFocused();
+    await expect(submit).toHaveCSS("outline-width", "2px");
+    await expect(submit).toHaveCSS("outline-offset", "0px");
+  });
+});
+
 test("summary 전문·줄임 없는 읽기·상대 시각 datetime·여러 출처 사건", async ({ page }) => {
   await mountToday(page);
   const summary = latest(page).getByText(LONG_SUMMARY, { exact: true }).first();
