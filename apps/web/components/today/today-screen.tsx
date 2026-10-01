@@ -58,7 +58,7 @@ export function TodayScreen({
     nextFocus.current = null;
   }
   return (
-    <main className="today-page" id="today-content">
+    <main className="today-page" id="main-content" tabIndex={-1}>
       <TodayHeader lastUpdated={live.lastUpdated} operationalNotice={operationalNotice} />
       <div className="today-toolbar">
         <div className="today-topic-controls">
@@ -77,14 +77,20 @@ export function TodayScreen({
             onValueChange={selectTopics}
             className="today-topics"
           >
-            {TOPICS.map((topic) => (
-              <Toggle key={topic} value={topic} className="today-topic-filter">
-                {topic}
-                <span>
-                  {storyCount(live.stories.filter((story) => story.topics.includes(topic)).length)}
-                </span>
-              </Toggle>
-            ))}
+            {TOPICS.map((topic) => {
+              const count = live.stories.filter((story) => story.topics.includes(topic)).length;
+              return (
+                <Toggle
+                  key={topic}
+                  value={topic}
+                  className="today-topic-filter"
+                  aria-label={`${topic} ${storyCount(count)}`}
+                >
+                  {topic}
+                  <span aria-hidden="true">{count}</span>
+                </Toggle>
+              );
+            })}
           </ToggleGroup>
         </div>
         <search aria-label={SEARCH_LINK} className="today-search">
@@ -94,7 +100,7 @@ export function TodayScreen({
             method="get"
             className="today-search-form"
           >
-            <label htmlFor="today-search-query" className="sr-only">
+            <label htmlFor="today-search-query" className="today-search-label">
               검색어
             </label>
             <input
@@ -111,16 +117,13 @@ export function TodayScreen({
           </form>
         </search>
       </div>
-      <div className="today-results">
-        <p>
-          {selected[0] ?? "전체 토픽"} · {storyCount(stories.length)}
-        </p>
-        <p>사건 갱신 시각 순</p>
-      </div>
       <div className="today-editorial">
         <div className="today-content-column">
           <section aria-labelledby="latest-stories">
-            <EditorialSectionHeading id="latest-stories" detail="발행된 사건">
+            <EditorialSectionHeading
+              id="latest-stories"
+              detail={`${selected[0] ?? "전체 토픽"} · ${storyCount(stories.length)} · 사건 갱신 시각 순`}
+            >
               {LATEST_STORIES}
             </EditorialSectionHeading>
             {stories.length === 0 ? (
@@ -137,11 +140,22 @@ export function TodayScreen({
               <>
                 <ul className="today-story-grid">
                   {stories.slice(0, visibleCount).map((story, index) => (
-                    <li key={story.id} className={index === 0 ? "today-lead" : undefined}>
+                    <li
+                      key={story.id}
+                      className={
+                        index === 0
+                          ? "today-lead"
+                          : index < 3
+                            ? "today-secondary"
+                            : "today-list-item"
+                      }
+                    >
                       <EditorialCard
                         story={story}
                         now={now}
                         featured={index === 0}
+                        compact={index >= 3}
+                        withImage={index === 1}
                         titleRef={(node) => {
                           if (node && nextFocus.current === story.id) {
                             node.focus();
@@ -167,21 +181,24 @@ export function TodayScreen({
               </>
             )}
           </section>
-          <section aria-labelledby="demo-stories" className="today-demos">
-            <EditorialSectionHeading id="demo-stories" detail={DEMO_NOTICE}>
-              {DEMO_STORIES}
-            </EditorialSectionHeading>
-            <ul className="today-story-grid">
-              {demo.stories.map((story) => (
-                <li key={story.id}>
-                  <EditorialCard story={story} now={now} />
-                </li>
-              ))}
-            </ul>
-          </section>
         </div>
         <TodayOverview stories={live.stories} />
       </div>
+      <section aria-labelledby="demo-stories" className="today-demos">
+        <EditorialSectionHeading id="demo-stories" detail={DEMO_NOTICE}>
+          {DEMO_STORIES}
+        </EditorialSectionHeading>
+        <ul className="today-demo-grid">
+          {demo.stories.map((story, index) => (
+            <li key={story.id}>
+              <p className="today-demo-index" aria-hidden="true">
+                {String(index + 1).padStart(2, "0")}
+              </p>
+              <EditorialCard story={story} now={now} />
+            </li>
+          ))}
+        </ul>
+      </section>
     </main>
   );
 }

@@ -28,7 +28,7 @@ test("scraper user agents get 200 html with og tags", async ({ request, browserN
     expect(meta(head, "og:image:height")).toBe("600");
     expect(meta(head, "twitter:card")).toBe("summary_large_image");
     expect(meta(head, "og:image"), userAgent).toMatch(
-      /\/og\/story\/demo-1-agreement\/[^/]+\/ko-t\d+-f[\d.]+\.png$/,
+      /\/og\/story\/demo-1-agreement\/[^/]+\/ko-t\d+-f[\w.-]+\.png$/,
     );
   }
 

@@ -112,7 +112,7 @@ function ChangeItem({ item }: { item: ChangeItemView }) {
           <p>
             <KindLabel icon={Minus}>{CHANGE_CLAIM_REMOVED}</KindLabel>
           </p>
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+          <dl className="sentence-diff grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
             <Sentence term={PREVIOUS_SENTENCE}>{item.previousText}</Sentence>
           </dl>
         </>
@@ -124,7 +124,7 @@ function ChangeItem({ item }: { item: ChangeItemView }) {
             <KindLabel icon={PencilLine}>{CHANGE_CLAIM_MODIFIED}</KindLabel>
             <ClaimRef order={item.claimOrder} />
           </p>
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+          <dl className="sentence-diff grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
             <Sentence term={PREVIOUS_SENTENCE}>
               <DiffText segments={item.previous} mark="del" />
             </Sentence>
@@ -189,13 +189,13 @@ export function ChangeSection({ view }: { view: StoryView }) {
                 // 변화는 저장 순서대로 한 번만 온다.
                 // biome-ignore lint/suspicious/noArrayIndexKey: 순서가 바뀌지 않는 불변 목록
                 key={index}
-                className="flex flex-col gap-2 rounded-md border border-border p-4"
+                className="change-row"
               >
                 <ChangeItem item={item} />
               </li>
             ))}
             {changes.sourceAdditionCount > 0 ? (
-              <li className="rounded-md border border-border p-4">
+              <li className="change-row">
                 <KindLabel icon={CHANGE_KIND_ICONS["출처 추가"]}>
                   {sourceAdditionCount(changes.sourceAdditionCount)}
                 </KindLabel>

@@ -57,12 +57,12 @@ for (const colorScheme of ["light", "dark"] as const) {
     test(`${colorScheme} ${width}px 기본 페이지`, async ({ page }, testInfo) => {
       await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
       await page.setViewportSize({ width, height: width === 640 ? 450 : 900 });
-      const response = await page.goto("/");
+      await page.goto("/");
       await expect(page.getByRole("group", { name: "토픽", exact: true })).toBeVisible();
       await expect(
         page.getByRole("region", { name: "데모 사건", exact: true }).getByRole("link").first(),
       ).toBeVisible();
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText("사건으로 읽는 해외 보도");
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText("오늘의 지면");
       await page.evaluate(() => document.fonts.ready);
       expect(await page.evaluate(() => document.fonts.check('17px "Pretendard Variable"'))).toBe(
         true,
@@ -74,16 +74,14 @@ for (const colorScheme of ["light", "dark"] as const) {
           ),
         ),
       ).toBe(true);
-      expect(await page.locator('link[rel="preload"][as="font"]').count()).toBe(0);
-      expect(response?.headers().link ?? "").not.toMatch(/woff2|as=font/);
+      const preloaded = page.locator('link[rel="preload"][as="font"]');
+      await expect(preloaded).toHaveCount(1);
+      await expect(preloaded).toHaveAttribute("href", "/fonts/NanumMyeongjo-Bold.woff2");
       await expect(page.locator("html")).toHaveAttribute("lang", "ko");
       await expect(page.locator("html")).toHaveCSS("font-size", "16px");
       await expect(page.locator("body")).toHaveCSS("font-size", width < 1024 ? "17px" : "18px");
-      // 오늘 머리 제목은 48rem 이상에서 40px이다(스펙 "타이포"). 일반 제목 26/32는 타이포 유틸 검사가 본다.
-      await expect(page.getByRole("heading", { level: 1 })).toHaveCSS(
-        "font-size",
-        width < 768 ? "26px" : "40px",
-      );
+      // 지면 이름은 작은 라벨이고 대표 사건 제목이 가장 큰 기사 위계를 맡는다.
+      await expect(page.getByRole("heading", { level: 1 })).toHaveCSS("font-size", "17px");
       await expect(page.getByRole("button", { name: /테마|다크|라이트/ })).toHaveCount(0);
       expect(
         await page.evaluate(

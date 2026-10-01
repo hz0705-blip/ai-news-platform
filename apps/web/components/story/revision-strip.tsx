@@ -47,11 +47,7 @@ export function RevisionStrip({ revisions }: { revisions: readonly RevisionStrip
         {revisions.map((item) => {
           const counts = item.counts.filter((c) => c.count > 0);
           return (
-            <li
-              key={item.id}
-              className="flex flex-col gap-1 rounded-md border border-border p-4 data-[current=true]:border-foreground"
-              data-current={item.isCurrent}
-            >
+            <li key={item.id} className="revision-row" data-current={item.isCurrent}>
               <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <RevisionLink item={item} />
                 {item.isCurrent ? <span className="font-semibold">{CURRENT_REVISION}</span> : null}

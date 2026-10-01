@@ -24,9 +24,9 @@ export function ClaimList({
     .map((claim) => claim.order);
   return (
     <ClaimExpansionProvider initialExpanded={initialExpanded}>
-      <div className="lg:grid lg:grid-cols-[minmax(0,19fr)_minmax(0,16fr)] lg:items-start lg:gap-8">
+      <div className="story-reading-grid">
         {frame(
-          <ol className="flex flex-col gap-6">
+          <ol className="story-claim-list">
             {claims.map((claim) => (
               <ClaimItem key={claim.id} claim={claim} />
             ))}

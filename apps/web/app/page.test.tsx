@@ -2,6 +2,7 @@ import type { TodayStoryCard } from "@newstrail/db";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { SiteHeader } from "../components/site-header.tsx";
 import { TodayScreen } from "../components/today/today-screen.tsx";
 
 const now = new Date("2026-09-23T03:00:00Z");
@@ -37,6 +38,15 @@ afterEach(() => {
 });
 
 describe("오늘", () => {
+  it("대표 사건·두 번째 위계·목록에서도 사건 링크와 상태를 읽을 수 있다", () => {
+    show(Array.from({ length: 5 }, (_, n) => story(n + 1)));
+    const latest = within(screen.getByRole("region", { name: "최신 사건" }));
+    expect(latest.getAllByRole("link").map((link) => link.textContent)).toEqual(
+      Array.from({ length: 5 }, (_, n) => `사건 제목 ${n + 1}`),
+    );
+    expect(latest.getAllByText("복수 출처 일치")).toHaveLength(5);
+    expect(latest.getByText("가능성을 포함한 첫 주장 전문 1")).toBeDefined();
+  });
   it("서버는 절대 시각을 렌더하고 클라이언트에서 상대 시각을 조용히 갱신한다", () => {
     vi.useFakeTimers();
     vi.setSystemTime(now);
@@ -67,11 +77,13 @@ describe("오늘", () => {
   });
   it("미발행 시각을 발명하지 않고 예정과 별도 데모를 보인다", () => {
     show();
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("사건으로 읽는 해외 보도");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("오늘의 지면");
     expect(screen.getByText("마지막 갱신 — 아직 발행된 사건이 없습니다")).toBeDefined();
     expect(screen.getAllByText("매일 오전 6시·오후 6시 갱신 예정")).toHaveLength(2);
     expect(
-      within(screen.getByRole("group", { name: "토픽" })).getAllByText("사건 0건"),
+      within(screen.getByRole("group", { name: "토픽" })).getAllByRole("button", {
+        name: /사건 0건$/,
+      }),
     ).toHaveLength(4);
     expect(screen.getByRole("link", { name: "데모 사건 보기" }).getAttribute("href")).toBe(
       "#demo-stories",
@@ -91,11 +103,11 @@ describe("오늘", () => {
     ]);
     const group = screen.getByRole("group", { name: "토픽" });
     const tiles = within(group).getAllByRole("button");
-    expect(tiles.map((tile) => tile.textContent)).toEqual([
-      "한국 관련 해외 보도사건 1건",
-      "국제 정치·외교·안보사건 0건",
-      "세계 경제·금융사건 1건",
-      "기술·AI사건 2건",
+    expect(tiles.map((tile) => tile.getAttribute("aria-label"))).toEqual([
+      "한국 관련 해외 보도 사건 1건",
+      "국제 정치·외교·안보 사건 0건",
+      "세계 경제·금융 사건 1건",
+      "기술·AI 사건 2건",
     ]);
     const latest = within(screen.getByRole("region", { name: "최신 사건" }));
     const economy = within(group).getByRole("button", { name: /^세계 경제·금융/ });
@@ -112,7 +124,7 @@ describe("오늘", () => {
     fireEvent.click(politics);
     expect(latest.getAllByRole("article")).toHaveLength(3);
   });
-  it("실제 발행 사건만 집계하고 토픽 필터·더 보기와 무관하게 전체 집계를 유지한다", () => {
+  it("보도가 달라진 사건은 데모와 섞지 않고 필터와 무관하게 이어 읽을 수 있다", () => {
     render(
       <TodayScreen
         live={{
@@ -127,25 +139,13 @@ describe("오늘", () => {
         now={now}
       />,
     );
-    const overview = screen.getByRole("region", { name: "발행 사건 현황" });
-    expect(overview.textContent).toContain("전체 발행 사건 10건");
-    const terms = within(overview).getAllByRole("term");
-    expect(terms.map((term) => [term.textContent, term.nextElementSibling?.textContent])).toEqual([
-      ["보도 상충", "1건"],
-      ["정정됨", "1건"],
-    ]);
-    const topics = screen.getByRole("region", { name: "토픽별 사건 분포" });
+    const overview = screen.getByRole("region", { name: "상충·정정 살펴보기" });
     expect(
-      within(topics)
-        .getAllByRole("listitem")
-        .map((item) => item.textContent),
-    ).toEqual([
-      "한국 관련 해외 보도사건 0건",
-      "국제 정치·외교·안보사건 0건",
-      "세계 경제·금융사건 1건",
-      "기술·AI사건 10건",
-    ]);
-    expect(topics.textContent).toContain("여러 토픽에 속한 사건은 각 토픽에 포함됩니다");
+      within(overview)
+        .getAllByRole("link", { name: /^사건 제목/ })
+        .map((link) => link.textContent),
+    ).toEqual(["사건 제목 1", "사건 제목 2"]);
+    expect(within(overview).queryByText("사건 제목 99")).toBeNull();
     const before = overview.textContent;
     fireEvent.click(screen.getByRole("button", { name: /^세계 경제·금융/ }));
     expect(overview.textContent).toBe(before);
@@ -158,6 +158,7 @@ describe("오늘", () => {
     ).toHaveLength(8);
   });
   it("홈 검색은 실제 검색 화면의 q로 보내고 팔로우·소개 진입점을 유지한다", () => {
+    render(<SiteHeader />);
     show([story(1)]);
     const form = screen.getByRole("form", { name: "사건 검색" });
     expect(form.getAttribute("action")).toBe("/search");
@@ -186,7 +187,7 @@ describe("오늘", () => {
     const latest = within(screen.getByRole("region", { name: "최신 사건" }));
     expect(latest.getByText("가능성을 포함한 첫 주장 전문 1")).toBeDefined();
     expect(latest.getByText("복수 출처 일치")).toBeDefined();
-    expect(latest.getByText("출처 2개")).toBeDefined();
+    expect(latest.getByText("출처 2곳")).toBeDefined();
     expect(latest.getByText("30분 전").getAttribute("datetime")).toBe("2026-09-23T02:30:00.000Z");
     expect(latest.getByRole("link", { name: "사건 제목 1" }).getAttribute("href")).toBe(
       "/story/story-1",

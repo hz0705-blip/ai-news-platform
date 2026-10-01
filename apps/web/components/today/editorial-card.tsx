@@ -7,18 +7,23 @@ import type { ReactNode } from "react";
 import { DEMO_TIME, STORY_UPDATED, sourceCount, TOPICS_LABEL } from "../../app/copy.ts";
 import { formatAbsolute } from "../../lib/format-time.ts";
 import { DemoBadge } from "../demo-badge.tsx";
+import { LeadImage } from "../lead-image.tsx";
 import { StatusBadge } from "../status-badge.tsx";
 
-/** 홈 전용 카드. 팔로우 화면에서 쓰는 StoryCard의 표시·동작은 별도로 유지한다. */
+/** 대표 사건·두 번째 위계·짧은 목록을 같은 사건 데이터로 그린다. */
 export function EditorialCard({
   story,
   now,
   featured = false,
+  compact = false,
+  withImage = false,
   titleRef,
 }: {
   story: TodayStoryCard;
   now: Date | null;
   featured?: boolean;
+  compact?: boolean;
+  withImage?: boolean;
   titleRef?: (node: HTMLAnchorElement | null) => void;
 }) {
   const absolute = formatAbsolute(story.updatedAt);
@@ -27,7 +32,11 @@ export function EditorialCard({
       ? formatRelativeTime(story.updatedAt, now)
       : absolute.text;
   return (
-    <article className="today-story" data-featured={featured || undefined}>
+    <article
+      className="today-story"
+      data-featured={featured || undefined}
+      data-compact={compact || undefined}
+    >
       {story.isDemo && (
         <p className="today-demo-notice">
           <DemoBadge />
@@ -44,7 +53,10 @@ export function EditorialCard({
           <ArrowUpRight aria-hidden="true" />
         </Link>
       </h3>
-      <p className="today-story-summary line-clamp-2">{story.summary}</p>
+      {!compact && (featured || withImage) && (
+        <LeadImage image={story.image} isDemo={story.isDemo} priority={featured} />
+      )}
+      {!compact && <p className="today-story-summary">{story.summary}</p>}
       <div className="today-story-meta">
         <StatusBadge status={story.status} />
         <span>{sourceCount(story.sourceCount)}</span>

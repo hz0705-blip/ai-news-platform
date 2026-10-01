@@ -27,10 +27,15 @@ export default function Page() {
   return (
     <Suspense
       fallback={
-        <main className="today-page">
+        <main className="today-page" id="main-content" tabIndex={-1}>
           <TodayHeader />
           <div className="today-loading" role="status">
-            사건을 불러오고 있습니다.
+            <p>사건을 불러오고 있습니다.</p>
+            <div className="editorial-skeleton" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
           </div>
         </main>
       }

@@ -30,19 +30,13 @@ describe("계정 진입점", () => {
     expect(fetchMock).toHaveBeenCalledWith("/auth/session", { cache: "no-store" });
   });
 
-  it("userId가 있으면 팔로우·계정 링크와 지금 페이지로 돌아오는 로그아웃을 보인다", async () => {
+  it("userId가 있으면 팔로우·계정 링크를 보이고 로그아웃은 계정 화면에 둔다", async () => {
     fetchMock.mockResolvedValue(session("user-1"));
     render(<AccountMenu />);
     const nav = await screen.findByRole("navigation", { name: "계정 메뉴" });
     expect(within(nav).getByRole("link", { name: "팔로우" }).getAttribute("href")).toBe("/follows");
     expect(within(nav).getByRole("link", { name: "계정" }).getAttribute("href")).toBe("/account");
-    const logout = within(nav).getByRole("button", { name: "로그아웃" });
-    const form = logout.closest("form");
-    expect(form?.getAttribute("action")).toBe("/auth/logout");
-    expect(form?.getAttribute("method")).toBe("post");
-    expect(form?.querySelector<HTMLInputElement>('input[name="next"]')?.value).toBe(
-      "/story/demo-1-agreement",
-    );
+    expect(within(nav).queryByRole("button", { name: "로그아웃" })).toBeNull();
     expect(screen.queryByRole("button", { name: "로그인" })).toBeNull();
   });
 

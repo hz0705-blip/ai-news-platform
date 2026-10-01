@@ -64,7 +64,7 @@ function decodePng(buffer: Buffer) {
   return { width, height, at };
 }
 
-const BACKGROUND = [0xf8, 0xfa, 0xfc];
+const BACKGROUND = [0xf5, 0xf2, 0xe9];
 
 function view(overrides: { title?: string; summary?: string; isDemo?: boolean } = {}): StoryView {
   return {

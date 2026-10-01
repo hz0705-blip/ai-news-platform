@@ -60,8 +60,9 @@ function Section({ id, title, children }: { id: string; title: string; children:
  */
 export default function Page(): ReactElement {
   return (
-    <main className="mx-auto flex max-w-[48rem] flex-col gap-8 px-4 py-12 lg:px-6">
+    <main id="main-content" tabIndex={-1} className="editorial-page document-page">
       <header className="flex flex-col gap-3">
+        <p className="editorial-eyebrow">Newstrail이 뉴스를 읽는 방식</p>
         <h1>{ABOUT_TITLE}</h1>
         <p>{ABOUT_LEAD}</p>
       </header>

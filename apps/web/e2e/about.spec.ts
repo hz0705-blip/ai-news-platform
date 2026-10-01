@@ -4,7 +4,10 @@ import { expectNoAxeViolations } from "./axe.ts";
 // 소개(#127). 요청 메일 주소는 빌드 때 CONTACT_EMAIL에서 들어간다. CI e2e 잡은 가짜 값 contact@example.com으로 빌드한다.
 test("오늘에서 소개를 열고 mailto 링크가 있다", async ({ page }) => {
   await page.goto("/");
-  await page.locator("main > header").getByRole("link", { name: "서비스 소개" }).click();
+  await page
+    .getByRole("navigation", { name: "주요 탐색" })
+    .getByRole("link", { name: "서비스 소개" })
+    .click();
   await expect(page).toHaveURL(/\/about$/);
   await expect(page.getByRole("heading", { level: 1, name: "서비스 소개" })).toBeVisible();
   const requests = page.getByRole("region", { name: "정정·삭제 요청" });

@@ -39,7 +39,11 @@ test("포커스만 옮기면 패널이 바뀌지 않고 활성화하면 바뀐�
 
   await page.keyboard.press("Enter");
   await expect(panelHeading(page)).toHaveText("주장 2의 근거");
-  const claimText = await page.locator("#claims ol > li").nth(1).locator("> p").textContent();
+  const claimText = await page
+    .locator("#claims ol > li")
+    .nth(1)
+    .locator(".claim-text")
+    .textContent();
   expect(claimText).toBeTruthy();
   await expect(page.locator("#evidence-panel p", { hasText: claimText ?? "" }).first()).toHaveText(
     claimText ?? "",

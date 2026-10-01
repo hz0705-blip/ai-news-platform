@@ -2,6 +2,24 @@
 @import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 @import "../styles/tokens.css";
 @import "../styles/today.css";
+@import "../styles/editorial.css";
+
+/* 한글·라틴 정적 제목 폰트. 전역 한 파일만 preload, 본문은 Pretendard. */
+@font-face {
+  font-family: "Nanum Myeongjo";
+  src: url("/fonts/NanumMyeongjo-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: optional;
+}
+@font-face {
+  font-family: "Editorial Fallback";
+  src: local("Batang"), local("AppleMyungjo"), local("Times New Roman");
+  ascent-override: 80%;
+  descent-override: 20%;
+  line-gap-override: 25%;
+  size-adjust: 100%;
+}
 
 @layer base {
   html {

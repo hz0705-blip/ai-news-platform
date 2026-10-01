@@ -27,14 +27,28 @@ export function EvidencePanel({ claims }: { claims: readonly ClaimView[] }) {
     <aside
       id={EVIDENCE_PANEL_ID}
       aria-labelledby={EVIDENCE_PANEL_HEADING_ID}
-      className="hidden lg:block"
+      className="story-evidence-panel hidden lg:block"
     >
       <div className="flex flex-col gap-4">
+        <p className="editorial-eyebrow">원문으로 확인하기</p>
         <h2 id={EVIDENCE_PANEL_HEADING_ID} tabIndex={-1}>
           {claim === undefined ? PANEL_EMPTY_HEADING : panelHeading(claim.order)}
         </h2>
         {claim === undefined ? (
-          <p className="text-muted-foreground">{PANEL_EMPTY_HINT}</p>
+          <>
+            <p className="text-muted-foreground">{PANEL_EMPTY_HINT}</p>
+            <ol aria-label="원문 확인 순서" className="evidence-reading-steps">
+              <li>
+                <span aria-hidden="true">01</span>확인하고 싶은 주장의 근거를 펼칩니다.
+              </li>
+              <li>
+                <span aria-hidden="true">02</span>출처별 영어 발췌와 보도가 다른 지점을 읽습니다.
+              </li>
+              <li>
+                <span aria-hidden="true">03</span>원문 링크에서 전체 맥락을 확인합니다.
+              </li>
+            </ol>
+          </>
         ) : (
           <>
             <p>{claim.text}</p>

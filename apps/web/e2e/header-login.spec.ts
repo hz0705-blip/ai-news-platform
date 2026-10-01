@@ -72,7 +72,7 @@ test.describe("로그인 상태", () => {
   test.skip(authEnv() === null, "로컬 Supabase가 꺼져 있다(pnpm exec supabase start)");
   test.use({ viewport: { width: 360, height: 780 } });
 
-  test("상단에 팔로우·계정·로그아웃이 보이고 로그아웃하면 같은 페이지로 돌아와 로그인 버튼이 보인다", async ({
+  test("상단의 계정 링크에서 로그아웃하면 오늘로 돌아와 로그인 버튼이 보인다", async ({
     makeUser,
     openAs,
   }, testInfo) => {
@@ -87,8 +87,10 @@ test.describe("로그인 상태", () => {
     );
     await expectNoAxeViolations(page, testInfo, "header-signed-in");
 
-    await nav.getByRole("button", { name: "로그아웃" }).click();
-    await expect(page).toHaveURL(new RegExp(`${STORY_URL}$`));
+    await expect(nav.getByRole("button", { name: "로그아웃" })).toHaveCount(0);
+    await nav.getByRole("link", { name: "계정" }).click();
+    await page.getByRole("main").getByRole("button", { name: "로그아웃" }).click();
+    await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole("banner").getByRole("button", { name: "로그인" })).toBeVisible();
   });
 });

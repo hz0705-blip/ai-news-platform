@@ -8,11 +8,12 @@ import { OG_SIZE, type OgStoryCard } from "./share-card.ts";
 
 /**
  * 공유 카드 PNG(스펙 "화면과 경험" 공유 카드). 1200×600, 모든 글자와 강조선은 가운데 800×400 안전 영역 안에 둔다
- * (카카오 2:1 크롭). B 라이트 토큰, 텍스트 전용, Pretendard 정적 OTF를 명시 로드한다.
+ * (카카오 2:1 크롭). 지면과 같은 종이·잉크 팔레트와 정적 한글 제목 폰트를 쓴다.
  */
 export const OG_SAFE_AREA = { x: 200, y: 100, width: 800, height: 400 } as const;
 
-const COLOR = { background: "#f8fafc", text: "#0f172a", muted: "#475569", accent: "#581c87" };
+// ImageResponse는 CSS 변수를 읽지 못하므로 tokens.css의 라이트 팔레트를 대응시킨다.
+const COLOR = { background: "#f5f2e9", text: "#252720", muted: "#626459", accent: "#292d24" };
 const FONT_FAMILY = "Pretendard";
 
 type Fonts = NonNullable<ConstructorParameters<typeof ImageResponse>[1]>["fonts"];
@@ -20,15 +21,19 @@ type Fonts = NonNullable<ConstructorParameters<typeof ImageResponse>[1]>["fonts"
 // 경로는 리터럴로 둔다 — 번들러(Turbopack)가 `new URL(리터럴, import.meta.url)`만 자산으로 내보내고 추적한다.
 const REGULAR = new URL("../assets/fonts/Pretendard-Regular.otf", import.meta.url);
 const BOLD = new URL("../assets/fonts/Pretendard-Bold.otf", import.meta.url);
+const DISPLAY = new URL("../assets/fonts/NanumMyeongjo-Bold.ttf", import.meta.url);
 
 let fontsPromise: Promise<Fonts> | undefined;
 
 /** Pretendard Regular·Bold. 프로세스당 한 번 읽고, 실패하면 다음 요청이 다시 읽는다. */
 export function loadOgFonts(): Promise<Fonts> {
-  fontsPromise ??= Promise.all([readFile(REGULAR), readFile(BOLD)]).then(([regular, bold]) => [
-    { name: FONT_FAMILY, data: regular, weight: 400, style: "normal" },
-    { name: FONT_FAMILY, data: bold, weight: 700, style: "normal" },
-  ]);
+  fontsPromise ??= Promise.all([readFile(REGULAR), readFile(BOLD), readFile(DISPLAY)]).then(
+    ([regular, bold, display]) => [
+      { name: FONT_FAMILY, data: regular, weight: 400, style: "normal" },
+      { name: FONT_FAMILY, data: bold, weight: 700, style: "normal" },
+      { name: "Nanum Myeongjo", data: display, weight: 700, style: "normal" },
+    ],
+  );
   fontsPromise.catch(() => {
     fontsPromise = undefined;
   });
@@ -57,8 +62,8 @@ function Frame({ children }: { children?: ReactNode }) {
           width: OG_SAFE_AREA.width,
           height: OG_SAFE_AREA.height,
           overflow: "hidden",
-          borderLeft: `8px solid ${COLOR.accent}`,
-          paddingLeft: 36,
+          borderTop: `3px solid ${COLOR.accent}`,
+          paddingTop: 16,
           fontFamily: FONT_FAMILY,
           color: COLOR.text,
         }}
@@ -79,7 +84,7 @@ function StoryCard({ card }: { card: OgStoryCard }) {
             style={{
               display: "flex",
               border: `2px dashed ${COLOR.text}`,
-              borderRadius: 8,
+              borderRadius: 0,
               padding: "2px 12px",
               fontWeight: 700,
             }}
@@ -97,6 +102,7 @@ function StoryCard({ card }: { card: OgStoryCard }) {
           ...clamp(3),
           marginTop: 20,
           fontSize: 50,
+          fontFamily: "Nanum Myeongjo",
           fontWeight: 700,
           lineHeight: 1.3,
           flexShrink: 0,
@@ -139,7 +145,9 @@ function SafeCard({ withText }: { withText: boolean }) {
           }}
         >
           <div style={{ display: "flex", fontSize: 32, color: COLOR.accent }}>{SERVICE_NAME}</div>
-          <div style={{ display: "flex", fontSize: 56 }}>{SCREEN_TITLE}</div>
+          <div style={{ display: "flex", fontSize: 56, fontFamily: "Nanum Myeongjo" }}>
+            {SCREEN_TITLE}
+          </div>
         </div>
       ) : null}
     </Frame>

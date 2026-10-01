@@ -1,13 +1,11 @@
 /** @jsxImportSource react */
 "use client";
 
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { ACCOUNT_LINK } from "../../app/account/copy.ts";
-import { ACCOUNT_NAV, HEADER_FOLLOWS, HEADER_LOGIN, LOGOUT } from "../../app/auth/copy.ts";
-import { safeReturnPath } from "../../lib/auth/return-path.ts";
-import { Button, buttonVariants } from "../ui/button.tsx";
+import { ACCOUNT_NAV, HEADER_FOLLOWS, HEADER_LOGIN } from "../../app/auth/copy.ts";
+import { buttonVariants } from "../ui/button.tsx";
 import { LoginGate } from "./login-gate.tsx";
 
 const sessionResponse = z.object({ userId: z.string().nullable() });
@@ -20,7 +18,6 @@ async function fetchUserId(): Promise<string | null> {
 }
 
 function SignedInMenu() {
-  const next = safeReturnPath(usePathname());
   return (
     <nav
       aria-label={ACCOUNT_NAV}
@@ -32,12 +29,6 @@ function SignedInMenu() {
       <a href="/account" className="underline">
         {ACCOUNT_LINK}
       </a>
-      <form action="/auth/logout" method="post">
-        <input type="hidden" name="next" value={next} />
-        <Button type="submit" variant="outline">
-          {LOGOUT}
-        </Button>
-      </form>
     </nav>
   );
 }

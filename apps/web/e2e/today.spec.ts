@@ -1,4 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
+import type { LeadImage } from "@newstrail/db";
 import type { BatchNotice } from "@newstrail/domain/batch-status";
 import { TOPICS } from "@newstrail/domain/topic";
 import { expect, type Page, test } from "@playwright/test";
@@ -9,7 +10,7 @@ import { firstStory, LONG_SUMMARY, liveStories } from "./today-data.ts";
 
 // Worker-local memory bundle: actual UI, no public fixture route or persisted fake live rows.
 let bundle: Promise<string> | undefined;
-async function mountToday(page: Page, notice?: BatchNotice) {
+async function mountToday(page: Page, notice?: BatchNotice, image?: LeadImage) {
   bundle ??= build({
     entryPoints: ["e2e/today-entry.tsx"],
     bundle: true,
@@ -37,6 +38,9 @@ async function mountToday(page: Page, notice?: BatchNotice) {
   if (notice) {
     await page.addScriptTag({ content: `window.__TODAY_NOTICE__ = ${JSON.stringify(notice)};` });
   }
+  if (image) {
+    await page.addScriptTag({ content: `window.__TODAY_IMAGE__ = ${JSON.stringify(image)};` });
+  }
   await page.addScriptTag({ content: await bundle });
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   expect(errors).toEqual([]);
@@ -48,6 +52,37 @@ const demos = (page: Page) => page.getByRole("region", { name: "데모 사건", 
 const tiles = (page: Page) =>
   page.getByRole("group", { name: "토픽", exact: true }).getByRole("button");
 
+test("대표 이미지: 핫링크·크레딧·위계·데모 제외와 실패 시 슬롯 제거", async ({ page }) => {
+  const image = {
+    url: "https://images.example.test/lead.svg",
+    articleUrl: "https://example.test/article",
+    sourceName: "검사용 출처",
+  };
+  await page.route(image.url, (route) =>
+    route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect width="900" height="600" fill="#567"/></svg>',
+    }),
+  );
+  await mountToday(page, undefined, image);
+  const images = latest(page).locator("img");
+  await expect(images).toHaveCount(2);
+  await expect(images.first()).toHaveAttribute("src", image.url);
+  await expect(images.first()).toHaveAttribute("loading", "eager");
+  await expect(images.last()).toHaveAttribute("loading", "lazy");
+  await expect(latest(page).getByRole("link", { name: "사진 · 검사용 출처" })).toHaveCount(2);
+  await expect(
+    latest(page).getByRole("link", { name: "사진 · 검사용 출처" }).first(),
+  ).toHaveAttribute("href", image.articleUrl);
+  await expect(demos(page).locator("figure")).toHaveCount(0);
+  await images.evaluateAll((nodes) => {
+    for (const node of nodes) node.dispatchEvent(new Event("error"));
+  });
+  await expect(latest(page).locator("figure")).toHaveCount(0);
+  await expect(latest(page).getByRole("link", { name: "사진 · 검사용 출처" })).toHaveCount(0);
+  await expect(latest(page).getByRole("link", { name: firstStory.title })).toBeVisible();
+});
+
 test("실제 오늘: 미발행·0건 토픽 필터·데모 앵커 → 사건 → 근거", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -58,10 +93,7 @@ test("실제 오늘: 미발행·0건 토픽 필터·데모 앵커 → 사건 →
   await expect(page.getByText("마지막 갱신 — 아직 발행된 사건이 없습니다")).toBeVisible();
   await expect(page.getByText("매일 오전 6시·오후 6시 갱신 예정").first()).toBeVisible();
   await expect(tiles(page)).toHaveCount(4);
-  for (const tile of await tiles(page).all()) await expect(tile).toContainText("사건 0건");
-  await expect(page.getByRole("region", { name: "발행 사건 현황" })).toContainText(
-    "전체 발행 사건 0건",
-  );
+  for (const tile of await tiles(page).all()) await expect(tile).toHaveAccessibleName(/사건 0건$/);
   await expect(latest(page).getByRole("link", { name: "데모 사건 보기" })).toHaveAttribute(
     "href",
     "#demo-stories",
@@ -97,7 +129,9 @@ test("시간순 카드·다중 토픽·필터 해제·빈 토픽·8개 단위 �
     const members = liveStories.filter((story) =>
       story.topics.includes(TOPICS[index] ?? TOPICS[0]),
     );
-    await expect(tiles(page).nth(index)).toContainText(`사건 ${members.length}건`);
+    await expect(tiles(page).nth(index)).toHaveAccessibleName(
+      `${TOPICS[index]} 사건 ${members.length}건`,
+    );
   }
   await expect(latest(page).getByRole("list", { name: "토픽" }).first()).toHaveText(
     TOPICS[0] + TOPICS[1],
@@ -130,7 +164,15 @@ test("Tab·Enter·Space로 토픽을 선택하고 해제한다", async ({ page, 
   await mountToday(page);
   // macOS WebKit keyboard navigation preference uses Option-Tab for all controls.
   const tab = browserName === "webkit" && process.platform === "darwin" ? "Alt+Tab" : "Tab";
-  for (const name of ["오늘", "팔로우한 사건 보기", "사건 검색", "서비스 소개"]) {
+  await page.keyboard.press(tab);
+  await expect(page.getByRole("link", { name: "본문으로 건너뛰기" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("main")).toBeFocused();
+  await page
+    .getByRole("navigation", { name: "주요 탐색" })
+    .getByRole("link", { name: "오늘", exact: true })
+    .focus();
+  for (const name of ["팔로우한 사건 보기", "사건 검색", "서비스 소개"]) {
     await page.keyboard.press(tab);
     await expect(page.getByRole("link", { name, exact: true })).toBeFocused();
   }
@@ -157,7 +199,7 @@ test.describe("터치", () => {
   });
 });
 
-test("summary 전문·최대 두 줄·상대 시각 datetime·데모 절대 시각", async ({ page }) => {
+test("summary 전문·줄임 없는 읽기·상대 시각 datetime·데모 절대 시각", async ({ page }) => {
   await mountToday(page);
   const summary = latest(page).getByText(LONG_SUMMARY, { exact: true }).first();
   await expect(summary).toHaveText(LONG_SUMMARY);
@@ -166,8 +208,8 @@ test("summary 전문·최대 두 줄·상대 시각 datetime·데모 절대 시�
     lineHeight: Number.parseFloat(getComputedStyle(node).lineHeight),
     clamp: getComputedStyle(node).webkitLineClamp,
   }));
-  expect(metrics.clamp).toBe("2");
-  expect(metrics.height).toBeLessThanOrEqual(metrics.lineHeight * 2 + 1);
+  expect(metrics.clamp).toBe("none");
+  expect(metrics.height).toBeGreaterThan(metrics.lineHeight * 2);
   await expect(latest(page).getByRole("time").first()).toHaveText("1분 전");
   await expect(latest(page).getByRole("time").first()).toHaveAttribute(
     "datetime",
@@ -217,8 +259,7 @@ for (const width of [320, 640, 1440]) {
           expect(tile.x).toBeGreaterThanOrEqual(0);
           expect(tile.x + tile.width).toBeLessThanOrEqual(width);
         }
-        if (width < 768) expect(second.y).toBeGreaterThan(first.y);
-        else {
+        if (width >= 768) {
           expect(second.y).toBe(first.y);
           expect(second.x).toBeGreaterThan(first.x);
           expect(third.y).toBe(first.y);
@@ -226,12 +267,15 @@ for (const width of [320, 640, 1440]) {
         expect(measurements.cards.length).toBeGreaterThan(2);
         const [firstCard, secondCard, thirdCard] = measurements.cards;
         if (!firstCard || !secondCard || !thirdCard) throw new Error("Missing card bounds");
-        expect(secondCard.x).toBe(firstCard.x);
-        expect(secondCard.y).toBeGreaterThan(firstCard.y);
-        if (width < 768) expect(thirdCard.y).toBeGreaterThan(secondCard.y);
-        else {
-          expect(thirdCard.y).toBe(secondCard.y);
-          expect(thirdCard.x).toBeGreaterThan(secondCard.x);
+        if (width < 768) {
+          expect(secondCard.x).toBe(firstCard.x);
+          expect(secondCard.y).toBeGreaterThan(firstCard.y);
+          expect(thirdCard.y).toBeGreaterThan(secondCard.y);
+        } else {
+          expect(secondCard.x).toBeGreaterThan(firstCard.x);
+          expect(secondCard.y).toBe(firstCard.y);
+          expect(thirdCard.x).toBe(secondCard.x);
+          expect(thirdCard.y).toBeGreaterThan(secondCard.y);
           expect(firstCard.width).toBeGreaterThan(secondCard.width);
         }
         await testInfo.attach(`bounds-${state}.json`, {
@@ -264,7 +308,9 @@ test.describe("배치 상태", () => {
     await mountToday(page, { kind: "none" });
     await expect(header(page)).toContainText("마지막 갱신 2026. 9. 23. 오전 11:59 KST");
     await expect(header(page)).toContainText("매일 오전 6시·오후 6시 갱신 예정");
-    await expect(header(page).getByRole("link", { name: "사건 검색" })).toBeVisible();
+    await expect(
+      page.getByRole("navigation", { name: "주요 탐색" }).getByRole("link", { name: "사건 검색" }),
+    ).toBeVisible();
     await expect(header(page).locator("[data-batch-notice]")).toHaveCount(0);
   });
 

@@ -7,13 +7,13 @@ import type { StoryView } from "./story-view.ts";
  * 개정판마다 바뀐다. 템플릿(`og-image.tsx`)을 바꾸면 템플릿 버전을, 폰트 파일을 바꾸면 폰트 버전을 올린다 —
  * 불변 캐시된 옛 이미지가 새 URL로 대체된다.
  */
-export const OG_TEMPLATE_VERSION = 2;
-/** `assets/fonts`의 Pretendard 릴리스 버전. */
-export const OG_FONT_VERSION = "1.3.9";
+export const OG_TEMPLATE_VERSION = 3;
+/** `assets/fonts`의 Pretendard·Nanum Myeongjo 조합 버전. */
+export const OG_FONT_VERSION = "1.3.9-nanum1";
 export const OG_LANGUAGE = "ko";
 export const OG_SIZE = { width: 1200, height: 600 } as const;
 
-/** 마지막 경로 조각: `ko-t2-f1.3.9.png`. */
+/** 마지막 경로 조각: `ko-t3-f1.3.9-nanum1.png`. */
 const CARD_SEGMENT = `${OG_LANGUAGE}-t${OG_TEMPLATE_VERSION}-f${OG_FONT_VERSION}.png`;
 
 /** 경로 조각이 이 앱이 만드는 카드 언어(`ko-…png`)인지. 버전이 옛 값이어도 지금 템플릿으로 그린다. */

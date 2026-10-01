@@ -21,9 +21,9 @@ async function sessionUserId(request: APIRequestContext): Promise<string | null>
 
 async function logout(context: BrowserContext) {
   const page = await context.newPage();
-  await page.goto(`/auth/login?next=${encodeURIComponent(STORY_URL)}`);
+  await page.goto("/account");
   await page.getByRole("main").getByRole("button", { name: "로그아웃" }).click();
-  await expect(page).toHaveURL(new RegExp(`${STORY_URL}$`));
+  await expect(page).toHaveURL(/\/$/);
   await page.close();
 }
 
@@ -35,9 +35,9 @@ test("주입한 세션으로 로그인 상태가 요청 시점 영역에 보이�
   const page = await context.newPage();
   await page.goto(`/auth/login?next=${encodeURIComponent(STORY_URL)}`);
   await expect(page.getByText("로그인되어 있습니다.")).toBeVisible();
-
+  await page.getByRole("link", { name: "계정 관리" }).click();
   await page.getByRole("main").getByRole("button", { name: "로그아웃" }).click();
-  await expect(page).toHaveURL(new RegExp(`${STORY_URL}$`));
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
   await page.goto("/auth/login");

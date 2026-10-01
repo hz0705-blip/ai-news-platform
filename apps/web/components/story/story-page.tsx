@@ -14,23 +14,36 @@ import { StoryPersonalProvider } from "./story-personal.tsx";
 
 /**
  * 사건 URL과 개정판 URL이 함께 쓰는 화면. 구획 셋은 탭이 아니라 문서 앵커로 잇는다.
- * 데스크톱(lg)은 주장 구획과 근거 패널이 38:32 두 열이고, 머리·구획 내비·출처·변화는 전폭이다(Ruling 24-5).
+ * 넓은 화면에서는 주장과 근거를 나란히 읽고, 좁은 화면에서는 근거를 주장 바로 아래에서 읽는다.
  */
 export function StoryPage({ view }: { view: StoryView }) {
   return (
-    <main className="mx-auto flex max-w-[76rem] flex-col gap-8 px-4 py-12 lg:px-6">
+    <main className="editorial-page story-page" id="main-content" tabIndex={-1}>
       <StoryPersonalProvider slug={view.slug} revisionId={view.revisionId}>
-        <StoryHeader header={view.header} />
-        <nav aria-label={SECTION_NAV_LABEL}>
+        <StoryHeader
+          header={view.header}
+          summary={view.claims[0]?.text}
+          sourceNames={[...new Set(view.sources.map((source) => source.name))]}
+        />
+        <nav aria-label={SECTION_NAV_LABEL} className="story-section-navigation">
           <ul className="flex flex-wrap gap-4">
             <li>
-              <a href="#claims">{CLAIMS_HEADING}</a>
+              <a href="#claims">
+                <span aria-hidden="true">01</span>
+                {CLAIMS_HEADING} <span>{view.claims.length}</span>
+              </a>
             </li>
             <li>
-              <a href="#sources">{SOURCES_HEADING}</a>
+              <a href="#sources">
+                <span aria-hidden="true">02</span>
+                {SOURCES_HEADING}
+              </a>
             </li>
             <li>
-              <a href="#changes">{CHANGES_HEADING}</a>
+              <a href="#changes">
+                <span aria-hidden="true">03</span>
+                {CHANGES_HEADING}
+              </a>
             </li>
           </ul>
         </nav>
@@ -39,6 +52,9 @@ export function StoryPage({ view }: { view: StoryView }) {
           frame={(list) => (
             <section id="claims" aria-labelledby="claims-heading" className="flex flex-col gap-4">
               <h2 id="claims-heading">{CLAIMS_HEADING}</h2>
+              <p className="section-deck">
+                사건을 이루는 주요 주장과, 그 문장의 근거를 확인합니다.
+              </p>
               {list}
             </section>
           )}

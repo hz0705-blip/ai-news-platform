@@ -3,7 +3,6 @@ import { type ReactElement, Suspense } from "react";
 import { LoginOptions } from "../../../components/auth/login-options.tsx";
 import { LegalLinks } from "../../../components/legal-links.tsx";
 import { Alert, AlertTitle } from "../../../components/ui/alert.tsx";
-import { Button } from "../../../components/ui/button.tsx";
 import { supabaseEnv } from "../../../lib/auth/env.ts";
 import { safeReturnPath } from "../../../lib/auth/return-path.ts";
 import { getCurrentUserId } from "../../../lib/auth/server.ts";
@@ -14,7 +13,6 @@ import {
   LOGIN_REASON,
   LOGIN_TITLE,
   LOGIN_UNAVAILABLE,
-  LOGOUT,
   RETURN_TO_READING,
   SIGNED_IN,
 } from "../copy.ts";
@@ -37,10 +35,9 @@ async function LoginBody({
     return (
       <>
         <p>{SIGNED_IN}</p>
-        <form action="/auth/logout" method="post">
-          <input type="hidden" name="next" value={next} />
-          <Button type="submit">{LOGOUT}</Button>
-        </form>
+        <a href="/account" className="underline">
+          계정 관리
+        </a>
         <a href={next} className="underline">
           {RETURN_TO_READING}
         </a>
@@ -74,7 +71,7 @@ async function LoginBody({
 
 export default function LoginPage({ searchParams }: PageProps<"/auth/login">): ReactElement {
   return (
-    <main className="mx-auto flex max-w-md flex-col gap-4 px-4 py-12">
+    <main id="main-content" tabIndex={-1} className="editorial-page account-page">
       <h1>{LOGIN_TITLE}</h1>
       <Suspense fallback={<div aria-hidden="true" className="min-h-40" />}>
         <LoginBody searchParams={searchParams} />

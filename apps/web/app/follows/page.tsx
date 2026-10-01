@@ -18,7 +18,7 @@ import { getRuntimeDb } from "../../lib/db.ts";
 import { submitStoryUnfollow, submitTopicFollow } from "../../lib/follow-actions.ts";
 import { arrangeFollowFeed, hasChangesSinceSeen } from "../../lib/follow-feed.ts";
 import { ACCOUNT_LINK } from "../account/copy.ts";
-import { NEXT_UPDATE, TODAY_LABEL } from "../copy.ts";
+import { DEMO_NOTICE, NEXT_UPDATE, TODAY_LABEL } from "../copy.ts";
 import {
   CHANGED_SINCE_SEEN,
   DEMO_STORIES,
@@ -63,10 +63,15 @@ function FollowCardExtra({ story }: { story: FollowFeedStory }) {
 
 function StoryList({ stories, now }: { stories: readonly FollowFeedStory[]; now: Date }) {
   return (
-    <ul className="flex flex-col gap-4">
-      {stories.map((story) => (
+    <ul className="editorial-feed">
+      {stories.map((story, index) => (
         <li key={story.id}>
-          <StoryCard story={story} now={now} extra={<FollowCardExtra story={story} />} />
+          <StoryCard
+            story={story}
+            now={now}
+            prominence={index === 0 ? "lead" : index < 3 ? "secondary" : "list"}
+            extra={<FollowCardExtra story={story} />}
+          />
         </li>
       ))}
     </ul>
@@ -125,6 +130,7 @@ async function FollowsBody(): Promise<ReactElement> {
       {demo.length > 0 ? (
         <section aria-labelledby="followed-demo-stories" className="flex flex-col gap-4">
           <h2 id="followed-demo-stories">{DEMO_STORIES}</h2>
+          <p className="text-meta text-muted-foreground">{DEMO_NOTICE}</p>
           <StoryList stories={demo} now={now} />
         </section>
       ) : null}
@@ -160,7 +166,7 @@ async function FollowsBody(): Promise<ReactElement> {
 /** 팔로우 화면(로그인). 머리는 공개 껍데기이고 목록은 요청 시점에 스트리밍한다. */
 export default function FollowsPage(): ReactElement {
   return (
-    <main className="mx-auto flex max-w-[76rem] flex-col gap-8 px-4 py-12 lg:px-6">
+    <main id="main-content" tabIndex={-1} className="editorial-page follows-page">
       <header className="flex flex-col gap-3">
         <p className="flex gap-4 text-meta">
           <a href="/" className="underline">
@@ -171,6 +177,9 @@ export default function FollowsPage(): ReactElement {
           </a>
         </p>
         <h1>{FOLLOWS_TITLE}</h1>
+        <p className="section-deck">
+          한 번 읽고 끝내지 않도록. 관심 있는 사건의 다음 보도와 변화를 이어 읽습니다.
+        </p>
       </header>
       <Suspense fallback={<div aria-hidden="true" className="min-h-40" />}>
         <FollowsBody />

@@ -102,7 +102,8 @@ describe("EvidencePanel (데스크톱)", () => {
     renderStory();
     expect(within(panel()).getByRole("heading", { level: 2 }).textContent).toBe("근거");
     expect(within(panel()).getByText("주장의 근거 보기를 누르면 여기에 보입니다")).toBeTruthy();
-    expect(within(panel()).queryAllByRole("listitem")).toHaveLength(0);
+    expect(within(panel()).queryAllByRole("list", { name: "근거 보도 목록" })).toHaveLength(0);
+    expect(within(panel()).getByRole("list", { name: "원문 확인 순서" }).children).toHaveLength(3);
     expect(inlineRegions()).toHaveLength(2);
     for (const region of inlineRegions()) expect(region.childElementCount).toBe(0);
   });
@@ -145,7 +146,7 @@ describe("EvidencePanel (데스크톱)", () => {
     expect(a.getAttribute("aria-expanded")).toBe("false");
     expect(within(panel()).getByRole("heading", { level: 2 }).textContent).toBe("근거");
     expect(within(panel()).getByText("주장의 근거 보기를 누르면 여기에 보입니다")).toBeTruthy();
-    expect(within(panel()).queryAllByRole("listitem")).toHaveLength(0);
+    expect(within(panel()).queryAllByRole("list", { name: "근거 보도 목록" })).toHaveLength(0);
   });
 
   it("패널 헤딩은 주장 N의 근거이고 주장 문장을 되풀이하며 주장 N로 돌아가기 링크는 #claim-N", () => {
@@ -219,7 +220,7 @@ describe("EvidencePanel (데스크톱)", () => {
     const region = document.getElementById("claim-2-evidence");
     expect(region?.hidden).toBe(false);
     expect(region?.querySelectorAll("li")).toHaveLength(second.evidence.length);
-    expect(within(panel()).queryAllByRole("listitem")).toHaveLength(0);
+    expect(within(panel()).queryAllByRole("list", { name: "근거 보도 목록" })).toHaveLength(0);
   });
 
   it("데스크톱에서 다른 주장을 활성화하면 이전 펼침은 닫히고 좁혀도 선택 주장만 열려 있다", () => {

@@ -43,7 +43,7 @@ export function measureReflow(page: Page): Promise<ReflowMeasurement> {
         return style.textOverflow === "ellipsis" || style.webkitLineClamp !== "none";
       })
       .map(describe);
-    const claimTextLines = [...document.querySelectorAll("main #claims ol > li > p")].map((p) => {
+    const claimTextLines = [...document.querySelectorAll("main #claims .claim-text")].map((p) => {
       const style = getComputedStyle(p);
       return Math.round(p.getBoundingClientRect().height / Number.parseFloat(style.lineHeight));
     });

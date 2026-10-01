@@ -48,7 +48,7 @@ async function DeletedBody(): Promise<ReactElement> {
 /** 계정 삭제 결과 화면. */
 export default function DeletedPage(): ReactElement {
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-12">
+    <main id="main-content" tabIndex={-1} className="editorial-page account-page">
       <h1>{DELETED_TITLE}</h1>
       <Suspense fallback={<div aria-hidden="true" className="min-h-40" />}>
         <DeletedBody />

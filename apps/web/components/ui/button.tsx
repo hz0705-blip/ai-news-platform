@@ -7,12 +7,13 @@ import { cn } from "../../lib/utils.ts";
 
 // shadcn 4.21.0 / base-nova: #20의 색·줄바꿈·포커스 계약에 맞춘 최소 variant.
 const buttonVariants = cva(
-  "inline-flex max-w-full items-center justify-center gap-2 rounded-md border border-transparent px-4 py-2 text-body font-medium whitespace-normal disabled:cursor-not-allowed [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-md border border-transparent px-4 py-2 text-body font-medium whitespace-normal cursor-pointer disabled:cursor-not-allowed disabled:border-border disabled:bg-muted disabled:text-muted-foreground [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:underline",
-        outline: "border-border bg-background text-foreground hover:underline",
+        outline: "border-input bg-background text-foreground hover:underline",
+        ghost: "bg-transparent text-foreground hover:bg-muted",
       },
     },
     defaultVariants: { variant: "default" },

@@ -1,6 +1,7 @@
 /** @jsxImportSource react */
 "use client";
 
+import { ArrowDown, ArrowUpRight } from "lucide-react";
 import type { MouseEvent, ReactNode } from "react";
 import { GO_TO_SELECTED_EVIDENCE } from "../../app/story/copy.ts";
 import {
@@ -40,12 +41,14 @@ export function ClaimDisclosure({
   return (
     <>
       <Button
-        className="self-start"
+        className="claim-evidence-trigger self-start"
+        variant="ghost"
         aria-expanded={isDesktop ? selected : expanded}
         aria-controls={isDesktop ? EVIDENCE_PANEL_ID : regionId}
         onClick={activate}
       >
         {triggerLabel}
+        {isDesktop ? <ArrowUpRight aria-hidden="true" /> : <ArrowDown aria-hidden="true" />}
       </Button>
       {isDesktop && selected ? (
         <a

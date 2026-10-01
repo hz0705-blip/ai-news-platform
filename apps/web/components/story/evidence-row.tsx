@@ -17,8 +17,7 @@ import { EvidenceHighlight } from "../evidence-highlight.tsx";
 import { Badge } from "../ui/badge.tsx";
 import { Button } from "../ui/button.tsx";
 
-const ROW_CLASS =
-  "flex flex-col gap-2 rounded-md border border-border bg-card p-4 text-card-foreground";
+const ROW_CLASS = "evidence-row";
 
 function SourceLine({ evidence }: { evidence: EvidenceView }) {
   return (
@@ -58,7 +57,7 @@ export function EvidenceRow({
     );
   if (evidence.display === "발췌 불가") {
     return (
-      <li className={ROW_CLASS}>
+      <li className={ROW_CLASS} data-comparison={position !== undefined || undefined}>
         {positionLine}
         <p className="font-medium">{EXCERPT_UNAVAILABLE}</p>
         <SourceLine evidence={evidence} />
@@ -71,7 +70,7 @@ export function EvidenceRow({
   const { excerpt, highlight } = evidence;
   const published = formatAbsolute(evidence.publishedAt);
   return (
-    <li className={ROW_CLASS}>
+    <li className={ROW_CLASS} data-comparison={position !== undefined || undefined}>
       {positionLine}
       <SourceLine evidence={evidence} />
       <p lang="en">{evidence.articleTitle}</p>
@@ -111,7 +110,7 @@ export function EvidenceRow({
 /** 주장 하나의 근거 행 목록. 모바일 인라인 영역과 데스크톱 패널이 같은 규칙(비교 행 순서)으로 쓴다. */
 export function EvidenceList({ claim }: { claim: ClaimView }) {
   return (
-    <ul className="flex flex-col gap-4">
+    <ul aria-label="근거 보도 목록" className="flex flex-col gap-4">
       {claim.evidence.map((item, i) => (
         <EvidenceRow
           key={`${item.sourceUrl}#${item.publishedAt.getTime()}`}

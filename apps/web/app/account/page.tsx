@@ -5,6 +5,7 @@ import { Alert, AlertTitle } from "../../components/ui/alert.tsx";
 import { Button } from "../../components/ui/button.tsx";
 import { deletionEnv } from "../../lib/account/admin.ts";
 import { getCurrentUserId } from "../../lib/auth/server.ts";
+import { LOGOUT } from "../auth/copy.ts";
 import { FOLLOWS_TITLE } from "../follows/copy.ts";
 import {
   ACCOUNT_LOGIN,
@@ -51,38 +52,49 @@ async function AccountBody({
   const message = error === undefined ? undefined : DELETION_ERRORS[error];
   const available = deletionEnv() !== null;
   return (
-    <section aria-labelledby="account-deletion" className="flex flex-col gap-4">
-      <h2 id="account-deletion">{DELETION_HEADING}</h2>
-      {message !== undefined || !available ? (
-        <Alert>
-          <AlertTitle>{message ?? DELETION_ERRORS.unavailable}</AlertTitle>
-        </Alert>
-      ) : null}
-      <p>{DELETION_INTRO}</p>
-      <ul className="list-disc pl-6">
-        {DELETION_ITEMS.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
-      <p className="text-meta text-muted-foreground">{DELETION_BACKUP}</p>
-      {available ? (
-        <form action="/account/delete" method="post" className="flex flex-col items-start gap-4">
-          <p className="text-meta">{DELETION_REAUTH}</p>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" name="confirm" value="yes" required className="size-4" />
-            {DELETION_CONFIRM}
-          </label>
-          <Button type="submit">{DELETION_SUBMIT}</Button>
+    <>
+      <section aria-labelledby="account-session" className="flex flex-col items-start gap-4">
+        <h2 id="account-session">로그인 관리</h2>
+        <form action="/auth/logout" method="post">
+          <input type="hidden" name="next" value="/" />
+          <Button type="submit" variant="outline">
+            {LOGOUT}
+          </Button>
         </form>
-      ) : null}
-    </section>
+      </section>
+      <section aria-labelledby="account-deletion" className="flex flex-col gap-4">
+        <h2 id="account-deletion">{DELETION_HEADING}</h2>
+        {message !== undefined || !available ? (
+          <Alert>
+            <AlertTitle>{message ?? DELETION_ERRORS.unavailable}</AlertTitle>
+          </Alert>
+        ) : null}
+        <p>{DELETION_INTRO}</p>
+        <ul className="list-disc pl-6">
+          {DELETION_ITEMS.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <p className="text-meta text-muted-foreground">{DELETION_BACKUP}</p>
+        {available ? (
+          <form action="/account/delete" method="post" className="flex flex-col items-start gap-4">
+            <p className="text-meta">{DELETION_REAUTH}</p>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" name="confirm" value="yes" required className="size-4" />
+              {DELETION_CONFIRM}
+            </label>
+            <Button type="submit">{DELETION_SUBMIT}</Button>
+          </form>
+        ) : null}
+      </section>
+    </>
   );
 }
 
 /** 계정 화면(로그인). 머리는 공개 껍데기이고 본문은 요청 시점에 스트리밍한다. 팔로우 화면에서 들어온다. */
 export default function AccountPage({ searchParams }: PageProps<"/account">): ReactElement {
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-12">
+    <main id="main-content" tabIndex={-1} className="editorial-page account-page">
       <header className="flex flex-col gap-3">
         <p className="text-meta">
           <a href="/follows" className="underline">

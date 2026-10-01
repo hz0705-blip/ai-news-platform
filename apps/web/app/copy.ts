@@ -19,7 +19,7 @@ export const FOLLOWS_LINK = "팔로우한 사건 보기";
 export const SEARCH_LINK = "사건 검색";
 export const ABOUT_LINK = "서비스 소개";
 export const storyCount = (count: number) => `사건 ${count}건`;
-export const sourceCount = (count: number) => `출처 ${count}개`;
+export const sourceCount = (count: number) => `출처 ${count}곳`;
 // 배치 상태(#56, 스펙 "배치와 비용"). 제목은 상태 이름, 설명은 독자가 할 일·남는 것.
 export const BATCH_RUNNING = "갱신 진행 중";
 export const BATCH_RUNNING_DETAIL =

@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 // 동작 없이 그리며, 보조기술이 조각을 하나씩 읽지 않게 숨긴다.
 export default function StoryLoading(): ReactElement {
   return (
-    <main aria-busy="true" className="mx-auto flex max-w-[76rem] flex-col gap-8 px-4 py-12 lg:px-6">
+    <main id="main-content" tabIndex={-1} aria-busy="true" className="editorial-page">
       <div aria-hidden="true" className="flex flex-col gap-3">
         <div className="h-6 w-40 rounded-md bg-muted" />
         <div className="h-11 w-full max-w-2xl rounded-md bg-muted" />

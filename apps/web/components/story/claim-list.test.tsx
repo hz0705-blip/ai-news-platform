@@ -78,6 +78,7 @@ const agreeClaim = { ...(claims[0] as (typeof claims)[number]), id: "claim-a", o
 describe("ClaimList", () => {
   it("첫 진입에 모든 근거가 접혀 있고 접힘 영역 안의 링크는 렌더되지 않는다", () => {
     render(<ClaimList claims={claims} />);
+    expect(screen.getByText("근거: Meridian Wire, Harbor Ledger")).toBeTruthy();
     const trigger = screen.getByRole("button", { name: "근거 2개 보기" });
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     expect(trigger.getAttribute("aria-controls")).toMatch(/\S/);
@@ -86,7 +87,8 @@ describe("ClaimList", () => {
 
   it("주장 번호·문장·상태 배지는 접힘 영역 밖에 있다", () => {
     render(<ClaimList claims={claims} />);
-    const item = screen.getByRole("listitem");
+    const item = screen.getByRole("heading", { level: 3, name: "주장 1" }).closest("li");
+    if (item === null) throw new Error("주장 항목이 없다");
     const region = item.querySelector(
       `#${screen.getByRole("button").getAttribute("aria-controls")}`,
     );

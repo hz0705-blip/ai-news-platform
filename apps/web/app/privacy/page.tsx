@@ -76,7 +76,7 @@ function Entry({
 /** 개인정보 처리방침(스펙 사용자 스토리 34, 렌더링은 정적). 연락처는 `ContactMail`이 `CONTACT_EMAIL`에서 읽는다. */
 export default function Page(): ReactElement {
   return (
-    <main className="mx-auto flex max-w-[48rem] flex-col gap-8 px-4 py-12 lg:px-6">
+    <main id="main-content" tabIndex={-1} className="editorial-page document-page">
       <header className="flex flex-col gap-3">
         <h1>{PRIVACY_TITLE}</h1>
         <p>{PRIVACY_LEAD}</p>

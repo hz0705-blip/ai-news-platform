@@ -34,7 +34,6 @@ import { SEARCH_PATH, type SearchResponse, type SearchResultStory } from "../../
 import { DemoBadge } from "../demo-badge.tsx";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert.tsx";
 import { Button } from "../ui/button.tsx";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card.tsx";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "../ui/empty.tsx";
 
 type Outcome =
@@ -67,50 +66,59 @@ async function runSearch(query: string): Promise<Outcome> {
   }
 }
 
-function ResultCard({ story, now }: { story: SearchResultStory; now: Date | null }) {
+function ResultCard({
+  story,
+  now,
+  index,
+}: {
+  story: SearchResultStory;
+  now: Date | null;
+  index: number;
+}) {
   const updatedAt = new Date(story.updatedAt);
   const absolute = formatAbsolute(updatedAt);
   // 목록 카드는 상대 시각, 데모는 고정 기준 시각이라 절대 시각(오늘 카드와 같다).
   const time =
     !story.isDemo && now && now >= updatedAt ? formatRelativeTime(updatedAt, now) : absolute.text;
   return (
-    <Card>
-      <CardHeader>
-        {story.isDemo && (
-          <p className="flex flex-wrap items-center gap-2 text-meta">
-            <DemoBadge />
-            <span>{DEMO_NOTICE}</span>
-          </p>
-        )}
-        <CardTitle>
-          <Link href={`/story/${story.slug}`}>{story.title}</Link>
-        </CardTitle>
-      </CardHeader>
+    <article
+      className="editorial-card"
+      data-prominence={index === 0 ? "lead" : index < 3 ? "secondary" : "list"}
+    >
+      {story.isDemo && (
+        <p className="flex flex-wrap items-center gap-2 text-meta">
+          <DemoBadge />
+        </p>
+      )}
+      <h3>
+        <Link href={`/story/${story.slug}`}>{story.title}</Link>
+      </h3>
       {story.claims.length > 0 && (
-        <CardContent>
-          <ul aria-label={NEAREST_CLAIMS} className="flex list-disc flex-col gap-1 pl-5">
+        <div className="search-matches">
+          <p>{NEAREST_CLAIMS}</p>
+          <ul aria-label={NEAREST_CLAIMS}>
             {story.claims.map((claim) => (
               <li key={claim.claimId}>{claim.text}</li>
             ))}
           </ul>
-        </CardContent>
+        </div>
       )}
-      <CardFooter>
+      <div className="editorial-card-meta">
         <span>
           {story.isDemo ? DEMO_TIME : STORY_UPDATED}{" "}
           <time dateTime={absolute.dateTime}>{time}</time>
         </span>
-      </CardFooter>
-    </Card>
+      </div>
+    </article>
   );
 }
 
 function ResultList({ stories, now }: { stories: readonly SearchResultStory[]; now: Date | null }) {
   return (
-    <ul className="flex flex-col gap-4">
-      {stories.map((story) => (
+    <ul className="editorial-feed">
+      {stories.map((story, index) => (
         <li key={story.slug}>
-          <ResultCard story={story} now={now} />
+          <ResultCard story={story} now={now} index={index} />
         </li>
       ))}
     </ul>
@@ -174,7 +182,7 @@ export function SearchScreen({
   const demo = outcome.kind === "ok" ? outcome.stories.filter((story) => story.isDemo) : [];
 
   return (
-    <main className="mx-auto flex max-w-[76rem] flex-col gap-8 px-4 py-12 lg:px-6">
+    <main id="main-content" tabIndex={-1} className="editorial-page search-page">
       <header className="flex flex-col gap-3">
         <p className="text-meta">
           <a href="/" className="underline">
@@ -182,10 +190,14 @@ export function SearchScreen({
           </a>
         </p>
         <h1>{SEARCH_TITLE}</h1>
-        <p className="text-meta text-muted-foreground">{SEARCH_HINT}</p>
+        <p className="section-deck">{SEARCH_HINT}</p>
       </header>
       <search>
-        <form onSubmit={onSubmit} className="flex flex-col gap-3">
+        <form
+          onSubmit={onSubmit}
+          className="flex flex-col gap-3"
+          aria-busy={outcome.kind === "loading"}
+        >
           <label htmlFor="search-query" className="font-semibold">
             {SEARCH_LABEL}
           </label>
@@ -198,12 +210,16 @@ export function SearchScreen({
               onChange={(event) => setQuery(event.target.value)}
               autoComplete="off"
               enterKeyHint="search"
+              aria-invalid={outcome.kind === "invalid" || undefined}
+              aria-describedby="search-feedback"
               className="min-w-0 flex-1 basis-60 rounded-md border border-input bg-background px-3 py-2 text-body text-foreground"
             />
-            <Button type="submit">{SEARCH_BUTTON}</Button>
+            <Button type="submit" disabled={outcome.kind === "loading"}>
+              {outcome.kind === "loading" ? SEARCHING : SEARCH_BUTTON}
+            </Button>
           </div>
           {/* 진행·결과 수·실패는 입력 바로 아래에서 한 번만 알린다. */}
-          <div aria-live="polite" className="flex flex-col gap-3">
+          <div id="search-feedback" aria-live="polite" className="flex flex-col gap-3">
             {outcome.kind === "loading" && <p className="text-meta">{SEARCHING}</p>}
             {outcome.kind === "ok" && (
               <p className="text-meta text-muted-foreground">
@@ -269,6 +285,7 @@ export function SearchScreen({
           {demo.length > 0 && (
             <section aria-labelledby="search-demo-results" className="flex flex-col gap-4">
               <h2 id="search-demo-results">{SEARCH_DEMO_RESULTS}</h2>
+              <p className="text-meta text-muted-foreground">{DEMO_NOTICE}</p>
               <ResultList stories={demo} now={now} />
             </section>
           )}
