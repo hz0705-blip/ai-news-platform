@@ -61,12 +61,6 @@ test("M4 인수: 팔로우 뒤 새 개정판 발행 → 읽은 이후 변화 →
   await expect(card).toBeVisible();
   await expect(card.getByText("읽은 이후 변화 있음")).toHaveCount(0);
   await followStory.publishNext();
-  // 실제 발행 워커와 같이 최신 개정판 캐시를 만료한다(링크 미리 가져오기로 생긴 공개 캐시 포함).
-  const revalidated = await page.request.post("/api/revalidate", {
-    headers: { authorization: "Bearer e2e-follow-publish" },
-    data: { tags: [`story:${followStory.storyId}:latest`, "today:ko"] },
-  });
-  expect(revalidated.status()).toBe(200);
   await navigation.locator('a[href="/"]').click();
   await navigation.locator('a[href="/follows"]').click();
   await expect(card.getByText("읽은 이후 변화 있음")).toBeVisible();
@@ -82,6 +76,20 @@ test("M4 인수: 팔로우 뒤 새 개정판 발행 → 읽은 이후 변화 →
   // 재방문(최신 개정판): 변화 구획의 읽은 이후 변화와 개정판 띠의 내가 본 지점.
   await card.locator(`a[href="${LATEST}"]`).click();
   await expect(page).toHaveURL(new RegExp(`${LATEST}$`));
+  // DB 발행과 캐시 무효화 사이에도 고정 링크의 새 개정판을 이전 개정판으로 오인하지 않는다.
+  const visibleRevision = page
+    .getByRole("figure", { name: /개정판 이력/ })
+    .locator("ol > li")
+    .nth(1);
+  await expect(visibleRevision).toContainText("최신");
+  await expect(visibleRevision).toContainText("보는 중");
+  await expect(page.getByText("이전 개정판을 보고 있습니다.")).toHaveCount(0);
+  // 실제 발행 워커의 기본 max 무효화도 이어서 검증한다.
+  const revalidated = await page.request.post("/api/revalidate", {
+    headers: { authorization: "Bearer e2e-follow-publish" },
+    data: { tags: [`story:${followStory.storyId}:latest`, "today:ko"] },
+  });
+  expect(revalidated.status()).toBe(200);
   await expect(page.getByText("읽은 이후 변화를 확인하지 못했습니다.")).toBeVisible();
   const retry = page.getByRole("button", { name: "변화 확인 다시 시도" });
   // 저장은 성공했지만 응답이 끊겨도, 다시 시도할 때 수신했던 이전 기준을 잃지 않는다.
