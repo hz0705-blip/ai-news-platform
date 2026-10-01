@@ -110,6 +110,14 @@
   color: var(--muted-foreground);
   opacity: 1;
 }
+/* 포커스 링은 안쪽 입력이 아니라 검색 상자 전체에 두어 상자 밖으로 삐져나오지 않게 한다. */
+.today-search-input:focus-visible {
+  outline: none;
+}
+.today-search-form:has(.today-search-input:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: 0;
+}
 .today-search-submit {
   display: grid;
   place-items: center;

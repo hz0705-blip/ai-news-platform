@@ -15,6 +15,8 @@ it.each(["단일 출처", "복수 출처 일치", "보도 상충", "상충 해�
     expect(screen.getByText(status).textContent).toBe(status);
     expect(container.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
+    // 배지 글자 크기는 부모를 물려받지 않고 메타 크기다(cn이 text-meta를 지우던 회귀).
+    expect(container.querySelector('[data-slot="badge"]')?.className).toContain("text-meta");
   },
 );
 
