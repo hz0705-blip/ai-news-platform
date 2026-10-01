@@ -13,13 +13,7 @@ export {
 } from "./account-deletion.ts";
 export type { Article } from "./article.ts";
 export { type ArticleVersion, createArticleVersion } from "./article-version.ts";
-export {
-  type BatchNotice,
-  DISPLAY_DELAY_MS,
-  type DueBatchRun,
-  deriveBatchNotice,
-  dueSlotKeyOf,
-} from "./batch-status.ts";
+export { DISPLAY_DELAY_MS, dueSlotKeyOf } from "./batch-status.ts";
 export {
   CLAIM_TYPES,
   type Claim,

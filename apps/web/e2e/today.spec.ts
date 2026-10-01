@@ -1,16 +1,14 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { LeadImage } from "@newstrail/db";
-import type { BatchNotice } from "@newstrail/domain/batch-status";
 import { TOPICS } from "@newstrail/domain/topic";
 import { expect, type Page, test } from "@playwright/test";
 import { build } from "esbuild";
-import { expectNoAxeViolations } from "./axe.ts";
 import { DESKTOP_MIN, evidenceOf } from "./evidence.ts";
 import { firstStory, LONG_SUMMARY, liveStories } from "./today-data.ts";
 
 // Worker-local memory bundle: actual UI, no public fixture route or persisted fake live rows.
 let bundle: Promise<string> | undefined;
-async function mountToday(page: Page, notice?: BatchNotice, image?: LeadImage) {
+async function mountToday(page: Page, image?: LeadImage) {
   bundle ??= build({
     entryPoints: ["e2e/today-entry.tsx"],
     bundle: true,
@@ -35,9 +33,6 @@ async function mountToday(page: Page, notice?: BatchNotice, image?: LeadImage) {
   await page.goto("/__today_fixture");
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  if (notice) {
-    await page.addScriptTag({ content: `window.__TODAY_NOTICE__ = ${JSON.stringify(notice)};` });
-  }
   if (image) {
     await page.addScriptTag({ content: `window.__TODAY_IMAGE__ = ${JSON.stringify(image)};` });
   }
@@ -65,7 +60,7 @@ test("대표 이미지: 핫링크·크레딧·위계·다중 출처 구획과 �
       body: '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect width="900" height="600" fill="#567"/></svg>',
     }),
   );
-  await mountToday(page, undefined, image);
+  await mountToday(page, image);
   const images = latest(page).locator("img");
   await expect(images).toHaveCount(3);
   await expect(images.first()).toHaveAttribute("src", image.url);
@@ -347,48 +342,13 @@ for (const width of [320, 640, 1440]) {
   }
 }
 
-// 배치 상태(#56): 원장 행 → 상태는 도메인 단위 테스트(deriveBatchNotice)와 db 실 DB 테스트가, 화면 문구는 여기서.
-test.describe("배치 상태", () => {
+test("머리에는 제목·마지막 갱신·갱신 예정만 있다", async ({ page }) => {
+  await mountToday(page);
   // 헤더가 <main> 안이라 banner 역할이 없다.
-  const header = (page: Page) => page.locator("main > header");
-
-  test("today shows normal update time", async ({ page }) => {
-    await mountToday(page, { kind: "none" });
-    await expect(header(page)).toContainText("마지막 갱신 2026. 9. 23. 오전 11:59 KST");
-    await expect(header(page)).toContainText("매일 오전 6시·오후 6시 갱신 예정");
-    await expect(
-      page.getByRole("navigation", { name: "주요 탐색" }).getByRole("link", { name: "사건 검색" }),
-    ).toBeVisible();
-    await expect(header(page).locator("[data-batch-notice]")).toHaveCount(0);
-  });
-
-  test("today shows running", async ({ page }) => {
-    await mountToday(page, { kind: "running" });
-    await expect(header(page).getByText("갱신 진행 중", { exact: true })).toBeVisible();
-  });
-
-  test("today shows cap reached with N deferred", async ({ page }) => {
-    await mountToday(page, { kind: "cap-reached", deferred: 7 });
-    await expect(
-      header(page).getByText("오늘 분석 한도에 도달해 7개 사건이 다음 갱신에 처리됩니다"),
-    ).toBeVisible();
-  });
-
-  test("today shows batch failed", async ({ page }) => {
-    await mountToday(page, { kind: "failed" });
-    await expect(header(page).getByText("갱신 실패", { exact: true })).toBeVisible();
-  });
-
-  test("today shows delayed", async ({ page }) => {
-    await mountToday(page, { kind: "delayed" });
-    await expect(header(page).getByText("갱신 지연", { exact: true })).toBeVisible();
-  });
-
-  test.describe("모바일 라이트", () => {
-    test.use({ viewport: { width: 390, height: 844 }, colorScheme: "light" });
-    test("axe 위반 0(한도 도달 상태)", async ({ page }, testInfo) => {
-      await mountToday(page, { kind: "cap-reached", deferred: 7 });
-      await expectNoAxeViolations(page, testInfo, "today-batch-notice");
-    });
-  });
+  const header = page.locator("main > header");
+  await expect(header.getByRole("heading", { level: 1 })).toHaveText("오늘의 지면");
+  await expect(header).toContainText("마지막 갱신 2026. 9. 23. 오전 11:59 KST");
+  await expect(header).toContainText("매일 오전 6시·오후 6시 갱신 예정");
+  await expect(header.locator("[data-slot=alert]")).toHaveCount(0);
+  await expect(header.locator("[data-batch-notice]")).toHaveCount(0);
 });
