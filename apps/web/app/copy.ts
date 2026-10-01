@@ -19,3 +19,5 @@ export const SEARCH_LINK = "사건 검색";
 export const ABOUT_LINK = "서비스 소개";
 export const storyCount = (count: number) => `사건 ${count}건`;
 export const sourceCount = (count: number) => `출처 ${count}곳`;
+export const followChangesNotice = (count: number) =>
+  `팔로우한 사건 ${count}건에 읽은 이후 변화가 있습니다`;

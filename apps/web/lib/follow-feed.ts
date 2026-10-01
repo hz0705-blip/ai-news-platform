@@ -22,3 +22,7 @@ export function arrangeFollowFeed(stories: readonly FollowFeedStory[]): {
     live: sorted.filter((story) => !story.isDemo),
   };
 }
+
+/** 오늘 머리의 안내(#208)가 세는 수: 팔로우 화면의 라이브 사건 중 읽은 이후 변화가 있는 것. */
+export const countFollowChanges = (stories: readonly FollowFeedStory[]): number =>
+  arrangeFollowFeed(stories).live.filter(hasChangesSinceSeen).length;

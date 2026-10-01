@@ -1,6 +1,6 @@
 import type { FollowFeedStory } from "@newstrail/db";
 import { describe, expect, it } from "vitest";
-import { arrangeFollowFeed, hasChangesSinceSeen } from "./follow-feed.ts";
+import { arrangeFollowFeed, countFollowChanges, hasChangesSinceSeen } from "./follow-feed.ts";
 
 function story(
   id: string,
@@ -44,5 +44,18 @@ describe("arrangeFollowFeed — 팔로우 화면 순서", () => {
     expect(hasChangesSinceSeen(story("a", 1, { latest: 3, lastSeen: null }))).toBe(false);
     expect(hasChangesSinceSeen(story("a", 1, { latest: 3, lastSeen: 2 }))).toBe(true);
     expect(hasChangesSinceSeen(story("a", 1, { latest: 3, lastSeen: 3 }))).toBe(false);
+  });
+
+  it("변화 수는 읽은 이후 변화가 있는 라이브 사건만 센다", () => {
+    expect(
+      countFollowChanges([
+        story("changed-old", 1, { latest: 3, lastSeen: 1 }),
+        story("changed-new", 5, { latest: 2, lastSeen: 1 }),
+        story("seen", 9, { latest: 2, lastSeen: 2 }),
+        story("never-seen", 8, { latest: 2, lastSeen: null }),
+        story("demo-changed", 2, { latest: 2, lastSeen: 1 }, true),
+      ]),
+    ).toBe(2);
+    expect(countFollowChanges([])).toBe(0);
   });
 });

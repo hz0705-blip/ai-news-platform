@@ -1,9 +1,10 @@
 /**
- * 사건 페이지 개인 영역의 요청 시점 엔드포인트(#105). 브라우저 번들이 읽는 파일이라 서버 모듈을 import하지 않는다 —
+ * 개인 영역(사건 페이지 #105, 오늘 머리 #208)의 요청 시점 엔드포인트. 브라우저 번들이 읽는 파일이라 서버 모듈을 import하지 않는다 —
  * 경로·본문·응답 모양만 둔다. 서버 쪽은 app/api/me/*\/route.ts(lib/auth/personal-route.ts).
  */
 export const STORY_VISIT_PATH = "/api/me/story-visit";
 export const STORY_FOLLOW_PATH = "/api/me/story-follow";
+export const FOLLOW_CHANGES_PATH = "/api/me/follow-changes";
 
 export type StoryVisitRequest = {
   /** 먼저 비교 기준을 받은 뒤, 실제 표시된 개정판을 기록한다. */
@@ -27,6 +28,10 @@ export type StoryVisitResponse =
 export type StoryFollowResponse =
   | { readonly signedIn: false }
   | { readonly signedIn: true; readonly following: boolean };
+/** 본문은 `{}`. `changed`는 팔로우 화면 기준으로 읽은 이후 변화가 있는 라이브 사건 수(lib/follow-feed.ts). */
+export type FollowChangesResponse =
+  | { readonly signedIn: false }
+  | { readonly signedIn: true; readonly changed: number };
 
 /** 같은 출처 JSON POST. 실패 응답은 예외다(호출한 컨트롤 옆에서 알린다). */
 export async function postPersonal<T>(path: string, body: unknown): Promise<T> {

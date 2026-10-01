@@ -1,3 +1,4 @@
+import type { Page } from "@playwright/test";
 import { authEnv, test as authTest, expect } from "./auth.ts";
 import { expectNoAxeViolations } from "./axe.ts";
 import { stageFollowStory } from "./follow-story.ts";
@@ -200,4 +201,69 @@ test("팔로우 해제와 토픽 팔로우, 익명의 팔로우 화면은 로그
   await expect(topic).toHaveAttribute("aria-pressed", "true");
   await signedIn.reload();
   await expect(topic).toHaveAttribute("aria-pressed", "true");
+});
+
+// 오늘 머리의 팔로우 변화 안내(#208). 공개 HTML에는 없고, 로그인 독자의 브라우저가 개인 API로 채운다.
+test("로그인 독자의 오늘 머리에 팔로우 변화 N건 안내와 팔로우 링크가 보이고 익명에는 없다", async ({
+  page,
+  makeUser,
+  openAs,
+  followStory,
+}) => {
+  const STORY = `/story/${followStory.slug}`;
+  const header = (target: Page) => target.locator("main > header");
+  const notice = (target: Page) =>
+    header(target).getByText("팔로우한 사건 1건에 읽은 이후 변화가 있습니다");
+  const followsLink = (target: Page) =>
+    header(target).getByRole("link", { name: "팔로우한 사건 보기" });
+
+  // 익명: 세션 쿠키 힌트가 없으므로 개인 API를 부르지 않고 아무것도 그리지 않는다.
+  const personalCalls: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/me/")) personalCalls.push(request.url());
+  });
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("오늘의 지면");
+  await page.waitForLoadState("networkidle");
+  expect(personalCalls).toEqual([]);
+  await expect(notice(page)).toHaveCount(0);
+  await expect(followsLink(page)).toHaveCount(0);
+
+  // 로그인 독자가 개정판 1을 읽으며 팔로우한다(로그인 뒤 돌아온 주소의 intent).
+  const context = await openAs(await makeUser("today-notice"));
+  const signedIn = await context.newPage();
+  const REVISION_1 = `${STORY}/revision/${encodeURIComponent(followStory.revision1)}`;
+  const REVISION_2 = `${STORY}/revision/${encodeURIComponent(followStory.revision2)}`;
+  const follow = signedIn.getByRole("button", { name: "팔로우" });
+  await signedIn.goto(`${REVISION_1}?intent=follow`);
+  await expect(follow).toHaveAttribute("aria-pressed", "true");
+  await expect(follow).not.toHaveAttribute("aria-disabled", "true");
+
+  const openToday = async () => {
+    const answered = signedIn.waitForResponse((response) =>
+      response.url().endsWith("/api/me/follow-changes"),
+    );
+    await signedIn.goto("/");
+    const response = await answered;
+    expect(response.status()).toBe(200);
+    expect(response.headers()["cache-control"]).toBe("private, no-store");
+  };
+  // 새 개정판이 없으면 0건이라 그리지 않는다.
+  await openToday();
+  await expect(notice(signedIn)).toHaveCount(0);
+
+  // 팔로우한 사건에 새 개정판이 발행되면 안내 한 줄과 팔로우 화면 링크가 보인다.
+  await followStory.publishNext();
+  await openToday();
+  await expect(notice(signedIn)).toBeVisible();
+  await expect(followsLink(signedIn)).toHaveAttribute("href", "/follows");
+  await expect(header(signedIn).locator("[data-slot=alert]")).toHaveCount(0);
+
+  // 같은 사용자가 그 사건의 최신 개정판을 읽고(읽은 지점 저장 완료) 돌아오면 사라진다.
+  await signedIn.goto(REVISION_2);
+  await expect(follow).toHaveAttribute("aria-pressed", "true");
+  await expect(follow).not.toHaveAttribute("aria-disabled", "true");
+  await openToday();
+  await expect(notice(signedIn)).toHaveCount(0);
+  await expect(followsLink(signedIn)).toHaveCount(0);
 });
