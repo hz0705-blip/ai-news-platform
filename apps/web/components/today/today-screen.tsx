@@ -152,7 +152,7 @@ export function TodayScreen({
                         now={now}
                         featured={index === 0}
                         compact={index >= 3}
-                        withImage={index === 1}
+                        withImage={index === 1 || index === 2}
                         titleRef={(node) => {
                           if (node && nextFocus.current === story.id) {
                             node.focus();

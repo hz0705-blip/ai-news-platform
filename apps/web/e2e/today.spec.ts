@@ -67,15 +67,40 @@ test("대표 이미지: 핫링크·크레딧·위계·다중 출처 구획과 �
   );
   await mountToday(page, undefined, image);
   const images = latest(page).locator("img");
-  await expect(images).toHaveCount(2);
+  await expect(images).toHaveCount(3);
   await expect(images.first()).toHaveAttribute("src", image.url);
   await expect(images.first()).toHaveAttribute("loading", "eager");
-  await expect(images.last()).toHaveAttribute("loading", "lazy");
-  await expect(latest(page).getByRole("link", { name: "사진 · 검사용 출처" })).toHaveCount(2);
+  const cards = latest(page).getByRole("article");
+  for (const index of [1, 2]) {
+    const secondaryImage = cards.nth(index).locator("img");
+    await expect(secondaryImage).toHaveAttribute("src", image.url);
+    await expect(secondaryImage).toHaveAttribute("loading", "lazy");
+    await secondaryImage.scrollIntoViewIfNeeded();
+    await expect
+      .poll(() => secondaryImage.evaluate((node: HTMLImageElement) => node.naturalWidth))
+      .toBe(900);
+    await expect(
+      cards.nth(index).getByRole("link", { name: "사진 · 검사용 출처" }),
+    ).toHaveAttribute("href", image.articleUrl);
+  }
+  await expect(latest(page).locator(".today-list-item figure")).toHaveCount(0);
+  await expect(latest(page).getByRole("link", { name: "사진 · 검사용 출처" })).toHaveCount(3);
   await expect(
     latest(page).getByRole("link", { name: "사진 · 검사용 출처" }).first(),
   ).toHaveAttribute("href", image.articleUrl);
   await expect(multiSource(page).locator("figure")).toHaveCount(0);
+  await tiles(page).nth(2).click();
+  await expect(images).toHaveCount(3);
+  await expect(cards.nth(2).locator("img")).toHaveAttribute("loading", "lazy");
+  await expect(latest(page).locator(".today-list-item figure")).toHaveCount(0);
+  await page.getByRole("button", { name: /^전체 사건/ }).click();
+  await latest(page).getByRole("button", { name: "더 보기" }).click();
+  await expect(cards).toHaveCount(16);
+  await expect(images).toHaveCount(3);
+  await expect(latest(page).locator(".today-list-item figure")).toHaveCount(0);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await expect(cards.nth(2).locator("img")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await images.evaluateAll((nodes) => {
     for (const node of nodes) node.dispatchEvent(new Event("error"));
   });
