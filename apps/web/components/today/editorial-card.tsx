@@ -31,6 +31,8 @@ export function EditorialCard({
     !story.isDemo && now && now >= story.updatedAt
       ? formatRelativeTime(story.updatedAt, now)
       : absolute.text;
+  // 첫 사건만 앞 주장 최대 3개를 한 문단으로 잇는다. 그 밖은 첫 주장 한 문장.
+  const summary = featured && story.claims.length > 0 ? story.claims.join(" ") : story.summary;
   return (
     <article
       className="today-story"
@@ -56,7 +58,7 @@ export function EditorialCard({
       {!compact && (featured || withImage) && (
         <LeadImage image={story.image} isDemo={story.isDemo} priority={featured} />
       )}
-      {!compact && <p className="today-story-summary">{story.summary}</p>}
+      {!compact && <p className="today-story-summary">{summary}</p>}
       <div className="today-story-meta">
         <StatusBadge status={story.status} />
         <span>{sourceCount(story.sourceCount)}</span>

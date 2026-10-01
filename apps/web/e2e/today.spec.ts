@@ -1,14 +1,14 @@
 import AxeBuilder from "@axe-core/playwright";
-import type { LeadImage } from "@newstrail/db";
+import type { LeadImage, TodayStoryCard } from "@newstrail/db";
 import { TOPICS } from "@newstrail/domain/topic";
 import { expect, type Page, test } from "@playwright/test";
 import { build } from "esbuild";
 import { DESKTOP_MIN, evidenceOf } from "./evidence.ts";
-import { firstStory, LONG_SUMMARY, liveStories } from "./today-data.ts";
+import { firstStory, LONG_SUMMARY, layoutStories, liveStories } from "./today-data.ts";
 
 // Worker-local memory bundle: actual UI, no public fixture route or persisted fake live rows.
 let bundle: Promise<string> | undefined;
-async function mountToday(page: Page, image?: LeadImage) {
+async function mountToday(page: Page, image?: LeadImage, stories?: readonly TodayStoryCard[]) {
   bundle ??= build({
     entryPoints: ["e2e/today-entry.tsx"],
     bundle: true,
@@ -35,6 +35,9 @@ async function mountToday(page: Page, image?: LeadImage) {
   page.on("pageerror", (error) => errors.push(error.message));
   if (image) {
     await page.addScriptTag({ content: `window.__TODAY_IMAGE__ = ${JSON.stringify(image)};` });
+  }
+  if (stories) {
+    await page.addScriptTag({ content: `window.__TODAY_STORIES__ = ${JSON.stringify(stories)};` });
   }
   await page.addScriptTag({ content: await bundle });
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -102,6 +105,99 @@ test("대표 이미지: 핫링크·크레딧·위계·다중 출처 구획과 �
   await expect(latest(page).locator("figure")).toHaveCount(0);
   await expect(latest(page).getByRole("link", { name: "사진 · 검사용 출처" })).toHaveCount(0);
   await expect(latest(page).getByRole("link", { name: firstStory.title })).toBeVisible();
+});
+
+test("데스크톱 첫 사건 카드: 리드 이미지가 열의 남은 높이를 채우고(3:2~4:5) 1열·짧은 열에서는 3:2를 유지한다", async ({
+  page,
+}, testInfo) => {
+  const image = {
+    url: "https://images.example.test/layout.svg",
+    articleUrl: "https://example.test/article",
+    sourceName: "검사용 출처",
+  };
+  await page.route(image.url, (route) =>
+    route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect width="900" height="600" fill="#567"/></svg>',
+    }),
+  );
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await mountToday(page, image, layoutStories);
+  const cards = latest(page).getByRole("article");
+  const lead = cards.first();
+  await expect
+    .poll(() => lead.locator("img").evaluate((node: HTMLImageElement) => node.naturalWidth))
+    .toBe(900);
+  const metrics: Record<string, unknown> = {};
+  const measure = async (state: string) => {
+    const result = await lead.evaluate((article) => {
+      const rect = (selector: string) => {
+        const node = article.querySelector(selector);
+        if (!node) throw new Error(`Missing ${selector}`);
+        const { top, bottom, width, height } = node.getBoundingClientRect();
+        return { top, bottom, width, height };
+      };
+      const { bottom } = article.getBoundingClientRect();
+      return {
+        bottom,
+        padding: Number.parseFloat(getComputedStyle(article).paddingBottom),
+        img: rect("img"),
+        caption: rect("figcaption"),
+        summary: rect(".today-story-summary"),
+        meta: rect(".today-story-meta"),
+      };
+    });
+    metrics[state] = result;
+    return result;
+  };
+  const [lead0, second] = layoutStories;
+  if (!lead0 || !second) throw new Error("Missing layout fixture");
+  const leadSummary = lead.locator(".today-story-summary");
+  // 첫 사건 요약은 앞 주장 3개를 한 문단으로, 두 번째 카드는 첫 주장만. 둘 다 줄임 없음.
+  await expect(leadSummary).toHaveText(lead0.claims.join(" "));
+  await expect(cards.nth(1).locator(".today-story-summary")).toHaveText(second.summary);
+  expect(await leadSummary.evaluate((node) => getComputedStyle(node).webkitLineClamp)).toBe("none");
+
+  // 1) 보조 사건 둘(이미지·짧은 요약)의 합이 리드 본문보다 길다: 리드 이미지가 그 차이만큼 세로로 커지고 여백은 패딩뿐.
+  let m = await measure("fill");
+  expect(m.img.height).toBeGreaterThan((m.img.width * 2) / 3 + 1);
+  expect(m.img.height).toBeLessThanOrEqual(m.img.width * 1.25 + 1);
+  expect(m.bottom - m.meta.bottom).toBeLessThanOrEqual(m.padding + 2);
+  const third = await cards.nth(2).boundingBox();
+  if (!third) throw new Error("Missing third card bounds");
+  expect(Math.abs(third.y + third.height - m.bottom)).toBeLessThanOrEqual(1);
+  await testInfo.attach("lead-fill.png", {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: "image/png",
+  });
+
+  // 2) 보조 이미지가 사라져 오른쪽 열이 리드 본문보다 짧으면 3:2 그대로다.
+  for (const index of [1, 2]) await cards.nth(index).locator("img").dispatchEvent("error");
+  await expect(latest(page).locator("img")).toHaveCount(1);
+  m = await measure("shortColumn");
+  expect(Math.abs(m.img.height - (m.img.width * 2) / 3)).toBeLessThanOrEqual(1);
+
+  // 3) 긴 요약의 보조 사건 둘(토픽 1 필터)로 오른쪽 열이 훨씬 길면 4:5에서 멈추고, 남는 여백은 메타 뒤에만 생긴다.
+  await tiles(page).nth(1).click();
+  await expect(latest(page).locator("img")).toHaveCount(3);
+  m = await measure("cap");
+  expect(Math.abs(m.img.height - m.img.width * 1.25)).toBeLessThanOrEqual(1);
+  // 캡션과 요약 사이는 평소 간격(figure 아래 여백 0.25rem + gap 0.75rem)이다.
+  expect(m.summary.top - m.caption.bottom).toBeLessThanOrEqual(16 + 2);
+  expect(m.bottom - m.meta.bottom).toBeGreaterThan(m.padding + 2);
+  await testInfo.attach("lead-cap.png", {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: "image/png",
+  });
+
+  // 4) 48rem 아래 1열에서는 3:2.
+  await page.setViewportSize({ width: 375, height: 812 });
+  m = await measure("narrow");
+  expect(Math.abs(m.img.height - (m.img.width * 2) / 3)).toBeLessThanOrEqual(1);
+  await testInfo.attach("lead-metrics.json", {
+    body: JSON.stringify(metrics, null, 2),
+    contentType: "application/json",
+  });
 });
 
 test("발행 사건 홈 → 실제 사건 경로 → 근거, 데모 미노출", async ({ page }) => {

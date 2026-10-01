@@ -9,7 +9,10 @@ export interface TodayStoryCard {
   readonly slug: string;
   readonly title: string;
   readonly topics: readonly Topic[];
+  /** 최신 개정판의 첫 주장 전문. 보조·목록 카드와 공유 설명이 쓴다. */
   readonly summary: string;
+  /** 최신 개정판의 앞 주장 전문(표시 순서, 최대 3개). 오늘 첫 사건 요약이 한 문단으로 잇는다. */
+  readonly claims: readonly string[];
   readonly status: ContradictionStatus;
   readonly sourceCount: number;
   readonly updatedAt: Date;
@@ -48,6 +51,15 @@ export async function loadPublishedToday(
         select ${claimRevisions.text} from ${claimRevisions}
         where ${claimRevisions.story_revision_id} = ${latest.id}
         order by ${claimRevisions.display_order}, ${claimRevisions.id} limit 1
+      )`,
+      claims: sql<string[]>`(
+        select coalesce(json_agg(lead_c.text order by lead_c.display_order, lead_c.id), '[]'::json)
+        from (
+          select ${claimRevisions.text}, ${claimRevisions.display_order}, ${claimRevisions.id}
+          from ${claimRevisions}
+          where ${claimRevisions.story_revision_id} = ${latest.id}
+          order by ${claimRevisions.display_order}, ${claimRevisions.id} limit 3
+        ) lead_c
       )`,
       status: latest.contradiction_status,
       sourceCount: sql<number>`(

@@ -70,6 +70,7 @@ maybe("loadPublishedToday", () => {
             title: "최신 발행 제목",
             topics: fixture.story.topics,
             summary,
+            claims: [summary, fixture.revision.claims[1]?.text],
             status: "단일 출처",
             sourceCount: 3,
             updatedAt,
@@ -90,6 +91,41 @@ maybe("loadPublishedToday", () => {
         stories: [],
         lastUpdated: null,
       });
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("첫 사건용 앞 주장은 표시 순서로 최대 3개를 담고 summary는 첫 주장이다", async () => {
+    const { db, cleanup } = await createMigrationDb(url as string);
+    try {
+      const template = fixture.revision.claims[0];
+      if (!template) throw new Error("픽스처에 주장이 없다");
+      const revision = (revisionNumber: number, orders: readonly number[]) => ({
+        ...fixture.revision,
+        id: `revision-${revisionNumber}`,
+        revisionNumber,
+        claims: orders.map((order) => ({
+          ...template,
+          id: `claim-${order}`,
+          order,
+          text: `주장 ${order}`,
+          evidence: [],
+        })),
+      });
+      const card = async () => (await loadPublishedToday(db, { isDemo: true })).stories[0];
+      // 배열 순서가 아니라 display_order 순이며 네 번째 주장은 싣지 않는다.
+      await publishFixture(db, { ...fixture, revision: revision(1, [3, 1, 4, 2]) });
+      expect(await card()).toMatchObject({
+        summary: "주장 1",
+        claims: ["주장 1", "주장 2", "주장 3"],
+      });
+      // 3개 미만이면 있는 만큼.
+      await publishFixture(db, { ...fixture, revision: revision(2, [2, 1]) });
+      expect(await card()).toMatchObject({ summary: "주장 1", claims: ["주장 1", "주장 2"] });
+      // 주장이 없으면 빈 묶음과 빈 summary.
+      await publishFixture(db, { ...fixture, revision: revision(3, []) });
+      expect(await card()).toMatchObject({ summary: "", claims: [] });
     } finally {
       await cleanup();
     }

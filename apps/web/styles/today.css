@@ -395,6 +395,21 @@
     height: 100%;
     border-bottom: 0;
   }
+  /* 왼쪽 열 높이는 오른쪽 두 카드가 정한다. 남는 높이는 리드 이미지만 채우되(3:2에서 세로 크롭, 가운데) 4:5에서 멈춘다.
+     상한을 figure에 두어 그 뒤 남는 여백이 캡션 아래가 아니라 카드 맨 아래(메타 뒤)로 간다. cqw는 열 안쪽 폭 = 이미지 폭. */
+  .today-lead {
+    container-type: inline-size;
+  }
+  .today-lead .lead-image {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+    /* 이미지 폭 × 1.25 + 캡션 한 줄(0.75rem × 1.6) + 캡션 위 여백 0.5rem */
+    max-height: calc(125cqw + 1.7rem);
+  }
+  .today-lead .lead-image img {
+    flex: 1 0 auto;
+  }
   .today-secondary {
     grid-column: 2;
   }
