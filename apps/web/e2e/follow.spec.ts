@@ -1,5 +1,22 @@
-import { authEnv, expect, test } from "./auth.ts";
+import { authEnv, test as authTest, expect } from "./auth.ts";
 import { expectNoAxeViolations } from "./axe.ts";
+import { stageFollowStory } from "./follow-story.ts";
+import { expectReflow } from "./reflow.ts";
+
+const test = authTest.extend<{ followStory: Awaited<ReturnType<typeof stageFollowStory>> }>({
+  followStory: async ({ request }, use) => {
+    const story = await stageFollowStory();
+    try {
+      await use(story);
+    } finally {
+      await story.close();
+      await request.post("/api/revalidate", {
+        headers: { authorization: "Bearer e2e-follow-publish" },
+        data: { tags: ["today:ko"], immediate: true },
+      });
+    }
+  },
+});
 
 // 팔로우와 마지막으로 본 개정판(#105, M4 인수). 로컬 Supabase CLI가 없으면 로컬에서는 건너뛰고 CI에서는 실패한다.
 if (authEnv() === null && process.env.CI) {
@@ -7,16 +24,15 @@ if (authEnv() === null && process.env.CI) {
 }
 test.skip(authEnv() === null, "로컬 Supabase가 꺼져 있다(pnpm exec supabase start)");
 
-// 전용 E2E 복제본 ③은 개정판이 둘이다(e2e/seed.ts). 개정판 1 고정 URL에서 팔로우하면 마지막으로 본 개정판이 1이 된다.
-const SLUG = "fixture-3-correction";
-const LATEST = `/story/${SLUG}`;
-const REVISION_1 = `${LATEST}/revision/${encodeURIComponent(`${SLUG}:rev-1`)}`;
-
-test("M4 인수: 익명으로 사건 팔로우 → 로그인 → 팔로우됨 → 재방문 시 읽은 이후 변화와 내가 본 지점 → 팔로우 화면", async ({
+test("M4 인수: 팔로우 뒤 새 개정판 발행 → 읽은 이후 변화 → 조회·저장 실패 복구 → 재방문", async ({
   page,
   makeUser,
   signIn,
+  followStory,
 }, testInfo) => {
+  const STORY = `/story/${followStory.slug}`;
+  const LATEST = `${STORY}/revision/${encodeURIComponent(followStory.revision2)}`;
+  const REVISION_1 = `${STORY}/revision/${encodeURIComponent(followStory.revision1)}`;
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto(REVISION_1);
   await page.getByRole("button", { name: "팔로우" }).click();
@@ -31,21 +47,55 @@ test("M4 인수: 익명으로 사건 팔로우 → 로그인 → 팔로우됨 �
   await page.goto(next);
   const follow = page.getByRole("button", { name: "팔로우" });
   await expect(follow).toHaveAttribute("aria-pressed", "true");
+  await expect(follow).toHaveText("팔로우 중");
+  await expect(page.getByRole("link", { name: "개정판 1부터 변화 추적" })).toBeVisible();
   expect(new URL(page.url()).search).toBe("");
 
-  // 팔로우 화면: 개정판 1까지 읽었고 최신은 개정판 2라 변화 있음. 데모 사건은 노출하지 않는다.
-  await page.goto("/follows");
+  // 실제 팔로우가 끝난 뒤 개정판 2를 게시한다. 화면 이동도 주요 탐색 링크로 수행한다.
+  const navigation = page.getByRole("navigation", { name: "주요 탐색" });
+  await navigation.locator('a[href="/follows"]').click();
   const card = page
     .getByRole("region", { name: "팔로우한 사건" })
     .getByRole("listitem")
-    .filter({ has: page.locator(`a[href="${LATEST}"]`) });
+    .filter({ has: page.locator(`a[href^="${STORY}/"]`) });
+  await expect(card).toBeVisible();
+  await expect(card.getByText("읽은 이후 변화 있음")).toHaveCount(0);
+  await followStory.publishNext();
+  // 실제 발행 워커와 같이 최신 개정판 캐시를 만료한다(링크 미리 가져오기로 생긴 공개 캐시 포함).
+  const revalidated = await page.request.post("/api/revalidate", {
+    headers: { authorization: "Bearer e2e-follow-publish" },
+    data: { tags: [`story:${followStory.storyId}:latest`, "today:ko"] },
+  });
+  expect(revalidated.status()).toBe(200);
+  await navigation.locator('a[href="/"]').click();
+  await navigation.locator('a[href="/follows"]').click();
   await expect(card.getByText("읽은 이후 변화 있음")).toBeVisible();
   await expect(page.getByRole("region", { name: "데모 사건", exact: true })).toHaveCount(0);
   await expectNoAxeViolations(page, testInfo, "follows");
 
+  // 개인 변화 요청이 실패해도 익명/변화 없음으로 숨기지 않고, 같은 페이지에서 복구할 수 있다.
+  await page.route(
+    "**/api/me/story-visit",
+    (route) => route.fulfill({ status: 503, json: { error: "temporary failure" } }),
+    { times: 1 },
+  );
   // 재방문(최신 개정판): 변화 구획의 읽은 이후 변화와 개정판 띠의 내가 본 지점.
   await card.locator(`a[href="${LATEST}"]`).click();
   await expect(page).toHaveURL(new RegExp(`${LATEST}$`));
+  await expect(page.getByText("읽은 이후 변화를 확인하지 못했습니다.")).toBeVisible();
+  const retry = page.getByRole("button", { name: "변화 확인 다시 시도" });
+  // 저장은 성공했지만 응답이 끊겨도, 다시 시도할 때 수신했던 이전 기준을 잃지 않는다.
+  await page.route("**/api/me/story-visit", async (route) => {
+    const request = route.request().postDataJSON() as { phase?: string };
+    if (request.phase === "read") return route.continue();
+    await route.fetch();
+    await route.abort("failed");
+    await page.unroute("**/api/me/story-visit");
+  });
+  await retry.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText("읽은 지점을 저장하지 못했습니다.")).toBeVisible();
+  await page.getByRole("button", { name: "읽은 지점 저장 다시 시도" }).click();
   const changes = page.getByRole("region", { name: "변화", exact: true });
   await expect(changes.getByRole("heading", { name: "읽은 이후 변화" })).toBeVisible();
   await expect(
@@ -56,10 +106,34 @@ test("M4 인수: 익명으로 사건 팔로우 → 로그인 → 팔로우됨 �
   await expect(strip.nth(0)).toContainText("내가 본 지점");
   await expect(strip.nth(1)).not.toContainText("내가 본 지점");
   await expect(follow).toHaveAttribute("aria-pressed", "true");
+  await expect(follow).not.toHaveAttribute("aria-disabled", "true");
+  const shortcut = page.getByRole("link", { name: "새 개정판 1개 · 읽은 이후 변화 보기" });
+  await shortcut.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(new RegExp(`${LATEST}#changes$`));
+  await expect(changes.getByText("이전", { exact: true }).first()).toBeVisible();
+  await expect(changes.getByText("현재", { exact: true }).first()).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect((await shortcut.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  expect(
+    (await page.getByRole("link", { name: "팔로우 목록", exact: true }).boundingBox())?.height,
+  ).toBeGreaterThanOrEqual(44);
+  await expectReflow(page, testInfo, 390, "follow-tracking-mobile");
+  await page.screenshot({
+    path: testInfo.outputPath("follow-tracking-mobile.png"),
+    fullPage: true,
+  });
   await expectNoAxeViolations(page, testInfo, "story-signed-in");
 
   // 최신을 읽었으므로 팔로우 화면의 변화 있음 표기가 사라진다.
-  await page.goto("/follows");
+  await navigation.locator('a[href="/follows"]').click();
+  await expect(card).toBeVisible();
+  await expect(card.getByText("읽은 이후 변화 있음")).toHaveCount(0);
+  await card.locator(`a[href="${LATEST}"]`).click();
+  await expect(page.getByRole("link", { name: "새 변화 없음 · 개정판 2까지 읽음" })).toBeVisible();
+  await expect(changes.getByText("마지막으로 본 이후 새 개정판이 없습니다.")).toBeVisible();
+  await expect(follow).not.toHaveAttribute("aria-disabled", "true");
+  await page.goBack();
   await expect(card).toBeVisible();
   await expect(card.getByText("읽은 이후 변화 있음")).toHaveCount(0);
 });
@@ -84,6 +158,27 @@ test("팔로우 해제와 토픽 팔로우, 익명의 팔로우 화면은 로그
   await expect(follow).toHaveAttribute("aria-pressed", "true");
   await follow.click();
   await expect(follow).toHaveAttribute("aria-pressed", "false");
+
+  // 로그인 후 intent의 저장 응답을 잃은 뒤 다른 화면에서 해제해도, 뒤로 가기가 다시 팔로우하지 않는다.
+  await signedIn.route("**/api/me/story-visit", async (route) => {
+    const request = route.request().postDataJSON() as { phase?: string };
+    if (request.phase === "read") return route.continue();
+    await route.fetch();
+    await route.abort("failed");
+    await signedIn.unroute("**/api/me/story-visit");
+  });
+  await signedIn.goto("/story/fixture-1-agreement?intent=follow");
+  await expect(signedIn.getByText("읽은 지점을 저장하지 못했습니다.")).toBeVisible();
+  await signedIn
+    .getByRole("navigation", { name: "주요 탐색" })
+    .locator('a[href="/follows"]')
+    .click();
+  await signedIn.getByRole("button", { name: /^팔로우 해제/ }).click();
+  await expect(signedIn.getByText("아직 팔로우한 사건이 없습니다")).toBeVisible();
+  await signedIn.goBack();
+  await expect(follow).not.toHaveAttribute("aria-disabled", "true");
+  await expect(follow).toHaveAttribute("aria-pressed", "false");
+  expect(new URL(signedIn.url()).search).toBe("");
 
   const response = await signedIn.goto("/follows");
   expect(response?.headers()["cache-control"]).toMatch(/no-store/);

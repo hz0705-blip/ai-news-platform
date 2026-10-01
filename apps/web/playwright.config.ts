@@ -35,6 +35,7 @@ export default defineConfig({
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "",
       // 계정 삭제(#106)의 Auth 관리자 API. 로컬 CLI 고정 값이다.
       SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY ?? "",
+      REVALIDATE_SECRET: "e2e-follow-publish",
       // 직접 OIDC의 인가 URL·콜백 거부만 본다 — 가짜 값이며 제공자에는 요청하지 않는다.
       KAKAO_REST_API_KEY: "e2e-kakao-client",
       KAKAO_CLIENT_SECRET: "e2e-kakao-secret",

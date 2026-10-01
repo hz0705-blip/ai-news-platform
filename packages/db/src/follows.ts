@@ -92,6 +92,37 @@ export interface StoryVisit {
   readonly following: boolean;
 }
 
+/** 방문 기록을 앞당기지 않고 비교 기준을 읽는다. 브라우저가 이 기준을 받은 뒤에만 방문을 기록한다. */
+export async function readStoryVisit(
+  db: Db,
+  params: { readonly userId: string; readonly slug: string; readonly revisionId: string },
+): Promise<StoryVisit | undefined> {
+  const rows = await db
+    .select({
+      previousRevisionId: lastSeenRevisions.revision_id,
+      following: sql<boolean>`${storyFollows.story_id} is not null`,
+    })
+    .from(storyRevisions)
+    .innerJoin(stories, eq(stories.id, storyRevisions.story_id))
+    .leftJoin(
+      lastSeenRevisions,
+      and(eq(lastSeenRevisions.story_id, stories.id), eq(lastSeenRevisions.user_id, params.userId)),
+    )
+    .leftJoin(
+      storyFollows,
+      and(eq(storyFollows.story_id, stories.id), eq(storyFollows.user_id, params.userId)),
+    )
+    .where(
+      and(
+        eq(stories.slug, params.slug),
+        eq(stories.is_demo, false),
+        eq(storyRevisions.id, params.revisionId),
+      ),
+    )
+    .limit(1);
+  return rows[0];
+}
+
 /**
  * 사건 페이지 방문(스펙 "마지막으로 본 개정판": 사건 페이지를 열면 갱신). 보이는 개정판(`revisionId`)이 그 사건의 것이면
  * 이전 값을 돌려주고, 마지막으로 본 개정판을 그 개정판으로 올린다 — 이미 본 개정판보다 뒤일 때만 바꾼다(개정판 고정 URL로
@@ -162,6 +193,8 @@ export async function recordStoryVisit(
 
 /** 팔로우 화면의 카드 하나. 오늘 카드에 팔로우 화면이 쓰는 값을 더한다. */
 export interface FollowFeedStory extends TodayStoryCard {
+  /** 목록에서 확인한 최신 개정판의 고정 링크를 만든다. */
+  readonly latestRevisionId: string;
   /** 최신 발행 개정판의 번호. */
   readonly latestRevisionNumber: number;
   /** 마지막으로 본 개정판의 번호. 본 적 없으면 null. */
@@ -214,6 +247,7 @@ export async function loadFollowFeed(
       isDemo: stories.is_demo,
       image: leadImageSql(latest.source_article_ids),
       latestRevisionNumber: latest.revision_number,
+      latestRevisionId: latest.id,
       lastSeenRevisionNumber: sql<number | null>`(
         select ${storyRevisions.revision_number} from ${lastSeenRevisions}
         join ${storyRevisions} on ${storyRevisions.id} = ${lastSeenRevisions.revision_id}

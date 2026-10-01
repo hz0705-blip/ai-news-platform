@@ -47,7 +47,7 @@ test("로그인한 사용자도 데모 팔로우나 방문을 기록하지 않�
   expect(await followed.json()).toMatchObject({ following: false });
   const visited = await context.request.post("/api/me/story-visit", {
     headers,
-    data: { slug: demos[0], revisionId: `${demos[0]}:rev-1`, follow: true },
+    data: { phase: "record", slug: demos[0], revisionId: `${demos[0]}:rev-1`, follow: true },
   });
   expect(visited.status()).toBe(200);
   expect(await visited.json()).toMatchObject({ following: false, lastSeenRevisionId: null });

@@ -14,6 +14,7 @@ export function StoryCard({
   now,
   titleRef,
   extra,
+  storyHref,
   prominence = "list",
 }: {
   story: TodayStoryCard;
@@ -22,6 +23,8 @@ export function StoryCard({
   titleRef?: (node: HTMLAnchorElement | null) => void;
   /** 항목 상단의 화면별 표기·동작. 팔로우 화면의 변화 있음·팔로우 해제가 쓴다. */
   extra?: ReactNode;
+  /** 팔로우 목록은 확인한 개정판의 고정 주소를 쓴다. */
+  storyHref?: string;
 }) {
   const absolute = formatAbsolute(story.updatedAt);
   // SSR과 첫 hydration은 같은 절대 시각. 단말 시계가 발행보다 느려도 유지한다.
@@ -43,7 +46,7 @@ export function StoryCard({
         ))}
       </ul>
       <h3>
-        <Link ref={titleRef} href={`/story/${story.slug}`}>
+        <Link ref={titleRef} href={storyHref ?? `/story/${story.slug}`}>
           {story.title}
         </Link>
       </h3>
