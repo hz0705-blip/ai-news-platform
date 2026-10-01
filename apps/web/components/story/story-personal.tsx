@@ -197,7 +197,10 @@ export function FollowControl() {
         <Button disabled variant="outline">
           {FOLLOW}
         </Button>
-        <span role="status" className="self-center text-meta">
+        <span
+          role="status"
+          className={state.status === "loading" ? "sr-only" : "self-center text-meta"}
+        >
           {state.status === "loading" ? TRACKING_LOADING : TRACKING_FAILED}
         </span>
         {state.status === "error" ? (
