@@ -3,7 +3,6 @@
 import { DEMO_TIME } from "../../app/copy.ts";
 import {
   DEMO_NOTICE,
-  SHARE,
   STATUS_COUNTS_LABEL,
   STORY_UPDATED,
   sourceCount,
@@ -17,7 +16,7 @@ import type { StoryView } from "../../lib/story-view.ts";
 import { DemoBadge } from "../demo-badge.tsx";
 import { LeadImage } from "../lead-image.tsx";
 import { StatusBadge } from "../status-badge.tsx";
-import { Button } from "../ui/button.tsx";
+import { ShareButton } from "./share-button.tsx";
 import { FollowControl } from "./story-personal.tsx";
 
 /** 사건 머리: 데모 표기·토픽·제목·사건 상충 상태·출처 개수·갱신 시각, 팔로우·공유 자리. */
@@ -86,9 +85,7 @@ export function StoryHeader({
         {/* 로그인 게이트의 <dialog>는 <p> 안에 둘 수 없다. */}
         <div className="flex flex-wrap gap-2">
           <FollowControl />
-          <Button variant="outline" disabled aria-disabled="true" title="공유 기능 준비 중">
-            {SHARE}
-          </Button>
+          <ShareButton title={header.title} summary={summary} />
         </div>
       </div>
     </header>

@@ -218,3 +218,23 @@ test("두 번째 주장에서도 트리거 → 패널 링크 순서로 포커스
   await expect(link).toBeFocused();
   expect(await trigger.locator("a, button").count()).toBe(0);
 });
+
+test("공유 버튼은 Web Share가 없으면 사건 URL을 복사하고 알린다", async ({
+  page,
+  context,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "클립보드 권한 부여는 chromium만 지원한다");
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "share", { value: undefined, configurable: true });
+  });
+  await page.goto(`${STORY_URL}?from=today#claim-1`);
+  const header = page.getByRole("main").locator("header");
+  await header.getByRole("button", { name: "공유", exact: true }).click();
+  await expect(header.getByRole("status").filter({ hasText: "링크를" })).toHaveText(
+    "링크를 복사했습니다",
+  );
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toBe(new URL(STORY_URL, page.url()).toString());
+});
